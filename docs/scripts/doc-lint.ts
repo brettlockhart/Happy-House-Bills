@@ -3,7 +3,6 @@ import { execSync } from "node:child_process";
 import { join, relative, resolve, dirname, basename } from "node:path";
 
 const DOCS_DIR = resolve(process.cwd(), "docs");
-const TECH_SPECS_DIR = join(DOCS_DIR, "3-reference", "tech-specs");
 const TECH_SPECS_README_REL = join("3-reference", "tech-specs", "README.md");
 
 const LIFECYCLE_FOLDERS = new Set(["01-draft", "02-in-progress", "03-ready-for-review", "04-implemented"]);
@@ -23,7 +22,6 @@ const QUESTION_ID_RE = /([A-Z]{2,}-Q\d+(?:[a-z]\d?)?|SQ-\d+-\d+)/;
 // bare `^resolved` misses `**Resolved**`.
 const RESOLVED_STATUS_RE = /^\s*[*_~`]*\s*resolved\b/i;
 const STRIKETHROUGH_RE = /~~([^~]+)~~/;
-const TABLE_ROW_RE = /^\|.+\|$/;
 
 interface Frontmatter {
   lifecycle?: string;
@@ -201,7 +199,7 @@ function checkReviewQueue(files: string[], findings: ValidationFinding[]): void 
   const content = readFileSync(reviewFull, "utf-8");
   const activeEntries = (content.match(REVIEW_ACTIVE_RE) || []).length;
 
-  let hasUncommittedWork = false;
+  let hasUncommittedWork: boolean;
   try {
     const gitOutput = execSync("git status --porcelain docs/", {
       cwd: resolve(process.cwd()),
@@ -526,9 +524,6 @@ function checkNextActionsSync(files: string[], findings: ValidationFinding[]): v
   const lines = content.split("\n");
 
   let inSection6 = false;
-  let inSpecTable = false;
-  const readmeStatuses = new Map<string, { status: string; readme: string }>();
-  let currentReadme = "";
 
   for (const line of lines) {
     if (/^## 6\.\s/.test(line)) { inSection6 = true; continue; }

@@ -2,6 +2,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: [
     '@clerk/nuxt',
+    '@nuxt/eslint',
   ],
   nitro: {
     preset: 'cloudflare-module',

@@ -35,7 +35,6 @@ import { join, relative, resolve, dirname, basename } from "node:path";
 const DOCS_DIR = resolve(process.cwd(), "docs");
 const TECH_SPECS_DIR = join(DOCS_DIR, "3-reference", "tech-specs");
 const SPEC_GAPS_REL = join("3-reference", "spec-gaps.md");
-const TECH_SPECS_README_REL = join("3-reference", "tech-specs", "README.md");
 const CONVENTIONAL_UPPERCASE = new Set(["README.md", "AGENTS.md", "CLAUDE.md", "CONTEXT.md"]);
 
 const QUIET = process.argv.includes("--quiet");
@@ -393,7 +392,7 @@ function check7EmptySections(files: string[]): CheckResult {
 
 // --- Check 8: Stale §1 entries ---
 
-function check8StaleSpecGapsEntries(files: string[]): CheckResult {
+function check8StaleSpecGapsEntries(_files: string[]): CheckResult {
   const findings: Finding[] = [];
   if (!fileExists(SPEC_GAPS_REL)) return { check: "8-stale-gaps-entries", description: "§1 entries for completed docs are marked", findings: [] };
 
@@ -436,7 +435,7 @@ function findCrossRefs(rel: string, content: string): Set<string> {
   return refs;
 }
 
-function check9CrossRefReciprocity(files: string[]): CheckResult {
+function check9CrossRefReciprocity(_files: string[]): CheckResult {
   const findings: Finding[] = [];
   if (!existsSync(TECH_SPECS_DIR)) return { check: "9-reciprocity", description: "Tech-spec cross-references are reciprocal", findings: [] };
 
@@ -619,9 +618,9 @@ function check14CrossProjectContamination(files: string[]): CheckResult {
         while ((match = pattern.exec(lines[i])) !== null) {
           if (isListingContext(lines[i])) continue;
           if (isNegatedContext(lines[i], match.index)) continue;
-          let matchStart = match.index;
-          let matchEnd = matchStart + match[0].length;
-          let snippet = lines[i].slice(Math.max(0, matchStart - 20), matchEnd + 20).trim();
+          const matchStart = match.index;
+          const matchEnd = matchStart + match[0].length;
+          const snippet = lines[i].slice(Math.max(0, matchStart - 20), matchEnd + 20).trim();
           findings.push({ check: "14-cross-project-contamination", file: rel, line: i + 1, message: `${message}: "${snippet}"`, severity: "error" });
         }
       }
