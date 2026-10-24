@@ -21,10 +21,10 @@ approve/reject expenses, record settlements, and see a real-time balance.
 - [ ] **Project scaffolding**
   - Nuxt 4 app at repo root with `nitro.preset: 'cloudflare-module'`
   - Convex project wiring (dev local, prod cloud)
-  - `@clerk/nuxt` integration
-  - `@j-boardman/convex-nuxt` for Convex + Nuxt bridging
-  - `convex/react-clerk` for Clerk ↔ Convex auth bridge
-  - `@convex-dev/r2` for R2 file storage
+   - `@clerk/nuxt` integration
+   - `convex-vue` for Vue composables (Convex client reactivity in Nuxt)
+   - `convex` package for Convex backend functions
+   - `@convex-dev/r2` for R2 file storage
 
 - [ ] **Backend schema & auth**
   - `convex/schema.ts` with expenses, settlements tables (`orgId` scoped)

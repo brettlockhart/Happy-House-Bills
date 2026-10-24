@@ -33,8 +33,8 @@ tier, premium OCR) is deferred to post-launch.
 ## Key Modules
 
 - `@clerk/nuxt` — Clerk integration
-- `@j-boardman/convex-nuxt` — Convex + Nuxt bridging (supports `cloudflare-module` preset)
-- `convex/react-clerk` — Clerk ↔ Convex auth bridge
+- `convex-vue` — Vue composables for Convex client reactivity in Nuxt
+- `convex` — Convex backend functions and client
 - `@convex-dev/r2` — R2 file storage component
 
 ## Multi-Tenancy Model
