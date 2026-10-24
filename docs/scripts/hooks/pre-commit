@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Pre-commit hook: run doc-lint before each commit.
+# Bypass with `git commit --no-verify`.
+#
+# Setup: run `node scripts/setup-hooks.js` once after cloning.
+
+set -e
+
+cd "$(git rev-parse --show-toplevel)"
+
+npx tsx docs/scripts/doc-lint.ts

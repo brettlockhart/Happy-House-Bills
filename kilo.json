@@ -1,0 +1,21 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "commands": {
+    "spec-gap-next": {
+      "description": "Start addressing the next highest-priority spec gap from spec-gaps.md"
+    },
+    "spec-review": {
+      "description": "Review a completed spec for overlap, missing decisions, unclear scope, and incomplete cross-references"
+    },
+    "docs-lint-fix": {
+      "description": "Fix doc-lint and docs-audit findings across the Happy House Bills docs tree"
+    },
+    "docs-audit": {
+      "description": "Run a comprehensive docs quality audit (cross-refs, stale forward refs, British English, open questions, gap counts)"
+    },
+    "post-launch-feature": {
+      "description": "Start a post-launch feature addition or update following the development-tier proposal lifecycle (placeholder — reassess before first use)"
+    }
+  },
+  "snapshot": false
+}

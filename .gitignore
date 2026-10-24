@@ -1,0 +1,33 @@
+-- Node
+node_modules/
+.nuxt/
+.nitro/
+.output/
+.cache/
+
+-- Convex
+convex/_generated/
+.convex/
+
+-- Env files
+.env
+.env.local
+.env.*.local
+
+-- OS
+.DS_Store
+Thumbs.db
+
+-- Logs
+*.log
+logs/
+
+-- Coverage
+coverage/
+
+-- IDE
+.vscode/
+.idea/
+
+-- Slice baselines (local only)
+.slice-baseline/
