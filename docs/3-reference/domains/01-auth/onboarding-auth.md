@@ -13,13 +13,13 @@ tags: [auth, onboarding, clerk, multi-tenancy]
 **Status:** Draft
 **Audience:** Backend engineers, frontend engineers
 
-## Purpose
+## 1. Purpose
 
 Define how Happy House Bills handles authentication and multi-tenancy using Clerk
 Organizations. Each household is a Clerk organisation with exactly two members. The onboarding
 flow ensures users land in an organisation with their partner before seeing any expense data.
 
-## Scope
+## 2. Scope
 
 ### In scope
 
@@ -33,39 +33,39 @@ flow ensures users land in an organisation with their partner before seeing any 
 ### Out of scope
 
 - Password reset flows (Clerk handles natively)
-- Multi-organisation switching (explicitly excluded in v1 — `project_brief.md` §215)
+- Multi-organisation switching (explicitly excluded in v1 — `project_brief.md`)
 - Team plan / subscription tiers (no monetisation in v1)
 
-## Key Decisions
+## 3. Key Decisions
 
 | ID | Decision | Rationale | Source |
 |----|----------|-----------|--------|
-| D1 | Use Clerk organisations for household multi-tenancy | Matches the "one household = one org, two members" model directly | `project_brief.md` §26-32 |
-| D2 | `orgId` extracted from Clerk session JWT, passed to Convex | Convex reads `auth.getUserId()` and the org from the session token | `project_brief.md` §29-30 |
-| D3 | Invite flow uses Resend email with deep link | Matches the email notification architecture; no in-app invite UI in v1 | `project_brief.md` §170-182 |
-| D4 | Enforce single-org membership in application logic | Clerk does not natively restrict to one org per user; we enforce in the onboarding guard | `project_brief.md` §32 |
+| D1 | Use Clerk organisations for household multi-tenancy | Matches the "one household = one org, two members" model directly | `project_brief.md` (## Multi-Tenancy Model) |
+| D2 | `orgId` extracted from Clerk JWT `org_id` claim via Convex `getUserIdentity()` | Configure Clerk JWT template to include `org_id`; Convex whitelists the claim | `project_brief.md` (## Multi-Tenancy Model) |
+| D3 | Invite flow uses Resend email with deep link | Matches the email notification architecture; no in-app invite UI in v1 | `project_brief.md` (## Tech Stack) |
+| D4 | Enforce single-org membership in application logic | Clerk does not natively restrict to one org per user; we enforce in the onboarding guard | `project_brief.md` (## Multi-Tenancy Model) |
 
-## Open Questions
+## 4. Open Questions
 
 | ID | Question | Status | Notes |
 |----|----------|--------|-------|
-| BB-Q3 | What happens if User B's email is already associated with a different Clerk org? | Open | v1 should block and show an error |
+| BB-Q3 | What happens if User B's email is already associated with a different Clerk org? | Resolved | v1 should block and show an error message. Document the error copy in D4 of the onboarding flow. |
 
-## Cross-References
+## 5. Cross-References
 
 - `tech-specs/backend/data-model.md` — `orgId` on all tables
 - `tech-specs/backend/api-contract.md` — `orgs:create` mutation
 - `tech-specs/backend/email-notifications.md` — invite email template
-- `user-flows.md` §1 — onboarding flow diagram
-- `project_brief.md` §25-32
+- `user-flows.md` — onboarding flow diagram
+- `project_brief.md` (## Multi-Tenancy Model)
 
-## Implementation Dependencies
+## 6. Implementation Dependencies
 
 - **Depends on:** None (foundational auth)
 - **Blocks:** All domain specs that query user-scoped data
 - **Consumer integration:** Frontend `useAuth` composable wraps `@clerk/nuxt`; Convex functions call `getAuthUser(ctx)`
 
-## Onboarding Flow
+## 7. Onboarding Flow
 
 ```
 1. User A signs up via Clerk
@@ -75,17 +75,50 @@ flow ensures users land in an organisation with their partner before seeing any 
 5. Both users are now members; app loads with org-scoped data
 ```
 
-## Auth Context in Convex
+## 8. Auth Context in Convex
 
-```typescript
-// convex/auth.ts
-import { getAuthUser } from "@convex-dev/clerk-auth";
+The project uses `@clerk/nuxt` (installed) for frontend auth via the `useAuth()` composable.
+On the Convex backend, auth context is derived from the Clerk session JWT passed through
+the `@clerk/nuxt` middleware. Convex extracts the `UserIdentity` via `ctx.auth.getUserIdentity()`.
 
-export const getOrgId = async (ctx: any) => {
-  const user = await getAuthUser(ctx);
-  if (!user) throw new Error("Unauthenticated");
-  return user.org_id;
-};
+### 8.1 Clerk JWT Template Configuration
+
+The `org_id` claim must be present in the JWT for multi-tenant isolation. Configure the
+Clerk Frontend API JWT template as follows in the Clerk dashboard:
+
+```json
+{
+  "type": "template",
+  "properties": {
+    "org_id": "{{org.id}}"
+  }
+}
 ```
 
-Every query and mutation calls `getOrgId(ctx)` and scopes by it.
+This injects the current organisation's ID as a custom claim in the session JWT.
+Convex must whitelist `org_id` in its auth configuration so it appears on
+`getUserIdentity()`.
+
+### 8.2 Auth Helper Implementation
+
+The canonical auth helper lives in `convex/auth.ts`:
+
+```typescript
+export async function requireAuthenticatedOrg(
+  ctx: { auth: { getUserIdentity: () => Promise<UserIdentity | null> } }
+): Promise<{ userId: string; orgId: string }> {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    throw new Error("Unauthenticated");
+  }
+  const userId = identity.subject;
+  const orgId = identity.org_id; // from Clerk JWT template custom claim
+  if (!userId || !orgId) {
+    throw new Error("Unauthenticated or no organisation");
+  }
+  return { userId, orgId };
+}
+```
+
+Every query and mutation calls `requireAuthenticatedOrg(ctx)` and scopes by `orgId`.
+Cross-tenant checks enforce `expense.orgId === orgId` on every data access path.

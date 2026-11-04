@@ -2,11 +2,53 @@
 
 This file tracks all pending, in-progress, and completed reviews for Happy House Bills.
 
+All reviews are complete for D1-D7. The following slices have been promoted to `04-implemented`:
+
+- D1 — Expense Management Foundation
+- D2 — Settlement API
+- D3 — Onboarding Flow
+- D4 — Receipt Upload & OCR
+- D5 — Duplicate Detection
+- D6 — Frontend UI Shell
+- D7 — Email Notifications
+- D8 — CI/CD Pipeline
+- D9 — Mobile Browser Compatibility
+- D10 — 10-Minute Deployment
+
 ## Active Reviews
 
 | Slice | Type | Reviewer | Status | Submitted | Last updated |
-|-------|------|----------|--------|-----------|--------------|
-| (none) | — | — | — | — | — |
+| D9 — Mobile Browser Compatibility | Implementation | implementation-reviewer | Approved | 30-October-2026 |
+| D9 — Mobile Browser Compatibility | Security | security-engineer | Pass | 30-October-2026 |
+| D9 — Mobile Browser Compatibility | Test Coverage | test-engineer | Pass (25 D9 tests) | 30-October-2026 |
+| D10 — 10-Minute Deployment | Implementation | implementation-reviewer | Pass | 31-October-2026 |
+| D10 — 10-Minute Deployment | Security | security-engineer | Pass | 31-October-2026 |
+| D10 — 10-Minute Deployment | Test Coverage | test-engineer | Pass (39 new tests) | 31-October-2026 |
+
+## Completed Reviews
+
+| Slice | Type | Reviewer | Verdict | Date |
+|-------|------|----------|---------|------|
+| D1 — Expense Management Foundation | Implementation | implementation-reviewer | Pass | 27-October-2026 |
+| D2 — Settlement API | Implementation | self | Pass | 27-October-2026 |
+| D3 — Onboarding, Flow | Implementation | implementation-reviewer | Pass | 28-October-2026 |
+| D3 — Onboarding Flow | Security | security-engineer | Conditional Pass | 28-October-2026 |
+| D3 — Onboarding Flow | Test Coverage | test-engineer | 66% on orgs.ts, 100% on auth.ts | 28-October-2026 |
+| D4 — Receipt Upload & OCR | Implementation | implementation-reviewer | Pass | 28-October-2026 |
+| D4 — Receipt Upload & OCR | Security | security-engineer | Pass (remediations applied) | 28-October-2026 |
+| D4 — Receipt Upload & OCR | Test Coverage | test-engineer | 22 security tests added | 28-October-2026 |
+| D5 — Duplicate Detection | Implementation | implementation-reviewer | Pass | 28-October-2026 |
+| D5 — Duplicate Detection | Security | security-engineer | Pass | 28-October-2026 |
+| D5 — Duplicate Detection | Test Coverage | test-engineer | Pass | 28-October-2026 |
+| D6 — Frontend UI Shell | Implementation | implementation-reviewer | Pass | 29-October-2026 |
+| D6 — Frontend UI Shell | Security | security-engineer | Pass | 29-October-2026 |
+| D6 — Frontend UI Shell | Test Coverage | test-engineer | Pass | 29-October-2026 |
+| D7 — Email Notifications | Implementation | implementation-reviewer | Pass | 30-October-2026 |
+| D7 — Email Notifications | Security | security-engineer | Pass | 30-October-2026 |
+| D7 — Email Notifications | Test Coverage | test-engineer | 272 tests passing; 12 SEC-D7 tests added | 30-October-2026 |
+| D8 — CI/CD Pipeline | Implementation | implementation-reviewer | Pass | 30-October-2026 |
+| D8 — CI/CD Pipeline | Security | security-engineer | Conditional Pass | 30-October-2026 |
+| D8 — CI/CD Pipeline | Test Coverage | test-engineer | 327 tests passing; 55 new CI/CD tests | 30-October-2026 |
 
 ## Review Process
 
@@ -18,3 +60,5 @@ This file tracks all pending, in-progress, and completed reviews for Happy House
 ## Archival
 
 Completed review reports are archived at `docs/2-development/supporting-docs/reviews/archive/`.
+
+**Note:** The archive contains copies of all review reports with detailed findings, security recommendations, and test coverage analysis. The active review queue above tracks current review status.

@@ -2,4 +2,5 @@
 
 | Spec | Status |
 |------|--------|
-| `ocr-pipeline.md` | Missing |
+| `ocr-pipeline.md` | Draft |
+

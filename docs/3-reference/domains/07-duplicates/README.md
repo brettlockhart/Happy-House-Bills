@@ -2,4 +2,5 @@
 
 | Spec | Status |
 |------|--------|
-| `duplicate-detection.md` | Missing |
+| `duplicate-detection.md` | Draft |
+

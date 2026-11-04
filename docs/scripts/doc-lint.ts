@@ -184,6 +184,32 @@ function checkImplementedProposalsInRoadmap(
   }
 }
 
+function checkImplementedProposalsHaveReviews(
+  files: string[],
+  findings: ValidationFinding[]
+): void {
+  const implementedFiles = files.filter((f) => {
+    const full = join(DOCS_DIR, f);
+    const content = readFileSync(full, "utf-8");
+    const { fm } = parseFrontmatter(content);
+    return fm.lifecycle === "04-implemented";
+  });
+
+  for (const impl of implementedFiles) {
+    const normalizedImpl = impl.replaceAll("\\", "/");
+    const basename = normalizedImpl.replace(/^2-development\/04-implemented\//, "").replace(/\.md$/, "");
+    const reviewFile = `2-development/supporting-docs/reviews/${basename}-review.md`;
+    const reviewFileExists = files.some((f) => f.replaceAll("\\", "/") === reviewFile);
+    if (!reviewFileExists) {
+      findings.push({
+        file: impl,
+        message: `Implemented proposal has no review report at \`${reviewFile}\``,
+        severity: "error",
+      });
+    }
+  }
+}
+
 function checkReviewQueue(files: string[], findings: ValidationFinding[]): void {
   const reviewPath = relative(DOCS_DIR, join(DOCS_DIR, "2-development/supporting-docs/reviews/README.md"));
   const reviewFull = join(DOCS_DIR, reviewPath);
@@ -615,6 +641,7 @@ function main(): void {
   checkCrossReferences(files, findings);
   checkDuplicateStatusHeaders(files, findings);
   checkImplementedProposalsInRoadmap(files, findings);
+  checkImplementedProposalsHaveReviews(files, findings);
   checkReviewQueue(files, findings);
   checkOpenQuestionsSync(files, findings);
   checkStaleForwardRefs(files, findings);

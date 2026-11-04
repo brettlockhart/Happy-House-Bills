@@ -8,7 +8,7 @@ can filter and prioritise docs.
 
 | Status | Meaning |
 |--------|---------|
-| Missing | Pending; tracked in `spec-gaps.md` §1 |
+| Missing | Pending; tracked in `spec-gaps.md` (## 1. Missing Referenced Documents) |
 | Complete | Spec written and reviewed |
 | Part complete | Spec partially written (sections missing) |
 | Updated | Existing spec that has been modified |
@@ -19,9 +19,9 @@ can filter and prioritise docs.
 
 | Filename | Status |
 |----------|--------|
-| `project-scaffolding.md` | Missing |
-| `ci-cd.md` | Missing |
-| `deployment.md` | Missing |
+| `project-scaffolding.md` | Draft |
+| `ci-cd.md` | Draft |
+| `deployment.md` | Draft |
 
 ## Backend Specs
 
@@ -29,11 +29,11 @@ can filter and prioritise docs.
 
 | Filename | Status |
 |----------|--------|
-| `data-model.md` | Complete |
-| `api-contract.md` | Complete |
-| `file-storage.md` | Missing |
-| `email-notifications.md` | Missing |
-| `duplicate-detection.md` | Missing |
+| `data-model.md` | Draft |
+| `api-contract.md` | Draft |
+| `file-storage.md` | Draft |
+| `email-notifications.md` | Draft |
+| `duplicate-detection.md` | Draft |
 
 ## Frontend Specs
 
@@ -41,9 +41,9 @@ can filter and prioritise docs.
 
 | Filename | Status |
 |----------|--------|
-| `ui-spec.md` | Missing |
-| `ocr-pipeline.md` | Missing |
-| `mobile-compat.md` | Missing |
+| `ui-spec.md` | Draft |
+| `ocr-pipeline.md` | Draft |
+| `mobile-compat.md` | Draft |
 
 ## Tech Spec Template
 

@@ -1,3 +1,13 @@
 {
-  "extends": "./.nuxt/tsconfig.json"
+  "extends": "./.nuxt/tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "paths": {
+      "~/convex/*": ["./convex/*"],
+      "~/convex": ["./convex"],
+      "~/utils/*": ["./app/utils/*"],
+      "~/components/*": ["./app/components/*"],
+      "~/composables/*": ["./app/composables/*"],
+    }
+  }
 }

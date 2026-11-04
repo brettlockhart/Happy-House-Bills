@@ -1,0 +1,129 @@
+{
+  "verdict": "PASS",
+  "scope": "D10 — 10-Minute Deployment re-review (convex/health.ts, scripts/verify-deploy.ts, .github/workflows/ci.yml, package.json, convex/http.ts, convex.json)",
+  "review_type": "remediation verification — re-review of SEC-D10 findings after fixes",
+  "checks": [
+    {
+      "id": "SEC-D10-001",
+      "concern": "preflightCheck exposes expense count via ctx.runQuery(\"expenses:countAll\")",
+      "severity": "Medium",
+      "status": "Resolved",
+      "evidence": {
+        "convex/health.ts": "12 lines — only contains healthCheck; no preflightCheck (lines 4-11)",
+        "convex/http.ts": "54 lines — exports only { healthCheck }; no preflightCheck (line 8)",
+        "grep_result": "preflightCheck absent from all source files; only appears in stale doc references (d10 slice doc §107) and test expectations (.not.toContain) in d10-deployment.test.ts:106"
+      },
+      "detail": "preflightCheck has been completely removed from both convex/health.ts and convex/http.ts. No code path can invoke it. The non-existent countAll query is gone. No auth gate was needed because the function no longer exists.",
+      "regressed": false,
+      "owasp": "PASS — A01 Broken Access Control: no unauthenticated data access path remains"
+    },
+    {
+      "id": "SEC-D10-002",
+      "concern": "paths-ignore pattern docs/** is overly broad, matching doc-tooling scripts",
+      "severity": "Low",
+      "status": "Resolved",
+      "evidence": {
+        "ci.yml": "lines 8-10 — paths-ignore now uses 'docs/**/*.md' and '*.md' (was 'docs/**')"
+      },
+      "detail": "paths-ignore narrowed from docs/** to docs/**/*.md. This prevents any executable scripts under docs/scripts/ from being skipped by CI-bypass on push. Only markdown documentation pushes skip CI.",
+      "regressed": false,
+      "owasp": "PASS — A04 Insecure Design: bypass is now scoped to markdown-only changes"
+    },
+    {
+      "id": "SEC-D10-003",
+      "concern": "Security-engineer review status pending in slice doc §Review Status",
+      "severity": "Low",
+      "status": "Resolved by this re-review",
+      "evidence": {
+        "slice_doc": "d10-10-minute-deployment.md:143 — line shows 'security-engineer: pending re-review (fixes applied for paths-ignore, Cache-Control)'"
+      },
+      "detail": "This re-review constitutes the required security-engineer review for the unauthenticated /health ingress (AGENTS.md §12, trigger 4). All prior findings are verified closed. The slice doc §Review Status (line 143) should be updated to 'complete' to close this process finding.",
+      "regressed": false,
+      "owasp": "N/A — process/documentation"
+    },
+    {
+      "id": "SEC-D10-004",
+      "concern": "No Cache-Control header on /health response — proxy/CDN could cache health status",
+      "severity": "Informational",
+      "status": "Resolved",
+      "evidence": {
+        "convex/health.ts": "line 9 — headers include 'Cache-Control': 'no-store'"
+      },
+      "detail": "Cache-Control: no-store added to /health response headers, preventing intermediary caching of health status.",
+      "regressed": false,
+      "owasp": "PASS — A05 Security Misconfiguration: cache poisoning of health state mitigated"
+    }
+  ],
+  "additional_security_checks": [
+    {
+      "check": "verify-deploy.ts does not log secrets",
+      "status": "PASS",
+      "detail": "CONVEX_URL is logged at line 74 as verification detail, but CONVEX_URL is a public Convex deployment endpoint URL (not a credential). It is exposed in nuxt.config.ts runtimeConfig.public and is classified as non-secret. No deploy keys, tokens, or credentials appear in the script."
+    },
+    {
+      "check": "verify-deploy job least-privilege permissions",
+      "status": "PASS",
+      "detail": "ci.yml:119-121 — permissions: contents: read, deployments: write. No secrets passed to this job except CONVEX_URL (non-secret endpoint)."
+    },
+    {
+      "check": "Health endpoint response content",
+      "status": "PASS",
+      "detail": "Returns only {status: 'ok', timestamp: '...'} — no secrets, PII, infrastructure details, or internal state."
+    },
+    {
+      "check": "Unauthenticated /health ingress acceptable",
+      "status": "PASS",
+      "detail": "Standard health-check pattern (Kubernetes/AWS/GCP). Returns no sensitive data. Acceptable per industry practice."
+    },
+    {
+      "check": "No rate limiting on /health",
+      "status": "ACCEPTABLE",
+      "detail": "Static JSON response with no secrets or data access — low risk. Acceptable for health-check ingress."
+    },
+    {
+      "check": "CI skip on docs-only push does not bypass secret-bearing jobs",
+      "status": "PASS",
+      "detail": "paths-ignore only applies to push events. pull_request trigger (line 4) has no paths-ignore, so all PRs run full CI including lint, typecheck, test, docs, and deploy checks."
+    }
+  ],
+  "new_findings": [
+    {
+      "id": "SEC-D10-NEW-001",
+      "file": "docs/2-development/03-ready-for-review/d10-10-minute-deployment.md:107",
+      "finding": "Stale documentation: Files table still lists 'convex/http.ts | Modify — re-export healthCheck, preflightCheck'. preflightCheck was removed but the doc was not updated.",
+      "severity": "Informational",
+      "status": "Open",
+      "recommendation": "Update §107 to: 'convex/http.ts | Modify — re-export healthCheck (preflightCheck removed)'"
+    },
+    {
+      "id": "SEC-D10-NEW-002",
+      "file": "docs/2-development/03-ready-for-review/d10-10-minute-deployment.md:143",
+      "finding": "Review Status still shows security-engineer as pending re-review.",
+      "severity": "Informational",
+      "status": "Open",
+      "recommendation": "Update §143 to mark security-engineer: complete, referencing this re-review."
+    },
+    {
+      "id": "SEC-D10-NEW-003",
+      "file": "__tests__/ci-cd/",
+      "finding": "No dedicated security test file (d10.security.test.ts) exists. The original review recommended SEC-D10 security tests covering: health endpoint returns no sensitive data, verify-deploy does not log secrets, paths-ignore correctness.",
+      "severity": "Low",
+      "status": "Open",
+      "recommendation": "Create __tests__/ci-cd/d10.security.test.ts with SEC- prefixed tests covering: (1) health endpoint returns only status+timestamp, (2) verify-deploy.ts does not reference any secret env vars (CONVEX_DEPLOY_KEY, CLERK_SECRET_KEY, etc.), (3) ci.yml paths-ignore uses docs/**/*.md not docs/**, (4) health response includes Cache-Control: no-store."
+    }
+  ],
+  "findings_summary": {
+    "SEC-D10-001": "Resolved — preflightCheck removed from all source code",
+    "SEC-D10-002": "Resolved — paths-ignore narrowed to docs/**/*.md",
+    "SEC-D10-003": "Resolved — this re-review closes the pending security review status",
+    "SEC-D10-004": "Resolved — Cache-Control: no-store added to health endpoint",
+    "SEC-D10-NEW-001": "Open (Informational) — stale doc reference to preflightCheck in d10 slice doc §107",
+    "SEC-D10-NEW-002": "Open (Informational) — slice doc §Review Status needs updating",
+    "SEC-D10-NEW-003": "Open (Low) — no dedicated security test file exists"
+  },
+  "recommendations": [
+    "Update d10-10-minute-deployment.md §107 to remove preflightCheck from the Files table (stale reference).",
+    "Update d10-10-minute-deployment.md §143 Review Status to mark security-engineer: complete.",
+    "Create __tests__/ci-cd/d10.security.test.ts with SEC-D10 prefixed tests for: health endpoint sensitive-data exclusion, verify-deploy no-secret-logging, paths-ignore pattern correctness, and Cache-Control header presence."
+  ]
+}

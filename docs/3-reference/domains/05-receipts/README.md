@@ -2,4 +2,5 @@
 
 | Spec | Status |
 |------|--------|
-| `receipt-upload.md` | Missing |
+| `receipt-upload.md` | Draft |
+

@@ -2,4 +2,5 @@
 
 | Spec | Status |
 |------|--------|
-| `expense-management.md` | Missing |
+| `expense-management.md` | Draft |
+

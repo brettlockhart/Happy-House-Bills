@@ -1,0 +1,115 @@
+{
+  "verdict": "PASS with conditions",
+  "scope": "D10 — 10-Minute Deployment (convex/health.ts, scripts/verify-deploy.ts, .github/workflows/ci.yml, package.json)",
+  "checks": [
+    {
+      "id": "C1",
+      "concern": "Does /health endpoint expose sensitive information?",
+      "status": "PASS",
+      "detail": "The registered /health route (convex.json:17-19 → http:healthCheck) returns only {status: \"ok\", timestamp: \"...\"}. No secrets, PII, infrastructure details, or internal state are exposed. This is standard for health-check endpoints and consistent with Kubernetes/AWS liveness probe patterns."
+    },
+    {
+      "id": "C2",
+      "concern": "Does prefightCheck expose data if ever registered as a route?",
+      "status": "LATENT RISK — Medium",
+      "detail": "convex/health.ts:11-23 defines preflightCheck which calls ctx.runQuery(\"expenses:countAll\") and would return {status: \"ok\", expenses: <count>, timestamp}. This exposes total expense document count (data volume enumeration, A01 Broken Access Control). However, preflightCheck is NOT registered as an HTTP route in convex.json (only healthCheck and verifyWebhook are). Two issues: (a) the query \"expenses:countAll\" does not exist in convex/functions/expenses.ts — it would throw and fall to the catch block returning {status: \"degraded\"}, so the count never actually leaks; (b) the function is exported from convex/http.ts (line 8) but never wired into convex.json http routes. If someone later adds a route entry for http:preflightCheck, the expense count would be exposed without authentication. Precaution: remove or scope preflightCheck before any future route registration."
+    },
+    {
+      "id": "C3",
+      "concern": "Does paths-ignore create a bypass risk?",
+      "status": "PASS with caveat — Low",
+      "detail": "ci.yml:8-11 paths-ignore ignores docs/**, *.md, AGENTS.md on push events only. The pull_request trigger has no paths-ignore, so PRs always run CI. Risk: docs/** is broad enough to match docs/scripts/doc-lint.ts and docs/scripts/docs-audit.ts. A direct push to master modifying these doc-tooling scripts would skip CI. However, (a) these scripts are documentation validators, not application or deployment code; (b) master pushes already require write access; (c) code files (.ts, .js, .json, .yml) in the app/convex/scripts/ directories are NOT ignored. Acceptable risk, but consider narrowing docs/** to docs/**/*.md to avoid future blind spots if executable scripts are added under docs/scripts/."
+    },
+    {
+      "id": "C4",
+      "concern": "Does verify-deploy.ts leak secrets in error output?",
+      "status": "PASS",
+      "detail": "scripts/verify-deploy.ts logs CONVEX_URL (line 74: detail: CONVEX_URL). CONVEX_URL is a public deployment endpoint URL (also exposed in nuxt.config.ts runtimeConfig.public), not a credential. No CONVEX_DEPLOY_KEY, CLOUDFLARE_API_TOKEN, CLERK_SECRET_KEY, RESEND_API_KEY, or R2 credentials are referenced or logged. Error handlers log generic fetch error messages, not secret values. Exit code 1 on failure stops the CI job. No secret leakage."
+    },
+    {
+      "id": "C5",
+      "concern": "OWASP Top 10 (2021) concerns from D10 changes?",
+      "status": "PASS — No new critical/high issues",
+      "detail": "A01 (Broken Access Control): /health is unauthenticated but acceptable (see C6). No data access paths. A02 (Crypto Failures): No crypto used. A03 (Injection): No user input processed by the health endpoint. A04 (Insecure Design): paths-ignore documented as intentional. A05 (Security Misconfiguration): /health has no rate limiting — low risk for a static JSON response. A06 (Vulnerable Components): No new deps. A07 (ID/Auth Failures): N/A (endpoint is deliberately public). A08 (Integrity Failures): N/A. A09 (Logging/Monitoring): health endpoint logs nothing; verify-deploy logs CONVEX_URL (non-secret). A10 (SSRF): No server-side URL fetching."
+    },
+    {
+      "id": "C6",
+      "concern": "Does health endpoint create unauthenticated ingress? Acceptable?",
+      "status": "PASS — Acceptable with note",
+      "detail": "Yes, /health is an unauthenticated GET endpoint (convex.json:17-19). This is acceptable for health-check ingresses per industry best practices (Kubernetes, AWS ALB, GCP health checks all use unauthenticated /health endpoints). The endpoint returns no sensitive data. The AGENTS.md §12 security handoff criterion (trigger 4: \"unauthenticated ingress\") was satisfied — this review constitutes the required security-engineer review. Recommendation: document in tech-specs that /health is intentionally public and returns no secrets."
+    },
+    {
+      "id": "C7",
+      "concern": "CI least-privilege permissions for verify-deploy job?",
+      "status": "PASS",
+      "detail": "verify-deploy job (ci.yml:118-136) uses permissions: contents: read, deployments: write — least-privilege. No secrets are passed except CONVEX_URL (non-secret endpoint). Deploy keys/tokens are not available in this job."
+    },
+    {
+      "id": "C8",
+      "concern": "Process gap: security handoff not documented in slice doc?",
+      "status": "FAIL — Process gap",
+      "detail": "The D10 slice doc (§Review Status) lists security-engineer as pending. The AGENTS.md §12 requires a security handoff to security-engineer when the spec introduces unauthenticated ingress (which /health does). The handoff did not occur before implementation. This is a process gap, not a code vulnerability."
+    }
+  ],
+  "findings": [
+    {
+      "id": "SEC-D10-001",
+      "file": "convex/health.ts:11-23",
+      "finding": "preflightCheck exposes expense count via ctx.runQuery(\"expenses:countAll\") and returns it in the response. While not currently registered as an HTTP route, the endpoint returns org-scoped data without authentication if ever registered.",
+      "severity": "Medium",
+      "status": "Open",
+      "recommendation": "Remove expenseCount from preflightCheck response, or gate it behind authentication. The countAll query does not exist — remove the call or implement it with org-scoping."
+    },
+    {
+      "id": "SEC-D10-002",
+      "file": ".github/workflows/ci.yml:8-11",
+      "finding": "paths-ignore pattern docs/** is overly broad for CI skip. Matches docs/scripts/doc-lint.ts and docs/scripts/docs-audit.ts, meaning pushes modifying doc-validation scripts skip CI.",
+      "severity": "Low",
+      "status": "Open",
+      "recommendation": "Narrow to docs/**/*.md (or docs/**/*.{md,mdx}) to avoid future blind spots if executable scripts are added under docs/."
+    },
+    {
+      "id": "SEC-D10-003",
+      "file": "docs/2-development/02-in-progress/d10-10-minute-deployment.md:142-143",
+      "finding": "Security-engineer review status is pending. AGENTS.md §12 requires security handoff when a slice introduces unauthenticated ingress (which /health does). The handoff did not occur before implementation.",
+      "severity": "Low",
+      "status": "Open",
+      "recommendation": "Complete security review and update §Review Status to show security-engineer: complete with this review's findings."
+    },
+    {
+      "id": "SEC-D10-004",
+      "file": "convex/health.ts:5",
+      "finding": "No security-relevant headers (e.g., Cache-Control: no-store) on the /health response. While the response body contains no secrets, a proxy/CDN could cache it, potentially masking a degraded state.",
+      "severity": "Informational",
+      "status": "Open",
+      "recommendation": "Add Cache-Control: no-store to /health response headers to prevent caching of health status."
+    }
+  ],
+  "owasp_analysis": {
+    "A01_broken_access_control": "Pass — /health returns only {status, timestamp}, no data access paths. preflightCheck (latent) would expose count if registered — see SEC-D10-001.",
+    "A02_cryptographic_failures": "N/A — no crypto in D10 changes.",
+    "A03_injection": "Pass — no user input processed by health endpoint or verify-deploy script.",
+    "A04_insecure_design": "Pass — paths-ignore is documented as intentional optimization.",
+    "A05_security_misconfiguration": "Partial — /health has no rate limiting (low risk, static response). No Cache-Control header (informational).",
+    "A06_vulnerable_components": "N/A — no new dependency versions introduced.",
+    "A07_identification_auth_failures": "N/A — endpoint is deliberately unauthenticated.",
+    "A08_software_data_integrity": "N/A — no CI/CD signing in scope.",
+    "A09_security_logging_monitoring": "Pass — no PII logged. CONVEX_URL (non-secret) logged in verify-deploy.",
+    "A10_ssrf": "N/A — no server-side URL fetching."
+  },
+  "unauthenticated_ingress": {
+    "endpoint": "/health (GET)",
+    "handler": "convex/health.ts:4 — healthCheck",
+    "exposed": true,
+    "justification": "Standard health-check endpoint returning only {status: \"ok\", timestamp}. Acceptable per industry best practices. No sensitive data, PII, or internal state exposed.",
+    "acceptable": true,
+    "recommendation": "Document in tech-specs as intentionally public."
+  },
+  "recommendations": [
+    "Remove or scope preflightCheck (convex/health.ts:11-23) — do not register it as a route without authentication, and remove the non-existent countAll call.",
+    "Add Cache-Control: no-store header to /health response.",
+    "Narrow paths-ignore from docs/** to docs/**/*.md in ci.yml.",
+    "Update d10 slice doc §Review Status to mark security-engineer review complete.",
+    "Register SEC-D10 security tests in __tests__/ci-cd/ to cover: health endpoint returns no sensitive data, verify-deploy does not log secrets, paths-ignore patterns correctness."
+  ]
+}

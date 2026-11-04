@@ -42,24 +42,26 @@ validates inputs with Convex `v.` validators.
 
 | ID | Decision | Rationale | Source |
 |----|----------|-----------|--------|
-| D1 | Use Convex `v.` validators (not Zod) for all function inputs | Convex's native validator system auto-generates types and is the idiomatic approach | `project_brief.md` §93-95 |
-| D2 | `orgId` derived from `auth.getUserId()` context, never from client | Prevents cross-tenant data access; auth context is server-trusted | `project_brief.md` §29 |
-| D3 | `uploadReceipt` is an action (not a mutation) | Actions can make external API calls (R2); mutations cannot | `project_brief.md` §113-115 |
-| D4 | Email notifications dispatched via Convex scheduler | Decouples notification delivery from the user-facing mutation path | `project_brief.md` §172 |
+| D1 | Use Convex `v.` validators (not Zod) for all function inputs | Convex's native validator system auto-generates types and is the idiomatic approach | `project_brief.md` (## 4. Architecture Decisions) |
+| D2 | `orgId` derived from `auth.getUserId()` context, never from client | Prevents cross-tenant data access; auth context is server-trusted | `project_brief.md` (## 2. Tech Stack) |
+| D3 | `uploadReceipt` is an action (not a mutation) | Actions can make external API calls (R2); mutations cannot | `project_brief.md` (## 3. Key Features) |
+| D4 | Email notifications dispatched via Convex scheduler | Decouples notification delivery from the user-facing mutation path | `project_brief.md` (## 3. Key Features) |
 
 ## 4. Open Questions
 
 | ID | Question | Status | Notes |
 |----|----------|--------|-------|
-| BB-Q1 | Should `expenses:list` return a cap or pagination? | Open | v1 has ≤2 users, list is small; revisit if scale grows |
-| BB-Q2 | Should `expenses:balance` return a numeric value or a structured object? | Open | Structured object is more self-documenting; numeric is simpler for v1 |
+| BB-Q1 | Should `expenses:list` return a cap or pagination? | Resolved | v1 has ≤2 users per household; list is small; no pagination needed |
+| BB-Q2 | Should `expenses:balance` return a numeric value or a structured object? | Resolved | Structured object `{ balance: number, owesWhom: string }` per `domains/03-user-flows/lexicon.md` D5 |
 
 ## 5. Cross-References
 
 - `tech-specs/backend/data-model.md` — table and index definitions
+- `domains/04-balance/balance-calculation.md` — `expenses:balance` query formula
 - `tech-specs/backend/file-storage.md` — R2 upload action
 - `tech-specs/backend/email-notifications.md` — notification triggers
 - `domains/01-auth/onboarding-auth.md` — auth context wiring
+- `domains/11-security/security.md` — auth enforcement pattern (## 9. Auth Enforcement)
 - `spec-gaps.md` — gap tracking
 
 ## 6. Implementation Dependencies
@@ -100,9 +102,9 @@ validates inputs with Convex `v.` validators.
 Every function begins:
 
 ```typescript
-const identity = getAuthUser(ctx);
-if (!identity) throw new Error("Unauthenticated");
-const orgId = identity.org_id;
+// Canonical pattern — see domains/11-security/security.md (## 9. Auth Enforcement)
+const { userId, orgId } = await requireAuthenticatedOrg(ctx);
+if (!userId || !orgId) throw new Error("Unauthenticated or no organisation");
 ```
 
 Queries filter all data by `.withIndex("by_org", (q) => q.eq("orgId", orgId))`.

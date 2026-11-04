@@ -1,5 +1,7 @@
 name = "happy-house-bills"
-type = "javascript"
+pages_build_output_dir = ".output/public"
+main = ".output/server/pages/_worker.js"
+
 account_id = ""
 workers_dev = true
 
@@ -8,3 +10,4 @@ pattern = "happy-house-bills.brettlockhart.com/*"
 zone_id = ""
 
 [vars]
+NEXT_PUBLIC_APP_URL = "https://app.happyhousebills.com"

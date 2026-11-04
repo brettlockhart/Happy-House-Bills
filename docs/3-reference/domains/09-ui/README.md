@@ -2,4 +2,5 @@
 
 | Spec | Status |
 |------|--------|
-| `ui-spec.md` | Missing |
+| `ui-spec.md` | Draft |
+

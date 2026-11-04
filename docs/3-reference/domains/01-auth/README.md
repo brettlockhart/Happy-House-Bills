@@ -2,4 +2,4 @@
 
 | Spec | Status |
 |------|--------|
-| `onboarding-auth.md` | Complete |
+| `onboarding-auth.md` | Draft |

@@ -2,4 +2,5 @@
 
 | Spec | Status |
 |------|--------|
-| `balance-calculation.md` | Missing |
+| `balance-calculation.md` | Draft |
+

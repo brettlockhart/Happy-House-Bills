@@ -2,4 +2,5 @@
 
 | Spec | Status |
 |------|--------|
-| `settlement-management.md` | Missing |
+| `settlement-management.md` | Draft |
+

@@ -2,4 +2,5 @@
 
 | Spec | Status |
 |------|--------|
-| `email-notifications.md` | Missing |
+| `email-notifications.md` | Draft |
+

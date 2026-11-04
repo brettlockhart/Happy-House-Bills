@@ -2,4 +2,5 @@
 
 | Spec | Status |
 |------|--------|
-| `security.md` | Missing |
+| `security.md` | Draft |
+

@@ -3,7 +3,7 @@ status: Draft
 package: convex
 priority: high
 created: 23-October-2026
-updated: 23-October-2026
+updated: 26-October-2026
 tags: [backend, schema, data-model, convex]
 ---
 
@@ -26,10 +26,12 @@ expenses and settlements.
 
 - Convex `defineSchema` with `expenses` and `settlements` tables
 - `orgId` field on every table (Clerk organisation ID)
-- Indexes: `by_org`, `by_org_date`
+- Indexes: `by_org`, `by_org_date`, `by_receiptImageId`
 - Field types and validators using Convex `v.` validators
 - Receipt fields: `receiptImageId`, `receiptPHash`, `receiptFingerprint`
 - Status workflow: `pending` → `approved` / `rejected`
+- Lifecycle fields: `createdAt`, `updatedAt`, `deletedAt` (GDPR Article 17 retention)
+- Soft-delete pattern: `deletedAt: v.optional(v.number())` on both tables
 
 ### Out of scope
 
@@ -41,10 +43,11 @@ expenses and settlements.
 
 | ID | Decision | Rationale | Source |
 |----|----------|-----------|--------|
-| D1 | Use Convex built-in document store (no raw SQL) | Tech brief §3 specifies Convex; document store eliminates SQL injection surface | `project_brief.md` |
-| D2 | Every table has `orgId: string` at the top level (no nested objects) | Enables index-based scoping at every query boundary | `project_brief.md` |
-| D3 | Receipt hashes stored as fields on the expense, not a separate table | Keeps duplicate detection within a single query; avoids cross-table joins which Convex does not support efficiently | `project_brief.md` §125 |
-| D4 | Derived balance is computed at query time, not stored | Guarantees consistency; eliminates stale-balance race conditions | `project_brief.md` §86-91 |
+| D1 | Use Convex built-in document store (no raw SQL) | Convex document store is specified in tech brief; eliminates SQL injection surface | project_brief.md (## Tech Stack) |
+| D2 | Every table has `orgId: string` at the top level (no nested objects) | Enables index-based scoping at every query boundary | `project_brief.md` (## Multi-Tenancy Model) |
+| D3 | Receipt hashes stored as fields on the expense, not a separate table | Keeps duplicate detection within a single query; avoids cross-table joins which Convex does not support efficiently | `project_brief.md` (## 3. Key Features) |
+| D4 | Derived balance is computed at query time, not stored | Guarantees consistency; eliminates stale-balance race conditions | `project_brief.md` (## 3. Key Features) |
+| D5 | Soft-delete via `deletedAt: v.optional(v.number())` on all tables | GDPR Article 17 compliance: 30-day retention window after deletion before hard-delete | `domains/11-security/security.md` §8 (Retention Policy)
 
 ## 4. Open Questions
 
@@ -59,6 +62,7 @@ expenses and settlements.
 - `domains/01-auth/onboarding-auth.md` — org scoping enforcement
 - `spec-gaps.md` — gap tracking
 - `user-flows.md` — how queries are consumed in flows
+- `domains/04-balance/balance-calculation.md` — balance derivation formula
 
 ## 6. Implementation Dependencies
 
@@ -95,10 +99,13 @@ export default defineSchema({
     enteredBy: v.string(),
     approvedBy: v.optional(v.string()),
     rejectReason: v.optional(v.string()),
-    createdAt: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    deletedAt: v.optional(v.number()),
   })
   .index("by_org", ["orgId"])
-  .index("by_org_date", ["orgId", "date"]),
+  .index("by_org_date", ["orgId", "date"])
+  .index("by_receiptImageId", ["receiptImageId"]),
 
   settlements: defineTable({
     orgId: v.string(),
@@ -106,7 +113,9 @@ export default defineSchema({
     fromUser: v.string(),
     toUser: v.string(),
     date: v.string(),
-    createdAt: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    deletedAt: v.optional(v.number()),
   })
   .index("by_org", ["orgId"]),
 });

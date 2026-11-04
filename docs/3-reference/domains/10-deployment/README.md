@@ -2,4 +2,5 @@
 
 | Spec | Status |
 |------|--------|
-| `deployment.md` | Missing |
+| `deployment.md` | Draft |
+
