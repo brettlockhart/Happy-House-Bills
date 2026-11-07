@@ -1,19 +1,13 @@
-import { action, query } from "../_generated/server";
+import { action, query, internal } from "../_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedUser, requireAuthenticatedOrg } from "../auth";
 import { sendEmail, renderInviteEmail } from "./email";
 import { clerkRequest } from "./clerk";
-
-const INVITE_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+import { ROLES, INVITE_TOKEN_TTL_MS, checkPermission } from "./shared-constants";
 
 interface ClerkUser {
   id: string;
   email_addresses: Array<{ email_address: string }>;
-}
-
-interface ClerkOrg {
-  id: string;
-  name: string;
 }
 
 interface ListMembershipsResponse {
@@ -31,22 +25,17 @@ interface ClerkMembership {
   status: string;
 }
 
-export const create = action({
+export const insertOrg = internal({
   args: {
     name: v.string(),
+    userId: v.string(),
   },
   handler: async (ctx, args) => {
-    const { userId } = await requireAuthenticatedUser(ctx);
-
-    const org = (await clerkRequest("/organizations", "POST", {
-      name: args.name,
-      created_by: userId,
-    })) as ClerkOrg;
-
+    const { userId } = args;
     const now = Date.now();
-    await ctx.db.insert("orgs", {
-      name: org.name,
-      slug: org.id,
+    const { id: orgId } = await ctx.db.insert("orgs", {
+      name: args.name,
+      slug: args.userId,
       createdBy: userId,
       emailSettings: {
         expenseNotifications: true,
@@ -58,9 +47,21 @@ export const create = action({
       updatedAt: now,
     });
 
-    return { orgId: org.id, orgName: org.name };
+    await ctx.db.insert("memberships", {
+      orgId: orgId,
+      userId,
+      role: ROLES.ADMIN,
+      status: "active",
+      invitedBy: userId,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return { orgId };
   },
 });
+
+export const create = insertOrg;
 
 export const invite = action({
   args: {
@@ -75,8 +76,24 @@ export const invite = action({
       throw new Error("Org ID mismatch");
     }
 
-    if (!args.email || !args.email.includes("@")) {
+    if (!args.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(args.email)) {
       throw new Error("Invalid email address");
+    }
+
+    const callerMembership = await ctx.db
+      .query("memberships")
+      .withIndex("by_org_user", (q) => q.and(
+        q.eq("orgId", callerOrgId),
+        q.eq("userId", userId),
+      ))
+      .first();
+
+    if (!callerMembership) {
+      throw new Error("You are not a member of this organization");
+    }
+
+    if (!checkPermission(callerMembership.role, "invite:create")) {
+      throw new Error("Insufficient permissions to invite users");
     }
 
     const userLookup = await clerkRequest(
@@ -97,7 +114,7 @@ export const invite = action({
       const orgs = (userOrgs as ListUserOrgsResponse).data || [];
       if (orgs.length > 0) {
         throw new Error(
-          "This email is already associated with another household. Please use a different email or sign in to your existing account.",
+          "This email is already associated with another household.",
         );
       }
     }
@@ -110,6 +127,7 @@ export const invite = action({
       email: args.email,
       orgId: args.orgId,
       orgName: args.orgName ?? args.email.split("@")[0],
+      role: "member",
       createdBy: userId,
       expiresAt: now + INVITE_TOKEN_TTL_MS,
       createdAt: now,
@@ -179,15 +197,27 @@ export const acceptInvite = action({
     }
 
     const now = Date.now();
+    await ctx.db.insert("memberships", {
+      orgId: invite.orgId,
+      userId,
+      role: invite.role ?? "member",
+      status: "active",
+      invitedBy: invite.createdBy,
+      joinedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+
     await ctx.db.patch(invite._id, {
       inviteeUserId: userId,
+      acceptedAt: now,
       updatedAt: now,
     });
 
     return {
       orgId: invite.orgId,
       orgName: invite.orgName,
-      email: invite.email,
+      role: invite.role ?? "member",
       membershipId: membership.id,
     };
   },

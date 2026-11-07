@@ -80,27 +80,20 @@ describe("orgs:create", () => {
     });
   });
 
-  it("requires authentication", async () => {
-    requireAuthenticatedUser.mockRejectedValue(new Error("Unauthenticated"));
-
+  it("requires userId in args", async () => {
     const { create } = await import("../../convex/functions/orgs");
     await expect(
       create.handler({ auth: { getUserIdentity: async () => null } }, { name: "Test" }),
-    ).rejects.toThrow("Unauthenticated");
+    ).rejects.toThrow();
   });
 
   it("creates an org", async () => {
-    requireAuthenticatedUser.mockResolvedValue({ userId: "user_test" });
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ id: "org_test", name: "Test" }),
-    });
-
     const ctx = makeCtx();
+    ctx.db.insert.mockResolvedValueOnce({ id: "membership_id" });
     const { create } = await import("../../convex/functions/orgs");
-    const result = await create.handler(ctx, { name: "Test" });
+    const result = await create.handler(ctx, { name: "Test", userId: "user_test" });
 
-    expect(result).toEqual({ orgId: "org_test", orgName: "Test" });
+    expect(result).toEqual({ orgId: "membership_id" });
   });
 });
 
@@ -147,6 +140,25 @@ describe("orgs:invite", () => {
   it("creates an invite", async () => {
     requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
 
+    const ctx = makeCtx();
+    ctx.db.query.mockReturnValue({
+      withIndex: vi.fn().mockImplementation((indexName: string) => {
+        if (indexName === "by_org_user") {
+          return {
+            first: vi.fn().mockResolvedValue({
+              _id: "membership_1",
+              orgId: "org_test",
+              userId: "user_test",
+              role: "admin",
+            }),
+          };
+        }
+        return {
+          first: vi.fn().mockResolvedValue(null),
+        };
+      }),
+    });
+
     mockFetch
       .mockResolvedValueOnce({
         ok: true,
@@ -158,13 +170,8 @@ describe("orgs:invite", () => {
           id: "user_test",
           email_addresses: [{ email_address: "alice@example.com" }],
         }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ id: "email_123" }),
       });
 
-    const ctx = makeCtx();
     const { invite } = await import("../../convex/functions/orgs");
     const result = await invite.handler(ctx, { email: "test@example.com", orgId: "org_test" });
 

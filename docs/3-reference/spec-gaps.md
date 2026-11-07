@@ -191,7 +191,7 @@ then domain specs).
 | ~~BB-Q1~~ | Should `expenses:list` return a cap or pagination? | Resolved | `tech-specs/backend/api-contract.md` | backend-engineer | Phase 1 — No pagination in v1; ≤2 users per household; list is trivially small |
 | ~~BB-Q2~~ | Should `expenses:balance` return a numeric value or a structured object? | Resolved | `tech-specs/backend/api-contract.md` | backend-engineer | Phase 1 — Structured object `{ balance: number, owesWhom: string }` per domain spec D5 |
 | ~~BB-Q3~~ | What happens if User B's email is already associated with a different Clerk org? | Resolved | `domains/01-auth/onboarding-auth.md` | backend-engineer | Phase 1 — Block and show error message |
-| UI-Q1 | Should we add a reduced-motion toggle in settings, or rely solely on `prefers-reduced-motion`? | Open | `tech-specs/frontend/ui-spec.md` | frontend-engineer | Phase 2 |
+| ~~UI-Q1~~ | Should we add a reduced-motion toggle in settings, or rely solely on `prefers-reduced-motion`? | Resolved | `tech-specs/frontend/ui-spec.md` | frontend-engineer | Phase 2 — Toggle implemented in useAccessibility composable |
 | ~~UI-Q2~~ | Should dark mode follow system preference or default to light regardless of OS setting? | Resolved | `tech-specs/frontend/ui-spec.md` | frontend-engineer | Phase 1 — Light mode default per D2 |
 | ~~EXP-Q1~~ | Should users be able to re-open a rejected expense, or must they create a new one? | Resolved | `domains/02-expenses/expense-management.md` | backend-engineer | Phase 1 — Create new expense; rejected history stays intact |
 | SET-Q1 | Should we add a "settlement requested" status for async confirmation (like expense approval)? | Open | `domains/03-settlements/settlement-management.md` | backend-engineer | Phase 2 |
@@ -205,13 +205,21 @@ then domain specs).
 | SEC-002 | Should we implement a GDPR Data Processing Agreement (DPA) with Clerk and Resend, or rely on their standard terms? | Resolved | `domains/11-security/security.md` | security-engineer | Phase 1 — Rely on standard terms (established providers; implement DPA only if EU user base grows) |
 | ~~DEPLOY-Q1~~ | What's the optimal deployment strategy for this application architecture? | Resolved | `docs/2-development/02-in-progress/d10-10-minute-deployment.md` | devops-engineer | Phase 2 — Single pipeline via GitHub Actions; Convex first, then Nuxt; no blue-green in v1; rollback via git revert + redeploy |
 | ~~DEPLOY-Q2~~ | What are the specific performance requirements for deployment? | Resolved | `docs/2-development/02-in-progress/d10-10-minute-deployment.md` | devops-engineer | Phase 2 — Sub-10-minute target; CI skips docs-only pushes via paths-ignore; health endpoint validates post-deploy |
+| ~~UI-Q3~~ | What's the best responsive framework for this project? | Resolved | `docs/2-development/01-draft/d12-mobile-responsive-ui-shell.md` | frontend-engineer | Phase 3 — Bootstrap-style responsive utilities with CSS custom properties |
+| ~~UI-Q4~~ | How should we handle mobile-first CSS architecture? | Resolved | `docs/2-development/01-draft/d12-mobile-responsive-ui-shell.md` | frontend-engineer | Phase 3 — CSS variables for breakpoints, media queries built into component stylesheets |
+| ~~UI-Q5~~ | What's the optimal approach for offline data sync? | Resolved | `docs/2-development/01-draft/d12-mobile-responsive-ui-shell.md` | backend-engineer | Phase 3 — IndexedDB store with action queue; sync on reconnect |
+| ~~TEAM-Q1~~ | What's the optimal RBAC model for this application? | Resolved | `docs/2-development/04-implemented/d13-team-workspaces-collaboration.md` | backend-engineer | Phase 3 — Three-role RBAC (admin, member, viewer) implemented with permission checks per role |
+| ~~TEAM-Q2~~ | How should we handle team invitations and security? | Resolved | `docs/2-development/04-implemented/d13-team-workspaces-collaboration.md` | security-engineer | Phase 3 — Token-based invites with rate limiting (10/day/org), org-scoped validation, org ID mismatch rejection, self-action prevention |
+| ~~INT-Q1~~ | How should we handle API authentication securely for external integrations? | ~~Resolved~~ | `docs/2-development/04-implemented/d14-advanced-integrations.md` | ~~security-engineer~~ | ~~Phase 3~~ | ~~OAuth 2.0 with token-based auth; credentials stored encrypted in Convex DB with org-scoped access control~~ |
+| ~~INT-Q2~~ | What's the best approach for data transformation between external APIs and internal models? | ~~Resolved~~ | `docs/2-development/04-implemented/d14-advanced-integrations.md` | ~~backend-engineer~~ | ~~Phase 3~~ | ~~Adapter pattern — each provider gets its own adapter module with a common interface (`INTEGRATION_TYPES` type constants)~~, Integrations |
+| ~~INT-Q3~~ | How should we manage API rate limiting across multiple external providers? | ~~Resolved~~ | `docs/2-development/04-implemented/d14-advanced-integrations.md` | ~~backend-engineer~~ | ~~Phase 3~~ | ~~Global rate limits per org with retry logic and exponential backoff via API gateway; fair usage to prevent abuse and control costs~~ |
 
 ## 7. Appendix: Gap Count Summary
 
 | Metric | Count |
 |--------|-------|
 | Missing referenced documents | 0 |
-| Open questions | 7 |
+  | Open questions | 1 |
 | Domains | 11 |
 | Total next actions | 0 |
 

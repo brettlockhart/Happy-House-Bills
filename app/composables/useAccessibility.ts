@@ -1,12 +1,14 @@
-import { ref, computed, readonly } from "vue";
+import { computed, type Ref } from "vue";
+
+type FontSize = "small" | "medium" | "large" | "extra-large";
 
 export interface AccessibilityState {
-  reducedMotion: boolean;
-  highContrast: boolean;
-  screenReaderMode: boolean;
-  fontSize: "small" | "medium" | "large" | "extra-large";
+  reducedMotion: Ref<boolean>;
+  highContrast: Ref<boolean>;
+  screenReaderMode: Ref<boolean>;
+  fontSize: Ref<FontSize>;
   announceToScreenReader: (message: string) => void;
-  updateFontSize(size: AccessibilityState["fontSize"]): void;
+  updateFontSize(size: FontSize): void;
   toggleHighContrast(): void;
   toggleReducedMotion(): void;
 }
@@ -14,11 +16,11 @@ export interface AccessibilityState {
 const reducedMotionState = ref<boolean>(false);
 const highContrastState = ref<boolean>(false);
 const screenReaderModeState = ref<boolean>(false);
-const fontSizeState = ref<AccessibilityState["fontSize"]>("medium");
+const fontSizeState = ref<FontSize>("medium");
 
 const announcementElement = ref<HTMLElement | null>(null);
 
-const updateFontSize = (size: AccessibilityState["fontSize"]) => {
+const updateFontSize = (size: "small" | "medium" | "large" | "extra-large") => {
   fontSizeState.value = size;
   if (typeof window !== "undefined") {
     localStorage.setItem("hhb-font-size", size);
@@ -94,7 +96,7 @@ const announceToScreenReader = (message: string) => {
 
 export function useAccessibility(): AccessibilityState {
   if (typeof window !== "undefined") {
-    const storedFontSize = localStorage.getItem("hhb-font-size") as AccessibilityState["fontSize"] | null;
+    const storedFontSize = localStorage.getItem("hhb-font-size") as FontSize | null;
     const storedHighContrast = localStorage.getItem("hhb-high-contrast") === "true";
     const storedReducedMotion = localStorage.getItem("hhb-reduced-motion") === "true";
     
@@ -108,10 +110,10 @@ export function useAccessibility(): AccessibilityState {
   }
   
   return {
-    reducedMotion: readonly(reducedMotionState),
-    highContrast: readonly(highContrastState),
-    screenReaderMode: readonly(screenReaderModeState),
-    fontSize: readonly(fontSizeState),
+    reducedMotion: computed(() => reducedMotionState.value),
+    highContrast: computed(() => highContrastState.value),
+    screenReaderMode: computed(() => screenReaderModeState.value),
+    fontSize: computed(() => fontSizeState.value),
     announceToScreenReader,
     updateFontSize,
     toggleHighContrast,

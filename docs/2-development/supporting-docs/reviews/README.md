@@ -2,7 +2,7 @@
 
 This file tracks all pending, in-progress, and completed reviews for Happy House Bills.
 
-All reviews are complete for D1-D7. The following slices have been promoted to `04-implemented`:
+All reviews are complete for D1-D8, D9, D10, D11, D12, D13. The following slices have been promoted to `04-implemented`:
 
 - D1 — Expense Management Foundation
 - D2 — Settlement API
@@ -14,10 +14,15 @@ All reviews are complete for D1-D7. The following slices have been promoted to `
 - D8 — CI/CD Pipeline
 - D9 — Mobile Browser Compatibility
 - D10 — 10-Minute Deployment
+- D11 — Advanced Features
+- D12 — Mobile-First UI/UX Shell
+- D13 — Team Workspaces & Collaboration
+- D14 — Advanced Integrations
 
 ## Active Reviews
 
 | Slice | Type | Reviewer | Status | Submitted | Last updated |
+|-------|------|----------|---------|-----------|---------------|
 | D9 — Mobile Browser Compatibility | Implementation | implementation-reviewer | Approved | 30-October-2026 |
 | D9 — Mobile Browser Compatibility | Security | security-engineer | Pass | 30-October-2026 |
 | D9 — Mobile Browser Compatibility | Test Coverage | test-engineer | Pass (25 D9 tests) | 30-October-2026 |
@@ -49,6 +54,18 @@ All reviews are complete for D1-D7. The following slices have been promoted to `
 | D8 — CI/CD Pipeline | Implementation | implementation-reviewer | Pass | 30-October-2026 |
 | D8 — CI/CD Pipeline | Security | security-engineer | Conditional Pass | 30-October-2026 |
 | D8 — CI/CD Pipeline | Test Coverage | test-engineer | 327 tests passing; 55 new CI/CD tests | 30-October-2026 |
+| D11 — Advanced Features | Implementation | implementation-reviewer | Pass | 03-November-2026 |
+| D11 — Advanced Features | Security | security-engineer | Pass | 03-November-2026 |
+| D11 — Advanced Features | Test Coverage | test-engineer | Pass | 03-November-2026 |
+| D12 — Mobile-First UI/UX Shell | Implementation | implementation-reviewer | Pass | 04-November-2026 |
+| D12 — Mobile-First UI/UX Shell | Security | security-engineer | Pass | 04-November-2026 |
+| D12 — Mobile-First UI/UX Shell | Test Coverage | test-engineer | Pass (18 tests) | 04-November-2026 |
+| D13 — Team Workspaces & Collaboration | Implementation | implementation-reviewer | Pass | 05-November-2026 |
+| D13 — Team Workspaces & Collaboration | Security | security-engineer | Pass | 05-November-2026 |
+| D13 — Team Workspaces & Collaboration | Test Coverage | test-engineer | Pass (27 tests) | 05-November-2026 |
+| D14 — Advanced Integrations | Implementation | implementation-reviewer | Pass | 07-November-2026 |
+| D14 — Advanced Integrations | Security | security-engineer | Pass | 07-November-2026 |
+| D14 — Advanced Integrations | Test Coverage | test-engineer | Pass (8 tests) | 07-November-2026 |
 
 ## Review Process
 
