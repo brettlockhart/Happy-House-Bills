@@ -85,21 +85,27 @@ export function setupTouchInteractions(element: HTMLElement): TouchInteraction {
   let startY = 0;
   
   const handleTouchStart = (event: TouchEvent) => {
-    startX = event.touches[0].clientX;
-    startY = event.touches[0].clientY;
+    const touch = event.touches[0];
+    if (!touch) return;
+    startX = touch.clientX;
+    startY = touch.clientY;
   };
   
   const handleTouchMove = (event: TouchEvent) => {
-    const deltaX = Math.abs(event.touches[0].clientX - startX);
-    const deltaY = Math.abs(event.touches[0].clientY - startY);
+    const touch = event.touches[0];
+    if (!touch) return;
+    const deltaX = Math.abs(touch.clientX - startX);
+    const deltaY = Math.abs(touch.clientY - startY);
     if (deltaX > 10 && deltaY > 10) {
       event.preventDefault();
     }
   };
   
   const handleTouchEnd = (event: TouchEvent) => {
-    const deltaX = Math.abs(event.changedTouches[0].clientX - startX);
-    const deltaY = Math.abs(event.changedTouches[0].clientY - startY);
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    const deltaX = Math.abs(touch.clientX - startX);
+    const deltaY = Math.abs(touch.clientY - startY);
     
     if (deltaX < 10 && deltaY < 10 && tapCallback) {
       tapCallback(event);
@@ -130,10 +136,10 @@ export function detectPerformance(): PerformanceMetrics {
       if (elapsed >= 1000) {
         const fps = Math.round((frameCount / elapsed) * 1000);
         const renderTime = elapsed / frameCount;
-        const memoryUsage = (performance as any).memory?.usedJSHeapSize || 0;
+        const memoryUsage = (performance as { memory?: { usedJSHeapSize?: number } }).memory?.usedJSHeapSize || 0;
         
         let networkQuality: PerformanceMetrics["networkQuality"] = "medium";
-        const connection = (navigator as any).connection || (navigator as any).mozConnection;
+        const connection = (navigator as { connection?: { effectiveType?: string }; mozConnection?: { effectiveType?: string } }).connection || (navigator as { connection?: { effectiveType?: string }; mozConnection?: { effectiveType?: string } }).mozConnection;
         if (connection) {
           if (connection.effectiveType === "slow-2g" || connection.effectiveType === "2g") networkQuality = "slow";
           else if (connection.effectiveType === "3g") networkQuality = "medium";
@@ -149,27 +155,27 @@ export function detectPerformance(): PerformanceMetrics {
     requestAnimationFrame(measurePerformance);
     
     return { fps: 0, renderTime: 0, memoryUsage: 0, networkQuality: "medium" };
-  } catch (error) {
+  } catch {
     // Return default metrics if performance API is not available
     return { fps: 0, renderTime: 0, memoryUsage: 0, networkQuality: "medium" };
   }
 }
 
-export function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
-  let timeout: number;
+export function debounce<T extends (...args: unknown[]) => unknown>(func: T, wait: number): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
   return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = window.setTimeout(() => func(...args), wait);
+    if (timeout !== undefined) clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
   };
 }
 
-export function throttle<T extends (...args: any[]) => any>(func: T, limit: number): (...args: Parameters<T>) => void {
-  let inThrottle: boolean;
+export function throttle<T extends (...args: unknown[]) => unknown>(func: T, limit: number): (...args: Parameters<T>) => void {
+  let inThrottle = false;
   return (...args: Parameters<T>) => {
     if (!inThrottle) {
       func(...args);
       inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
+      setTimeout(() => { inThrottle = false; }, limit);
     }
   };
 }

@@ -1,19 +1,13 @@
-import { ref, computed, readonly } from "vue";
+import { ref, computed, readonly, type Ref, type ComputedRef } from "vue";
 import { getViewportConfig, type ViewportConfig } from "~/utils/mobile-utils";
 
 export interface ResponsiveState {
-  viewport: ViewportConfig;
-  isMobile: boolean;
-  isTablet: boolean;
-  isDesktop: boolean;
-  orientation: ViewportConfig["orientation"];
-  breakpoints: {
-    xs: number;
-    sm: number;
-    md: number;
-    lg: number;
-    xl: number;
-  };
+  viewport: Readonly<Ref<ViewportConfig>>;
+  isMobile: ComputedRef<boolean>;
+  isTablet: ComputedRef<boolean>;
+  isDesktop: ComputedRef<boolean>;
+  orientation: ComputedRef<ViewportConfig["orientation"]>;
+  breakpoints: Readonly<Ref<{ xs: number; sm: number; md: number; lg: number; xl: number }>>;
   updateViewport(): void;
 }
 

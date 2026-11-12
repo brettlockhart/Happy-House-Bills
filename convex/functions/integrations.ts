@@ -1,7 +1,7 @@
-import { mutation, query, internal } from "../_generated/server";
+import { internalMutation, mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedOrg } from "../auth";
-import { checkPermission } from "./shared-constants";
+import { checkPermission } from "./shared_constants";
 
 export const INTEGRATION_TYPES = [
   "bank",
@@ -198,12 +198,11 @@ export const getSyncLogs = query({
         q.eq("integrationId", args.integrationId),
       )
       .order("desc")
-      .take(limit)
-      .collect();
+      .take(limit);
   },
 });
 
-export const recordSyncLog = internal({
+export const recordSyncLog = internalMutation({
   args: {
     orgId: v.string(),
     integrationId: v.id("integrations"),
@@ -217,7 +216,6 @@ export const recordSyncLog = internal({
     completedAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const now = Date.now();
     await ctx.db.insert("integrationSyncLogs", {
       orgId: args.orgId,
       integrationId: args.integrationId,
@@ -228,9 +226,7 @@ export const recordSyncLog = internal({
       recordsSkipped: args.recordsSkipped,
       errorMessage: args.errorMessage,
       startedAt: args.startedAt,
-      completedAt: args.completedAt ?? now,
-      createdAt: now,
-      updatedAt: now,
+      completedAt: args.completedAt ?? Date.now(),
     });
   },
 });
@@ -245,29 +241,24 @@ export const listWebhooks = query({
   },
   handler: async (ctx, args) => {
     const { orgId } = await requireAuthenticatedOrg(ctx);
-
-    let queryBuilder = ctx.db.query("webhooks").withIndex("by_org", (q) =>
-      q.eq("orgId", orgId),
-    );
+    const limit = args.limit ?? 100;
+    let rows = await ctx.db
+      .query("webhooks")
+      .withIndex("by_org", (q) => q.eq("orgId", orgId))
+      .order("desc")
+      .take(limit);
 
     if (args.integrationId) {
-      queryBuilder = queryBuilder.filter((q) =>
-        q.eq(q.field("integrationId"), args.integrationId),
-      );
+      rows = rows.filter((r) => r.integrationId === args.integrationId);
     }
-
     if (args.status) {
-      queryBuilder = queryBuilder.filter((q) =>
-        q.eq(q.field("status"), args.status),
-      );
+      rows = rows.filter((r) => r.status === args.status);
     }
-
-    const limit = args.limit ?? 100;
-    return queryBuilder.order("desc").take(limit).collect();
+    return rows;
   },
 });
 
-export const handleWebhook = internal({
+export const handleWebhook = internalMutation({
   args: {
     orgId: v.string(),
     integrationId: v.optional(v.id("integrations")),
@@ -276,7 +267,6 @@ export const handleWebhook = internal({
     payload: v.any(),
   },
   handler: async (ctx, args) => {
-    const now = Date.now();
     await ctx.db.insert("webhooks", {
       orgId: args.orgId,
       integrationId: args.integrationId,
@@ -284,30 +274,27 @@ export const handleWebhook = internal({
       eventType: args.eventType,
       payload: args.payload,
       status: "received",
-      createdAt: now,
-      updatedAt: now,
+      createdAt: Date.now(),
     });
   },
 });
 
-export const markWebhookProcessed = internal({
+export const markWebhookProcessed = internalMutation({
   args: {
     webhookId: v.id("webhooks"),
     status: v.union(v.literal("processed"), v.literal("failed")),
     errorMessage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const now = Date.now();
     await ctx.db.patch(args.webhookId, {
       status: args.status,
       errorMessage: args.errorMessage,
-      processedAt: now,
-      updatedAt: now,
+      processedAt: Date.now(),
     });
   },
 });
 
-export const testConnection = internal({
+export const testConnection = internalMutation({
   args: {
     type: v.union(
       v.literal("bank"),
@@ -323,17 +310,19 @@ export const testConnection = internal({
     credentials: v.any(),
   },
   handler: async (ctx, args) => {
-    const { testBankConnection } = await import("./bank-api");
-    const { testAccountingConnection } = await import("./accounting-api");
-    const { testTravelConnection } = await import("./travel-api");
+    const { testBankConnection } = await import("./bank_api");
+    const { testAccountingConnection } = await import("./accounting_api");
+    const { testTravelConnection } = await import("./travel_api");
+
+    type TestHandler = (ctx: typeof ctx, args: { provider: string; credentials: unknown }) => Promise<{ success: boolean; error?: string }>;
 
     switch (args.type) {
       case "bank":
-        return testBankConnection(args.provider, args.credentials);
+        return (testBankConnection as TestHandler).handler(ctx, { provider: args.provider, credentials: args.credentials });
       case "accounting":
-        return testAccountingConnection(args.provider, args.credentials);
+        return (testAccountingConnection as TestHandler).handler(ctx, { provider: args.provider, credentials: args.credentials });
       case "travel":
-        return testTravelConnection(args.provider, args.credentials);
+        return (testTravelConnection as TestHandler).handler(ctx, { provider: args.provider, credentials: args.credentials });
       default:
         return { success: false, error: `Connection test not implemented for ${args.type}` };
     }

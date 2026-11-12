@@ -1,13 +1,43 @@
-import { httpAction } from "convex/server";
-import type { HttpAction } from "convex/server";
-import { createHmac } from "crypto";
+import { httpRouter } from "convex/server";
+import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { healthCheck } from "./health";
 
 const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
-export { healthCheck } from "./health";
+async function verifySvixSignature(
+  payload: string,
+  signature: string,
+  timestamp: string,
+  secret: string,
+): Promise<boolean> {
+  // Clerk signs webhooks via Svix using HMAC-SHA256
+  // Signature = "v1," + HMAC-SHA256(secret, timestamp + "." + payload)
+  const signedPayload = `${timestamp}.${payload}`;
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(signedPayload));
+  const hex = Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  const expected = `v1,${hex}`;
 
-export const verifyWebhook: HttpAction = httpAction(async (ctx, req) => {
+  if (signature.length !== expected.length) return false;
+  // constant-time compare
+  let diff = 0;
+  for (let i = 0; i < signature.length; i++) {
+    diff |= signature.charCodeAt(i) ^ expected.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
+const verifyWebhook = httpAction(async (ctx, req) => {
   if (!WEBHOOK_SECRET) {
     throw new Error("CLERK_WEBHOOK_SECRET not configured");
   }
@@ -20,17 +50,13 @@ export const verifyWebhook: HttpAction = httpAction(async (ctx, req) => {
     return new Response("Missing Svix headers", { status: 401 });
   }
 
-  // Clerk signs webhooks via Svix using HMAC-SHA256
-  // Signature = "v1," + HMAC-SHA256(secret, timestamp + "." + payload)
-  const signedPayload = `${svixTimestamp}.${payload}`;
-  const hmac = createHmac("sha256", WEBHOOK_SECRET);
-  hmac.update(signedPayload);
-  const expectedSignature = `v1,${hmac.digest("hex")}`;
-
-  // Constant-time comparison
-  const sigBytes = new TextEncoder().encode(svixSignature);
-  const expectedBytes = new TextEncoder().encode(expectedSignature);
-  if (sigBytes.length !== expectedBytes.length || !crypto.timingSafeEqual(sigBytes, expectedBytes)) {
+  const valid = await verifySvixSignature(
+    payload,
+    svixSignature,
+    svixTimestamp,
+    WEBHOOK_SECRET,
+  );
+  if (!valid) {
     return new Response("Invalid signature", { status: 401 });
   }
 
@@ -44,11 +70,28 @@ export const verifyWebhook: HttpAction = httpAction(async (ctx, req) => {
   const eventType = event.type as string | undefined;
 
   if (eventType === "organization.deleted") {
-      const orgId = (event.data as { id: string })?.id;
-      if (orgId) {
-        await ctx.scheduler.runAfter(0, internal.cleanup.cleanupOrganization, { orgId });
-      }
+    const orgId = (event.data as { id: string })?.id;
+    if (orgId) {
+      await ctx.scheduler.runAfter(0, internal.functions.cleanup.cleanupOrganization, { orgId });
+    }
   }
 
   return new Response("OK", { status: 200 });
 });
+
+const http = httpRouter();
+
+http.route({
+  path: "/webhook/clerk",
+  method: "POST",
+  handler: verifyWebhook,
+});
+
+http.route({
+  path: "/health",
+  method: "GET",
+  handler: healthCheck,
+});
+
+export default http;
+export { healthCheck };

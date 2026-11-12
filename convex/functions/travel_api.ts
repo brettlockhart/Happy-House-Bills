@@ -1,5 +1,9 @@
-import { internal } from "../_generated/server";
+import { internalAction } from "../_generated/server";
 import { v } from "convex/values";
+
+function isoDate(d: Date = new Date()): string {
+  return d.toISOString().slice(0, 10);
+}
 
 export interface TravelConfig {
   provider: "skyscanner" | "expedia" | "travelport" | "mock";
@@ -38,7 +42,7 @@ export interface TravelSyncResult {
   error?: string;
 }
 
-export const testTravelConnection = internal({
+export const testTravelConnection = internalAction({
   args: {
     provider: v.string(),
     credentials: v.any(),
@@ -74,7 +78,7 @@ export const testTravelConnection = internal({
   },
 });
 
-export const syncTravelData = internal({
+export const syncTravelData = internalAction({
   args: {
     provider: v.string(),
     credentials: v.any(),
@@ -104,8 +108,8 @@ export const syncTravelData = internal({
             airline: "American Airlines",
             origin: "JFK",
             destination: "LAX",
-            departureDate: new Date().toISOString().split("T")[0],
-            arrivalDate: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString().split("T")[0],
+            departureDate: isoDate(),
+            arrivalDate: isoDate(new Date(Date.now() + 5 * 60 * 60 * 1000)),
             price: 420.0,
             currency: "USD",
             status: "scheduled",
@@ -116,8 +120,8 @@ export const syncTravelData = internal({
             airline: "Delta",
             origin: "LAX",
             destination: "ORD",
-            departureDate: new Date(Date.now() + 86400000 * 3).toISOString().split("T")[0],
-            arrivalDate: new Date(Date.now() + 86400000 * 3 + 4 * 60 * 60 * 1000).toISOString().split("T")[0],
+            departureDate: isoDate(new Date(Date.now() + 86400000 * 3)),
+            arrivalDate: isoDate(new Date(Date.now() + 86400000 * 3 + 4 * 60 * 60 * 1000)),
             price: 385.0,
             currency: "USD",
             status: "scheduled",
@@ -134,8 +138,8 @@ export const syncTravelData = internal({
             id: "htl_1",
             name: "Grand Hotel",
             address: "123 Main St, New York, NY",
-            checkIn: new Date().toISOString().split("T")[0],
-            checkOut: new Date(Date.now() + 86400000 * 2).toISOString().split("T")[0],
+            checkIn: isoDate(),
+            checkOut: isoDate(new Date(Date.now() + 86400000 * 2)),
             price: 299.0,
             currency: "USD",
             status: "booked",
@@ -154,8 +158,8 @@ export const syncTravelData = internal({
             airline: "TravelPort Air",
             origin: "SFO",
             destination: "SEA",
-            departureDate: new Date().toISOString().split("T")[0],
-            arrivalDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().split("T")[0],
+            departureDate: isoDate(),
+            arrivalDate: isoDate(new Date(Date.now() + 2 * 60 * 60 * 1000)),
             price: 210.0,
             currency: "USD",
             status: "scheduled",
@@ -174,8 +178,8 @@ export const syncTravelData = internal({
             airline: "Mock Air",
             origin: "NYC",
             destination: "CHI",
-            departureDate: new Date().toISOString().split("T")[0],
-            arrivalDate: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString().split("T")[0],
+            departureDate: isoDate(),
+            arrivalDate: isoDate(new Date(Date.now() + 3 * 60 * 60 * 1000)),
             price: 150.0,
             currency: "USD",
             status: "scheduled",

@@ -1,4 +1,4 @@
-import { internal } from "../_generated/server";
+import { internalAction } from "../_generated/server";
 import { v } from "convex/values";
 import { formatCurrency } from "./formatting";
 
@@ -53,19 +53,21 @@ export async function checkAndIncrementRateLimit(
   orgId: string,
   userId?: string,
 ): Promise<void> {
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split("T")[0] ?? "";
   let dbQuery: Promise<IndexedQueryResult | null>;
 
   if (userId) {
     dbQuery = ctx.db
       .query("emailRateLimits")
-      .withIndex("by_org_date_user", (q) => q.eq("orgId", orgId).eq("date", today).eq("userId", userId))
-      .first();
+      .withIndex("by_org_date_user", (q) =>
+        q.eq("orgId", orgId).eq("date", today).eq("userId", userId),
+      )
+      .first() as Promise<IndexedQueryResult | null>;
   } else {
     dbQuery = ctx.db
       .query("emailRateLimits")
       .withIndex("by_org_date", (q) => q.eq("orgId", orgId).eq("date", today))
-      .first();
+      .first() as Promise<IndexedQueryResult | null>;
   }
 
   const rateLimit = await dbQuery;
@@ -141,7 +143,7 @@ export async function sendEmail(
   });
 
   if (!response.ok) {
-    const errorBody = (await response.json().catch(() => ({}))) as ResendErrorResponse;
+    const errorBody = await response.json().catch(() => ({} as ResendErrorResponse));
     throw new Error(`Resend API error: ${response.status} ${errorBody.message || response.statusText}`);
   }
 
@@ -280,7 +282,7 @@ export function renderExpenseRejectedEmail(
 </html>`;
 }
 
-export const send = internal({
+export const send = internalAction({
   args: {
     to: v.array(v.string()),
     subject: v.string(),
@@ -297,7 +299,7 @@ export const send = internal({
         orgId: args.orgId,
         userId: args.userId,
       },
-      ctx,
+      ctx as unknown as RateLimitContext,
     );
   },
 });

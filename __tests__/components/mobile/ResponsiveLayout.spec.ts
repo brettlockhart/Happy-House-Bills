@@ -4,7 +4,7 @@ import ResponsiveLayout from "~/components/mobile/ResponsiveLayout.vue";
 
 // Mock the composables
 vi.mock("~/composables/useResponsiveStore", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = await importOriginal() as unknown;
   return {
     ...actual,
     useResponsiveStore: vi.fn(() => {
@@ -29,7 +29,7 @@ vi.mock("~/composables/useResponsiveStore", async (importOriginal) => {
 });
 
 vi.mock("~/composables/useTouchInteractions", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = await importOriginal() as unknown;
   return {
     ...actual,
     useTouchInteractions: vi.fn(() => {
@@ -68,7 +68,7 @@ describe("ResponsiveLayout.vue", () => {
   it("applies tablet classes for tablet viewport", () => {
     // Update mock to simulate tablet viewport
     vi.mock("~/composables/useResponsiveStore", async (importOriginal) => {
-      const actual = await importOriginal() as any;
+      const actual = await importOriginal() as unknown;
       return {
         ...actual,
         useResponsiveStore: vi.fn(() => {
@@ -105,7 +105,7 @@ describe("ResponsiveLayout.vue", () => {
   it("applies desktop classes for desktop viewport", () => {
     // Update mock to simulate desktop viewport
     vi.mock("~/composables/useResponsiveStore", async (importOriginal) => {
-      const actual = await importOriginal() as any;
+      const actual = await importOriginal() as unknown;
       return {
         ...actual,
         useResponsiveStore: vi.fn(() => {
@@ -178,7 +178,7 @@ describe("ResponsiveLayout.vue", () => {
     
     // Re-mock with custom update function
     vi.mock("~/composables/useResponsiveStore", async (importOriginal) => {
-      const actual = await importOriginal() as any;
+      const actual = await importOriginal() as unknown;
       return {
         ...actual,
         useResponsiveStore: vi.fn(() => {

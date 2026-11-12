@@ -1,5 +1,9 @@
-import { internal } from "../_generated/server";
+import { internalAction } from "../_generated/server";
 import { v } from "convex/values";
+
+function isoDate(d: Date = new Date()): string {
+  return d.toISOString().slice(0, 10);
+}
 
 export interface BankConfig {
   provider: "plaid" | "yodlee" | "mock";
@@ -50,7 +54,7 @@ export interface SyncBankResult {
   error?: string;
 }
 
-export const testBankConnection = internal({
+export const testBankConnection = internalAction({
   args: {
     provider: v.string(),
     credentials: v.any(),
@@ -84,7 +88,7 @@ export const testBankConnection = internal({
   },
 });
 
-export const syncBankAccounts = internal({
+export const syncBankAccounts = internalAction({
   args: {
     provider: v.string(),
     credentials: v.any(),
@@ -133,7 +137,7 @@ export const syncBankAccounts = internal({
             id: "tx_1",
             name: "Grocery Store",
             amount: -45.23,
-            date: new Date().toISOString().split("T")[0],
+            date: isoDate(),
             isoCurrencyCode: "USD",
             pending: false,
             category: "groceries",
@@ -142,7 +146,7 @@ export const syncBankAccounts = internal({
             id: "tx_2",
             name: "Salary Deposit",
             amount: 3000.0,
-            date: new Date().toISOString().split("T")[0],
+            date: isoDate(),
             isoCurrencyCode: "USD",
             pending: false,
             category: "income",
@@ -176,7 +180,7 @@ export const syncBankAccounts = internal({
             id: "mock_tx_1",
             name: "Mock Transaction",
             amount: -25.5,
-            date: new Date().toISOString().split("T")[0],
+            date: isoDate(),
             isoCurrencyCode: "USD",
             pending: false,
           },
@@ -191,7 +195,7 @@ export const syncBankAccounts = internal({
   },
 });
 
-export const testBankConnectionMFA = internal({
+export const testBankConnectionMFA = internalAction({
   args: {
     provider: v.string(),
     credentials: v.any(),

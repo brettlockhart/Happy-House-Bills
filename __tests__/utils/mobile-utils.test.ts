@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getViewportConfig, setupTouchInteractions, detectPerformance, debounce, throttle, type ViewportConfig, type TouchInteraction, type PerformanceMetrics } from "~/utils/mobile-utils";
+import { getViewportConfig, setupTouchInteractions, detectPerformance, debounce, throttle } from "~/utils/mobile-utils";
 
 // Mock window and document globals
 Object.defineProperty(window, 'innerWidth', { value: 375, configurable: true });
@@ -83,7 +83,7 @@ describe("Mobile Utils - Touch Interactions", () => {
       preventDefault: vi.fn(),
     };
     
-    touchHandlers.touchStart(mockTouchEvent as any);
+    touchHandlers.touchStart(mockTouchEvent as unknown);
     expect(mockTouchEvent.preventDefault).not.toHaveBeenCalled(); // should only prevent for sliders
   });
   
@@ -92,7 +92,7 @@ describe("Mobile Utils - Touch Interactions", () => {
     const touchHandlers = setupTouchInteractions(mockElement);
     
     let tapDetected = false;
-    const mockCallback = vi.fn((event: TouchEvent) => {
+    const mockCallback = vi.fn(() => {
       tapDetected = true;
     });
     
@@ -102,7 +102,7 @@ describe("Mobile Utils - Touch Interactions", () => {
       changedTouches: [{ clientX: 100, clientY: 200 }],
     };
     
-    touchHandlers.touchEnd(mockTouchEvent as any);
+    touchHandlers.touchEnd(mockTouchEvent as unknown);
     
     expect(tapDetected).toBe(false); // No tap because no start
   });
@@ -165,6 +165,6 @@ describe("Mobile Utils - Throttle Function", () => {
 
 // Import the actual debounce and throttle functions at the end to avoid circular imports
 vi.mock("~/utils/mobile-utils", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = await importOriginal() as unknown;
   return actual;
 });

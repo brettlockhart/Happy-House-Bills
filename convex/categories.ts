@@ -1,4 +1,4 @@
-import { mutation, query } from "convex/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedOrg } from "./auth";
 
@@ -90,7 +90,7 @@ export const update = mutation({
         .filter((q) => q.eq(q.field("name"), args.name))
         .collect();
 
-      if (duplicate.length > 0 && duplicate[0]._id !== args.id) {
+      if (duplicate.length > 0 && duplicate[0]?._id !== args.id) {
         throw new Error("Category name already exists in this organization");
       }
 

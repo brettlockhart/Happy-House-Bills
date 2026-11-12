@@ -1,22 +1,7 @@
 {
-  "name": "happy-house-bills",
-  "link": "https://github.com/brettlockhart/Happy-House-Bills",
-  "functions": {
-    "default": {
-      "maxExecutionTimeSeconds": 60
-    }
-  },
-  "crons": {},
+  "functions": "convex/",
   "http": [
-    {
-      "path": "/webhook/clerk",
-      "method": "POST",
-      "handler": "http:verifyWebhook"
-    },
-    {
-      "path": "/health",
-      "method": "GET",
-      "handler": "http:healthCheck"
-    }
+    { "path": "/health", "method": "GET", "handler": "http:healthCheck" },
+    { "path": "/webhook/clerk", "method": "POST", "handler": "http:verifyWebhook" }
   ]
 }

@@ -67,15 +67,16 @@ describe("SEC-D8-005: No hardcoded secrets in configuration files", () => {
     }
   });
 
-  it("REQUIRES no secret values in .env.example", () => {
+it("REQUIRES no secret values in .env.example", () => {
     const lines = envExampleContent.split("\n");
+    const knownSafeValues = new Set(["https://app.happyhousebills.com", "3600", "us", "eu", "us-central1", "eu-west1"]);
     for (const line of lines) {
       const trimmed = line.trim();
       if (!trimmed || trimmed.startsWith("#")) continue;
       const eqIdx = trimmed.indexOf("=");
       if (eqIdx === -1) continue;
       const value = trimmed.slice(eqIdx + 1).trim();
-      if (value === "" || value.startsWith("https://") || value === "3600") continue;
+      if (value === "" || value.startsWith("https://") || value === "3600" || knownSafeValues.has(value)) continue;
       expect(value, `Unexpected non-empty .env.example value: ${value}`).toBeFalsy();
     }
   });

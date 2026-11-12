@@ -81,22 +81,26 @@ function getImageDimensions(buffer: Uint8Array): { width: number; height: number
 
 function parseJpegDimensions(buffer: Uint8Array): { width: number; height: number } | null {
   let i = 2;
-  while (i < buffer.length - 1) {
+  while (i < buffer.length - 8) {
     if (buffer[i] !== 0xff) {
       i++;
       continue;
     }
     const marker = buffer[i + 1];
+    if (marker === undefined) break;
     if (marker === 0xd9 || marker === 0xda) break;
     if (marker >= 0xd0 && marker <= 0xd7) {
       i += 2;
       continue;
     }
-    const length = (buffer[i + 2] << 8) | buffer[i + 3];
+    const b2 = buffer[i + 2];
+    const b3 = buffer[i + 3];
+    if (b2 === undefined || b3 === undefined) break;
+    const length = (b2 << 8) | b3;
     if (marker === 0xc0 || marker === 0xc2) {
-      const height = (buffer[i + 5] << 8) | buffer[i + 6];
-      const width = (buffer[i + 7] << 8) | buffer[i + 8];
-      return { width, height };
+      const h1 = buffer[i + 5], h2 = buffer[i + 6], w1 = buffer[i + 7], w2 = buffer[i + 8];
+      if (h1 === undefined || h2 === undefined || w1 === undefined || w2 === undefined) return null;
+      return { width: (w1 << 8) | w2, height: (h1 << 8) | h2 };
     }
     i += length + 2;
   }
@@ -115,18 +119,22 @@ function stripExifJpeg(buffer: Uint8Array): Uint8Array {
   const result: number[] = [0xff, 0xd8];
   let i = 2;
   while (i < buffer.length - 1) {
-    if (buffer[i] !== 0xff) {
+    const b0 = buffer[i];
+    if (b0 === undefined) break;
+    if (b0 !== 0xff) {
       i++;
       continue;
     }
     const marker = buffer[i + 1];
+    if (marker === undefined) break;
     if (marker === 0xd9) {
       result.push(0xff, 0xd9);
       break;
     }
     if (marker === 0xda) {
       for (let j = i; j < buffer.length; j++) {
-        result.push(buffer[j]);
+        const bj = buffer[j];
+        if (bj !== undefined) result.push(bj);
       }
       break;
     }
@@ -135,13 +143,17 @@ function stripExifJpeg(buffer: Uint8Array): Uint8Array {
       i += 2;
       continue;
     }
-    const length = (buffer[i + 2] << 8) | buffer[i + 3];
+    const b2 = buffer[i + 2];
+    const b3 = buffer[i + 3];
+    if (b2 === undefined || b3 === undefined) break;
+    const length = (b2 << 8) | b3;
     if (marker === 0xe1) {
       i += length + 2;
       continue;
     }
-    for (let j = i; j < i + length + 2; j++) {
-      result.push(buffer[j]);
+    for (let j = i; j < i + length + 2 && j < buffer.length; j++) {
+      const bj = buffer[j];
+      if (bj !== undefined) result.push(bj);
     }
     i += length + 2;
   }
@@ -194,15 +206,8 @@ export const uploadReceipt = action({
     const extension = getExtension(args.contentType);
     const filename = `receipt-${orgId}-${crypto.randomUUID()}.${extension}`;
 
-    const storageId = await ctx.storage.store(filename, cleaned, {
-      contentType: args.contentType,
-      customMetadata: {
-        orgId,
-        userId,
-        uploadAt: Date.now().toString(),
-        width: dimensions ? dimensions.width.toString() : "0",
-        height: dimensions ? dimensions.height.toString() : "0",
-      },
+    const storageId = await ctx.storage.store(new File([new Uint8Array(cleaned) as BlobPart], filename, { type: args.contentType }), {
+      customMetadata: { orgId, userId: userId ?? "", uploadAt: Date.now().toString(), width: dimensions ? dimensions.width.toString() : "0", height: dimensions ? dimensions.height.toString() : "0" },
     });
 
     return {

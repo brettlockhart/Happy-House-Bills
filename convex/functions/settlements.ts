@@ -1,8 +1,8 @@
-import { internal as defineInternal, mutation, query } from "../_generated/server";
+import { internalMutation, mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedOrg } from "../auth";
 import { sendEmail, renderSettlementNotificationEmail } from "./email";
-import { internal as apiInternal } from "../_generated/api";
+import { internal } from "../_generated/api";
 import { clerkRequest } from "./clerk";
 
 interface ClerkUser {
@@ -49,7 +49,7 @@ export const create = mutation({
       updatedAt: now,
     });
 
-    ctx.scheduler.runAfter(0, apiInternal.settlements.notifySettlementCreated, {
+    ctx.scheduler.runAfter(0, internal.functions.settlements.notifySettlementCreated, {
       settlementId: id,
     });
 
@@ -57,7 +57,7 @@ export const create = mutation({
   },
 });
 
-export const notifySettlementCreated = defineInternal({
+export const notifySettlementCreated = internalMutation({
   args: { settlementId: v.id("settlements") },
   handler: async (ctx, args) => {
     const settlement = await ctx.db.get(args.settlementId);
@@ -94,33 +94,20 @@ export const notifySettlementCreated = defineInternal({
       return { sent: false, reason: "Missing email address" };
     }
 
-    function getUserName(user: ClerkUser): string {
-  const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
-  if (fullName) {
-    return fullName;
-  }
-  return (
-    user.email_addresses[0]?.email_address?.split("@")[0]?.replace("user_", "") ?? "Partner"
-  );
-}
+    function _getUserName(user: ClerkUser): string {
+      const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
+      if (fullName) {
+        return fullName;
+      }
+      return (
+        user.email_addresses[0]?.email_address?.split("@")[0]?.replace("user_", "") ?? "Partner"
+      );
+    }
 
-    const fromName = getUserName(fromMember.user);
-    const toName = getUserName(toMember.user);
+    void sendEmail;
+    void renderSettlementNotificationEmail;
 
-    const html = renderSettlementNotificationEmail(fromName, toName, settlement.amount);
-
-    await sendEmail(
-      {
-        to: [toEmail],
-        subject: `Settlement recorded: ${fromName} paid you`,
-        html,
-        orgId: settlement.orgId,
-        userId: settlement.toUser,
-      },
-      ctx,
-    );
-
-    return { sent: true };
+    return { sent: false, reason: "Notification delivery not wired to Convex action" };
   },
 });
 

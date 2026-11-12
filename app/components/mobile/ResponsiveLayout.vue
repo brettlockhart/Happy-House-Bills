@@ -7,23 +7,24 @@ const elementRef = ref<HTMLElement | null>(null);
 
 const responsiveClasses = computed(() => {
   const classes = [];
-  
-  if (responsiveStore.isMobile) classes.push("hhb-mobile");
-  if (responsiveStore.isTablet) classes.push("hhb-tablet");
-  if (responsiveStore.isDesktop) classes.push("hhb-desktop");
-  
-  classes.push(`hhb-breakpoint-${responsiveStore.viewport.breakpoint}`);
-  
-  if (responsiveStore.orientation === "portrait") {
+  const vp = responsiveStore.viewport.value;
+
+  if (responsiveStore.isMobile.value) classes.push("hhb-mobile");
+  if (responsiveStore.isTablet.value) classes.push("hhb-tablet");
+  if (responsiveStore.isDesktop.value) classes.push("hhb-desktop");
+
+  classes.push(`hhb-breakpoint-${vp.breakpoint}`);
+
+  if (responsiveStore.orientation.value === "portrait") {
     classes.push("hhb-portrait");
   } else {
     classes.push("hhb-landscape");
   }
-  
-  if (responsiveStore.viewport.isMobile) {
+
+  if (vp.isMobile) {
     classes.push("hhb-touch-targets");
   }
-  
+
   return classes.join(" ");
 });
 
@@ -48,7 +49,7 @@ onUnmounted(() => {
     role="main"
     aria-label="Mobile Responsive Layout"
   >
-    <slot></slot>
+    <slot/>
   </div>
 </template>
 

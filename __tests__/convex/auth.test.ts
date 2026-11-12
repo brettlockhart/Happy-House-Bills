@@ -107,4 +107,17 @@ describe("auth:requireAuthenticatedOrg (SEC-001)", () => {
       requireAuthenticatedOrg({ auth: { getUserIdentity: async () => makeIdentity("user_test", "") } }),
     ).rejects.toThrow("Unauthenticated or no organisation");
   });
+
+  it("uses explicit dev bypass when AUTH_BYPASS=1 (non-production opt-in)", async () => {
+    process.env.AUTH_BYPASS = "1";
+    process.env.AUTH_BYPASS_USER_ID = "dev-user";
+    process.env.AUTH_BYPASS_ORG_ID = "dev-org";
+    const { requireAuthenticatedOrg, requireAuthenticatedUser } = await import("../../convex/auth");
+    await expect(
+      requireAuthenticatedOrg({ auth: { getUserIdentity: async () => null } }),
+    ).resolves.toEqual({ userId: "dev-user", orgId: "dev-org" });
+    await expect(
+      requireAuthenticatedUser({ auth: { getUserIdentity: async () => null } }),
+    ).resolves.toEqual({ userId: "dev-user" });
+  });
 });

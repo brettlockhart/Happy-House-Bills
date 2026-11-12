@@ -1,5 +1,9 @@
-import { internal } from "../_generated/server";
+import { internalAction } from "../_generated/server";
 import { v } from "convex/values";
+
+function isoDate(d: Date = new Date()): string {
+  return d.toISOString().slice(0, 10);
+}
 
 export interface AccountingConfig {
   provider: "quickbooks" | "xero" | "wave" | "mock";
@@ -35,7 +39,7 @@ export interface SyncAccountingResult {
   error?: string;
 }
 
-export const testAccountingConnection = internal({
+export const testAccountingConnection = internalAction({
   args: {
     provider: v.string(),
     credentials: v.any(),
@@ -72,7 +76,7 @@ export const testAccountingConnection = internal({
   },
 });
 
-export const syncAccountingTransactions = internal({
+export const syncAccountingTransactions = internalAction({
   args: {
     provider: v.string(),
     credentials: v.any(),
@@ -94,7 +98,7 @@ export const syncAccountingTransactions = internal({
         result.transactions = [
           {
             id: "acctx_1",
-            date: new Date().toISOString().split("T")[0],
+            date: isoDate(),
             amount: -42.5,
             description: "Grocery Store",
             payee: "Safeway",
@@ -103,7 +107,7 @@ export const syncAccountingTransactions = internal({
           },
           {
             id: "acctx_2",
-            date: new Date().toISOString().split("T")[0],
+            date: isoDate(),
             amount: 1500.0,
             description: "Salary Deposit",
             payee: "Employer",
@@ -129,7 +133,7 @@ export const syncAccountingTransactions = internal({
         result.transactions = [
           {
             id: "xcctx_1",
-            date: new Date().toISOString().split("T")[0],
+            date: isoDate(),
             amount: -38.99,
             description: "Coffee Shop",
             payee: "Starbucks",
@@ -146,7 +150,7 @@ export const syncAccountingTransactions = internal({
         result.transactions = [
           {
             id: "wctx_1",
-            date: new Date().toISOString().split("T")[0],
+            date: isoDate(),
             amount: -12.75,
             description: "Pharmacy",
             payee: "CVS",
@@ -163,7 +167,7 @@ export const syncAccountingTransactions = internal({
         result.transactions = [
           {
             id: "mock_acctx_1",
-            date: new Date().toISOString().split("T")[0],
+            date: isoDate(),
             amount: -19.99,
             description: "Test Transaction",
             payee: "Test Payee",

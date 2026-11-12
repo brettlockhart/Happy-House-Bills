@@ -20,9 +20,11 @@ vi.mock("convex-vue", () => ({
 
 vi.mock("~/convex/_generated/api", () => ({
   api: {
-    settlements: {
-      create: { _name: "create" },
-      list: { _name: "list" },
+    functions: {
+      settlements: {
+        create: { _name: "create" },
+        list: { _name: "list" },
+      },
     },
   },
   Settlement: {} as never,

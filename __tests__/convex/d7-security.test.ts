@@ -5,10 +5,32 @@ vi.mock("../../convex/_generated/server", () => ({
     ...config,
     handler: config.handler.bind(config),
   }),
+  internalAction: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+    ...config,
+    handler: config.handler.bind(config),
+  }),
   internal: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
     ...config,
     handler: config.handler.bind(config),
   }),
+}));
+
+vi.mock("../../convex/_generated/api", () => ({
+  api: {
+    expenses: {},
+    settlements: {},
+  },
+  internal: {
+    email: {
+      send: {},
+    },
+    expenses: {
+      notifyExpensePending: {},
+    },
+    settlements: {
+      notifySettlementCreated: {},
+    },
+  },
 }));
 
 vi.mock("convex/values", () => ({

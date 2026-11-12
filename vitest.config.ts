@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "~/convex": resolve(process.cwd(), "convex"),
+      "~/app": resolve(process.cwd(), "app"),
       "~/composables": resolve(process.cwd(), "app/composables"),
       "~/utils": resolve(process.cwd(), "app/utils"),
       "~/components": resolve(process.cwd(), "app/components"),
@@ -15,8 +16,15 @@ export default defineConfig({
   test: {
     environment: "happy-dom",
     setupFiles: ["__tests__/setup.ts"],
-    include: ["__tests__/convex/**/*.ts", "__tests__/composables/**/*.ts", "__tests__/utils/**/*.ts", "__tests__/components/**/*.ts", "__tests__/ci-cd/**/*.ts"],
+    include: ["__tests__/convex/**/*.ts", "__tests__/composables/**/*.ts", "__tests__/utils/**/*.ts", "__tests__/components/**/*.ts", "__tests__/ci-cd/**/*.ts", "__tests__/performance/**/*.ts"],
     exclude: ["**/*.spec.ts", "app/**/*.{vue,ts}", "convex/_generated/**"],
+    maxWorkers: 1,
+    poolOptions: {
+      forks: {
+        isolate: false,
+        maxForks: 1,
+      },
+    },
     coverage: {
       provider: "v8",
       reporter: ["text", "json"],

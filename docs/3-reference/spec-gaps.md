@@ -213,13 +213,16 @@ then domain specs).
 | ~~INT-Q1~~ | How should we handle API authentication securely for external integrations? | ~~Resolved~~ | `docs/2-development/04-implemented/d14-advanced-integrations.md` | ~~security-engineer~~ | ~~Phase 3~~ | ~~OAuth 2.0 with token-based auth; credentials stored encrypted in Convex DB with org-scoped access control~~ |
 | ~~INT-Q2~~ | What's the best approach for data transformation between external APIs and internal models? | ~~Resolved~~ | `docs/2-development/04-implemented/d14-advanced-integrations.md` | ~~backend-engineer~~ | ~~Phase 3~~ | ~~Adapter pattern — each provider gets its own adapter module with a common interface (`INTEGRATION_TYPES` type constants)~~, Integrations |
 | ~~INT-Q3~~ | How should we manage API rate limiting across multiple external providers? | ~~Resolved~~ | `docs/2-development/04-implemented/d14-advanced-integrations.md` | ~~backend-engineer~~ | ~~Phase 3~~ | ~~Global rate limits per org with retry logic and exponential backoff via API gateway; fair usage to prevent abuse and control costs~~ |
+| ANL-Q1 | What's the best approach for predictive analytics? | Resolved | `docs/2-development/04-implemented/d15-advanced-analytics-insights.md` | backend-engineer | Phase 3 — Simple linear projection (historical average / period months); ML enhancement deferred to Phase 4+ |
+| ANL-Q2 | How should we handle data privacy in analytics? | Resolved | `docs/2-development/04-implemented/d15-advanced-analytics-insights.md` | security-engineer | Phase 3 — Org-scoped queries; analytics return only aggregated numbers; no user-identifiable data in responses |
+| ANL-Q3 | What's the optimal visualization approach? | Resolved | `docs/2-development/04-implemented/d15-advanced-analytics-insights.md` | frontend-engineer | Phase 3 — Chart.js with computed series from Convex queries; evaluate lighter alternatives (uPlot, ApexCharts) in Phase 4 |
 
 ## 7. Appendix: Gap Count Summary
 
 | Metric | Count |
 |--------|-------|
 | Missing referenced documents | 0 |
-  | Open questions | 1 |
+| Open questions | 4 |
 | Domains | 11 |
 | Total next actions | 0 |
 

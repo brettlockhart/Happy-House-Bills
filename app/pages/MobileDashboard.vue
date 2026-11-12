@@ -2,11 +2,12 @@
 import { useResponsiveStore } from "~/composables/useResponsiveStore";
 import { useOfflineState } from "~/composables/useOfflineState";
 import { useAccessibility } from "~/composables/useAccessibility";
-import { ResponsiveLayout } from "~/components/mobile/ResponsiveLayout.vue";
+import ResponsiveLayout from "~/components/mobile/ResponsiveLayout.vue";
 
-const responsiveStore = useResponsiveStore();
-const offlineState = useOfflineState();
+const _responsiveStore = useResponsiveStore();
+const _offlineState = useOfflineState();
 const accessibility = useAccessibility();
+const _testId = "mobile-dashboard";
 </script>
 
 <template>
@@ -31,17 +32,17 @@ const accessibility = useAccessibility();
           </div>
           
           <button
-            @click="accessibility.toggleHighContrast"
             class="hhb-btn hhb-btn-secondary hhb-text-sm"
-            :aria-pressed="accessibility.highContrast"
+            :aria-pressed="accessibility.highContrast.value"
+            @click="accessibility.toggleHighContrast()"
           >
             High Contrast
           </button>
           
           <button
-            @click="accessibility.toggleReducedMotion"
             class="hhb-btn hhb-btn-secondary hhb-text-sm"
-            :aria-pressed="accessibility.reducedMotion"
+            :aria-pressed="accessibility.reducedMotion.value"
+            @click="accessibility.toggleReducedMotion()"
           >
             Reduced Motion
           </button>
@@ -52,13 +53,13 @@ const accessibility = useAccessibility();
           <div class="hhb-flex hhb-items-center hhb-gap-1">
             <div 
               class="hhb-w-3 hhb-h-3 hhb-rounded-full"
-              :class="offlineState.isOnline ? 'hhb-bg-green-500' : 'hhb-bg-red-500'"
-              :aria-label="offlineState.isOnline ? 'Online' : 'Offline'"
-            ></div>
-            <span class="hhb-text-sm">{{ offlineState.isOnline ? 'Online' : 'Offline' }}</span>
+              :class="_offlineState.isOnline ? 'hhb-bg-green-500' : 'hhb-bg-red-500'"
+              :aria-label="_offlineState.isOnline ? 'Online' : 'Offline'"
+            />
+            <span class="hhb-text-sm">{{ _offlineState.isOnline ? 'Online' : 'Offline' }}</span>
           </div>
           
-          {{ offlineState.wasOffline && offlineState.isOnline ? ' (Reconnected)' : '' }}
+          {{ _offlineState.wasOffline && _offlineState.isOnline ? ' (Reconnected)' : '' }}
         </div>
       </header>
       
@@ -135,8 +136,3 @@ const accessibility = useAccessibility();
   transition: none !important;
 }
 </style>
-
-<script setup lang="ts">
-// For testability
-const testId = "mobile-dashboard";
-</script>

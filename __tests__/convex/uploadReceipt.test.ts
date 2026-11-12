@@ -184,8 +184,9 @@ describe("uploadReceipt (SEC-001, SEC-004, SEC-005)", () => {
     });
 
     const callArgs = ctx.storage.store.mock.calls[0];
-    const filename = callArgs[0];
-    expect(filename).toMatch(/^receipt-org_test-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$/);
+    const file = callArgs[0];
+    expect(file).toBeInstanceOf(File);
+    expect(file.name).toMatch(/^receipt-org_test-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$/);
   });
 
   // SEC-001: Cross-tenant isolation — orgId in filename comes from JWT, not client input
@@ -203,8 +204,9 @@ describe("uploadReceipt (SEC-001, SEC-004, SEC-005)", () => {
     });
 
     const callArgs = ctx.storage.store.mock.calls[0];
-    const filename = callArgs[0];
-    expect(filename).toMatch(/^receipt-org_victim-/);
+    const file = callArgs[0];
+    expect(file).toBeInstanceOf(File);
+    expect(file.name).toMatch(/^receipt-org_victim-/);
   });
 
   // SEC-001: Response includes orgId and userId from JWT, not from client input
@@ -275,8 +277,8 @@ describe("uploadReceipt (SEC-001, SEC-004, SEC-005)", () => {
     });
 
     const callArgs = ctx.storage.store.mock.calls[0];
-    const storedBuffer = callArgs[1];
-    const storedBytes = new Uint8Array(storedBuffer);
+    const storedFile = callArgs[0];
+    const storedBytes = new Uint8Array(await storedFile.arrayBuffer());
 
     expect(storedBytes.length).toBeLessThan(jpegWithExif.length);
     expect(storedBytes[0]).toBe(0xff);
@@ -307,7 +309,7 @@ describe("uploadReceipt (SEC-001, SEC-004, SEC-005)", () => {
     });
 
     const callArgs = ctx.storage.store.mock.calls[0];
-    const opts = callArgs[2];
+    const opts = callArgs[1];
     expect(opts).toHaveProperty("customMetadata");
     expect(opts.customMetadata.orgId).toBe("org_test");
     expect(opts.customMetadata.userId).toBe("user_test");
@@ -397,7 +399,7 @@ describe("uploadReceipt (SEC-001, SEC-004, SEC-005)", () => {
 
     expect(result.storageId).toBe("storage_id");
     const call = ctx.storage.store.mock.calls[0];
-    expect(call[0]).toMatch(/\.heic$/);
+    expect(call[0].name).toMatch(/\.heic$/);
   });
 
   it("rejects images with unparseable dimensions (non-image magic bytes)", async () => {
@@ -428,6 +430,6 @@ describe("uploadReceipt (SEC-001, SEC-004, SEC-005)", () => {
 
     expect(result.storageId).toBe("storage_id");
     const call = ctx.storage.store.mock.calls[0];
-    expect(call[0]).toMatch(/\.png$/);
+    expect(call[0].name).toMatch(/\.png$/);
   });
 });

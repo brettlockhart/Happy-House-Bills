@@ -1,53 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("convex/server", () => {
-  const internalFn = (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
-    ...config,
-    handler: config.handler.bind(config),
-  });
-  return {
-    mutation: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
-      ...config,
-      handler: config.handler.bind(config),
-    }),
-    query: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
-      ...config,
-      handler: config.handler.bind(config),
-    }),
-    mutationGeneric: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
-      ...config,
-      handler: config.handler.bind(config),
-    }),
-    queryGeneric: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
-      ...config,
-      handler: config.handler.bind(config),
-    }),
-    internal: Object.assign(internalFn, {
-      mutation: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
-        ...config,
-        handler: config.handler.bind(config),
-      }),
-      query: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
-        ...config,
-        handler: config.handler.bind(config),
-      }),
-    }),
-    defineInternal: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
-      ...config,
-      handler: config.handler.bind(config),
-    }),
-    action: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
-      ...config,
-      handler: config.handler.bind(config),
-    }),
-    internalAction: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
-      ...config,
-      handler: config.handler.bind(config),
-    }),
-  };
-});
-
-vi.mock("../../_generated/server", () => {
+vi.mock("../../convex/_generated/server", () => {
   const internalFn = (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
     ...config,
     handler: config.handler.bind(config),
@@ -63,7 +16,26 @@ vi.mock("../../_generated/server", () => {
     }),
     internalMutationGeneric: internalFn,
     internalQueryGeneric: internalFn,
+    internalMutation: internalFn,
+    internalQuery: internalFn,
+    internalAction: internalFn,
     internal: internalFn,
+    mutation: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+      ...config,
+      handler: config.handler.bind(config),
+    }),
+    query: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+      ...config,
+      handler: config.handler.bind(config),
+    }),
+    action: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+      ...config,
+      handler: config.handler.bind(config),
+    }),
+    defineInternal: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+      ...config,
+      handler: config.handler.bind(config),
+    }),
   };
 });
 
@@ -522,7 +494,7 @@ describe("reports:exportCsv", () => {
     ];
     const ctx = createMockCtx(validIdentity(), { expenses });
     const result = await exportReportCsv.handler(ctx as never, {});
-    expect(result).toContain("Date,Category,Amount,Paid By,Status,Notes,Receipt");
+    expect(result).toContain("Date,Category,Amount,Status,Has Receipt");
   });
 });
 

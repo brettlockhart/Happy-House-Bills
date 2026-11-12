@@ -2,7 +2,7 @@
 
 This file tracks all pending, in-progress, and completed reviews for Happy House Bills.
 
-All reviews are complete for D1-D8, D9, D10, D11, D12, D13. The following slices have been promoted to `04-implemented`:
+All reviews are complete for D1–D16. The following slices have been promoted to `04-implemented`:
 
 - D1 — Expense Management Foundation
 - D2 — Settlement API
@@ -18,17 +18,14 @@ All reviews are complete for D1-D8, D9, D10, D11, D12, D13. The following slices
 - D12 — Mobile-First UI/UX Shell
 - D13 — Team Workspaces & Collaboration
 - D14 — Advanced Integrations
+- D15 — Advanced Analytics & Insights
+- D16 — Performance & Reliability
 
 ## Active Reviews
 
 | Slice | Type | Reviewer | Status | Submitted | Last updated |
 |-------|------|----------|---------|-----------|---------------|
-| D9 — Mobile Browser Compatibility | Implementation | implementation-reviewer | Approved | 30-October-2026 |
-| D9 — Mobile Browser Compatibility | Security | security-engineer | Pass | 30-October-2026 |
-| D9 — Mobile Browser Compatibility | Test Coverage | test-engineer | Pass (25 D9 tests) | 30-October-2026 |
-| D10 — 10-Minute Deployment | Implementation | implementation-reviewer | Pass | 31-October-2026 |
-| D10 — 10-Minute Deployment | Security | security-engineer | Pass | 31-October-2026 |
-| D10 — 10-Minute Deployment | Test Coverage | test-engineer | Pass (39 new tests) | 31-October-2026 |
+| — | — | — | — | — | No active reviews |
 
 ## Completed Reviews
 
@@ -36,7 +33,7 @@ All reviews are complete for D1-D8, D9, D10, D11, D12, D13. The following slices
 |-------|------|----------|---------|------|
 | D1 — Expense Management Foundation | Implementation | implementation-reviewer | Pass | 27-October-2026 |
 | D2 — Settlement API | Implementation | self | Pass | 27-October-2026 |
-| D3 — Onboarding, Flow | Implementation | implementation-reviewer | Pass | 28-October-2026 |
+| D3 — Onboarding Flow | Implementation | implementation-reviewer | Pass | 28-October-2026 |
 | D3 — Onboarding Flow | Security | security-engineer | Conditional Pass | 28-October-2026 |
 | D3 — Onboarding Flow | Test Coverage | test-engineer | 66% on orgs.ts, 100% on auth.ts | 28-October-2026 |
 | D4 — Receipt Upload & OCR | Implementation | implementation-reviewer | Pass | 28-October-2026 |
@@ -54,6 +51,12 @@ All reviews are complete for D1-D8, D9, D10, D11, D12, D13. The following slices
 | D8 — CI/CD Pipeline | Implementation | implementation-reviewer | Pass | 30-October-2026 |
 | D8 — CI/CD Pipeline | Security | security-engineer | Conditional Pass | 30-October-2026 |
 | D8 — CI/CD Pipeline | Test Coverage | test-engineer | 327 tests passing; 55 new CI/CD tests | 30-October-2026 |
+| D9 — Mobile Browser Compatibility | Implementation | implementation-reviewer | Pass | 30-October-2026 |
+| D9 — Mobile Browser Compatibility | Security | security-engineer | Pass | 30-October-2026 |
+| D9 — Mobile Browser Compatibility | Test Coverage | test-engineer | Pass (25 D9 tests) | 30-October-2026 |
+| D10 — 10-Minute Deployment | Implementation | implementation-reviewer | Pass | 31-October-2026 |
+| D10 — 10-Minute Deployment | Security | security-engineer | Pass | 31-October-2026 |
+| D10 — 10-Minute Deployment | Test Coverage | test-engineer | Pass (39 new tests) | 31-October-2026 |
 | D11 — Advanced Features | Implementation | implementation-reviewer | Pass | 03-November-2026 |
 | D11 — Advanced Features | Security | security-engineer | Pass | 03-November-2026 |
 | D11 — Advanced Features | Test Coverage | test-engineer | Pass | 03-November-2026 |
@@ -66,6 +69,12 @@ All reviews are complete for D1-D8, D9, D10, D11, D12, D13. The following slices
 | D14 — Advanced Integrations | Implementation | implementation-reviewer | Pass | 07-November-2026 |
 | D14 — Advanced Integrations | Security | security-engineer | Pass | 07-November-2026 |
 | D14 — Advanced Integrations | Test Coverage | test-engineer | Pass (8 tests) | 07-November-2026 |
+| D15 — Advanced Analytics & Insights | Implementation | implementation-reviewer | Pass | 07-November-2026 |
+| D15 — Advanced Analytics & Insights | Security | security-engineer | Pass | 07-November-2026 |
+| D15 — Advanced Analytics & Insights | Test Coverage | test-engineer | Pass (10 utils tests) | 07-November-2026 |
+| D16 — Performance & Reliability | Implementation | implementation-reviewer | Pass | 07-November-2026 |
+| D16 — Performance & Reliability | Security | security-engineer | Pass (Conditional) | 07-November-2026 |
+| D16 — Performance & Reliability | Test Coverage | test-engineer | Pass (18 tests) | 07-November-2026 |
 
 ## Review Process
 

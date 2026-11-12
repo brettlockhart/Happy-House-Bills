@@ -1,8 +1,8 @@
 # Happy House Bills — Development Index
 
 **Project:** Happy House Bills
-**Status:** Active — Phase 1: MVP
-**Last updated:** 24-October-2026
+**Status:** Active — Phase 1 MVP complete; Phases 3–5 expansion complete
+**Last updated:** 07-November-2026
 
 ## Overview
 
@@ -23,13 +23,16 @@ Happy House Bills is a web app for couples to track shared household spending, s
 | P0 | OCR pipeline (Tesseract.js) | `tech-specs/frontend/ocr-pipeline.md` | 04-implemented | ✅ D4 complete |
 | P0 | Duplicate detection | `tech-specs/backend/duplicate-detection.md` | 04-implemented | ✅ D1 complete |
 | P0 | Main UI (balance header, action buttons, entry list) | `tech-specs/frontend/ui-spec.md` | 04-implemented | ✅ D6 complete |
-| P0 | Email notifications (Resend) | `tech-specs/backend/email-notifications.md` | 03-ready-for-review | Ready for review |
-| P0 | CI/CD (GitHub Actions) | `tech-specs/architecture/ci-cd.md` | 01-draft | Not started |
-| P0 | Mobile browser compatibility | `tech-specs/frontend/mobile-compat.md` | 01-draft | Not started |
-| P0 | < 10 min deploy time | `tech-specs/architecture/deployment.md` | 01-draft | Not started |
-| P0 | Advanced features & enhancements | `tech-specs/advanced-features.md` | 01-draft | Not started |
+| P0 | Email notifications (Resend) | `tech-specs/backend/email-notifications.md` | 04-implemented | ✅ D7 complete |
+| P0 | CI/CD (GitHub Actions) | `tech-specs/architecture/ci-cd.md` | 04-implemented | ✅ D8 complete |
+| P0 | Mobile browser compatibility | `tech-specs/frontend/mobile-compat.md` | 04-implemented | ✅ D9 complete |
+| P0 | < 10 min deploy time | `tech-specs/architecture/deployment.md` | 04-implemented | ✅ D10 complete |
+| P0 | Advanced features & enhancements | `tech-specs/advanced-features.md` | 04-implemented | ✅ D11 complete |
+| P0 | Mobile-first UI/UX shell | `tech-specs/frontend/mobile-compat.md` | 04-implemented | ✅ D12 complete |
+| P0 | Team Workspaces & Collaboration | `tech-specs/teams/team-workspaces.md` | 04-implemented | ✅ D13 complete |
 | P0 | Advanced Integrations | `docs/2-development/04-implemented/d14-advanced-integrations.md` | 04-implemented | ✅ D14 complete |
-| P2 | Team Workspaces & Collaboration | `tech-specs/teams/team-workspaces.md` | 04-implemented | ✅ D13 complete |
+| P0 | Advanced Analytics & Insights | `docs/2-development/04-implemented/d15-advanced-analytics-insights.md` | 04-implemented | ✅ D15 complete |
+| P0 | Performance & Reliability | `docs/2-development/04-implemented/d16-performance-reliability.md` | 04-implemented | ✅ D16 complete |
 
 ## Review Queue
 
@@ -39,8 +42,7 @@ Active reviews are tracked in [`supporting-docs/reviews/README.md`](supporting-d
 
 | Slice | Phase | Lifecycle folder | Owner | Status |
 |-------|-------|-----------------|-------|--------|
-| D7 — Email Notifications | Phase 2 | 04-implemented | backend-engineer | Implemented |
-| D13 — Team Workspaces & Collaboration | Phase 3 | 04-implemented | backend-engineer | Implemented |
+| — | — | — | — | No slices currently in review |
 
 ## Recent Promotions
 
@@ -53,5 +55,12 @@ Active reviews are tracked in [`supporting-docs/reviews/README.md`](supporting-d
 | D5 — Duplicate Detection | 28-October-2026 | implementation-reviewer | Pass |
 | D6 — Frontend UI Shell | 29-October-2026 | implementation-reviewer | Pass |
 | D7 — Email Notifications | 30-October-2026 | implementation-reviewer | Pass |
+| D8 — CI/CD Pipeline | 30-October-2026 | implementation-reviewer | Pass |
+| D9 — Mobile Browser Compatibility | 30-October-2026 | implementation-reviewer | Pass |
+| D10 — 10-Minute Deployment | 31-October-2026 | implementation-reviewer | Pass |
+| D11 — Advanced Features | 03-November-2026 | implementation-reviewer | Pass |
+| D12 — Mobile-First UI/UX Shell | 04-November-2026 | implementation-reviewer | Pass |
 | D13 — Team Workspaces & Collaboration | 05-November-2026 | implementation-reviewer | Pass |
 | D14 — Advanced Integrations | 07-November-2026 | implementation-reviewer | Pass |
+| D15 — Advanced Analytics & Insights | 07-November-2026 | implementation-reviewer | Pass |
+| D16 — Performance & Reliability | 07-November-2026 | implementation-reviewer | Pass |

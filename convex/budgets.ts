@@ -1,7 +1,7 @@
-import { mutation, query, internal } from "convex/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedOrg } from "./auth";
-import { internal as apiInternal } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { sendEmail } from "./functions/email";
 
 // Budgets
@@ -43,8 +43,7 @@ export const createBudget = mutation({
       updatedAt: now,
     });
 
-    // Check budget immediately
-    await ctx.scheduler.runAfter(0, apiInternal.budgets.checkBudget, { budgetId: id });
+    await ctx.scheduler.runAfter(0, internal.budgets.checkBudget, { budgetId: id });
 
     return id;
   },
@@ -107,8 +106,7 @@ export const updateBudget = mutation({
 
     await ctx.db.patch(args.id, updates);
 
-    // Re-check budget
-    await ctx.scheduler.runAfter(0, apiInternal.budgets.checkBudget, { budgetId: args.id });
+    await ctx.scheduler.runAfter(0, internal.budgets.checkBudget, { budgetId: args.id });
 
     return args.id;
   },
@@ -140,7 +138,7 @@ export const delete_ = deleteBudget;
 export const remove = deleteBudget;
 export { deleteBudget as del };
 
-export const checkBudget = internal.mutation({
+export const checkBudget = internalMutation({
   args: {
     budgetId: v.id("budgets"),
   },
@@ -189,7 +187,7 @@ export const checkBudget = internal.mutation({
       // Send alert via email
       try {
         const escapeHtml = (text: string) => {
-          return text.replace(/[&<>"']/g, (char) => {
+          return text.replace(/[&<>"']/g, (char: string) => {
             const escapeMap: Record<string, string> = {
               '&': '&amp;',
               '<': '&lt;',
@@ -197,14 +195,14 @@ export const checkBudget = internal.mutation({
               '"': '&quot;',
               "'": '&#39;',
             };
-            return escapeMap[char];
+            return escapeMap[char] ?? char;
           });
         };
         await sendEmail({
           to: ["admin@happyhousebills.com"],
           subject: `Budget alert: ${escapeHtml(budget.category)}`,
           html: `<p>You have spent ${total/100} on ${escapeHtml(budget.category)}, exceeding ${budget.alertThreshold}% of your budget of ${budget.amount/100}.</p>`,
-          orgId: orgId as any,
+          orgId: orgId as string,
           userId: "admin",
         });
       } catch {

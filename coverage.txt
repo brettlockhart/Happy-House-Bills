@@ -1,0 +1,11 @@
+
+ RUN  v5.0.5 C:/Users/brett/Documents/Projects/Happy House Bills
+      Coverage enabled with v8
+
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  08:53:38
+   Duration  2.09s (environment 78%, setup 9%, tests 6%, worker 4%, import 2%, transform 1%)
+
+

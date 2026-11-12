@@ -1,5 +1,9 @@
 export const CLERK_API_URL = "https://api.clerk.com/v3";
 
+export function isClerkConfigured(): boolean {
+  return !!process.env.CLERK_SECRET_KEY?.trim();
+}
+
 export async function clerkRequest(
   path: string,
   method: string = "GET",

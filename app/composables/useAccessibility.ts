@@ -1,4 +1,4 @@
-import { computed, type Ref } from "vue";
+import { computed, ref, type Ref } from "vue";
 
 type FontSize = "small" | "medium" | "large" | "extra-large";
 

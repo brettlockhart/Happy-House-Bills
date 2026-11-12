@@ -1,10 +1,12 @@
 import { useConvexClient, useConvexQuery } from "convex-vue";
 import { api } from "~/convex/_generated/api";
-import type { Invite } from "~/convex/_generated/api";
+import type { Doc } from "~/convex/_generated/dataModel";
 import { computed } from "vue";
 
+type Invite = Doc<"invites">;
+
 export function usePendingInvites() {
-  const result = useConvexQuery(api.orgs.listPendingInvites, {});
+  const result = useConvexQuery(api.functions.orgs.listPendingInvites, {});
 
   return {
     data: computed(() => (result.data.value as Invite[] | undefined) ?? []),
@@ -17,10 +19,10 @@ export function useOrgs() {
 
   return {
     createOrg: (args: { name: string }) =>
-      client.action(api.orgs.create, args),
+      client.mutation(api.functions.orgs.createOrg, args),
     invitePartner: (args: { email: string; orgId: string; orgName?: string }) =>
-      client.action(api.orgs.invite, args),
+      client.action(api.functions.orgs.invite, args),
     acceptInvite: (args: { token: string }) =>
-      client.action(api.orgs.acceptInvite, args),
+      client.action(api.functions.orgs.acceptInvite, args),
   };
 }

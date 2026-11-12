@@ -14,11 +14,19 @@ vi.mock("../../convex/_generated/server", () => ({
     ...config,
     handler: config.handler.bind(config),
   }),
-  mutationGeneric: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+  mutation: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
     ...config,
     handler: config.handler.bind(config),
   }),
-  queryGeneric: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+  internalAction: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+    ...config,
+    handler: config.handler.bind(config),
+  }),
+  internalMutation: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+    ...config,
+    handler: config.handler.bind(config),
+  }),
+  internalQuery: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
     ...config,
     handler: config.handler.bind(config),
   }),
@@ -50,15 +58,29 @@ const mockFetch = vi.fn();
 global.fetch = mockFetch as unknown as typeof fetch;
 
 function makeCtx() {
+  const mockQuery = vi.fn().mockReturnValue({
+    withIndex: vi.fn().mockReturnValue({
+      first: vi.fn().mockResolvedValue(null),
+    }),
+    filter: vi.fn().mockReturnValue({
+      order: vi.fn().mockReturnValue({
+        collect: vi.fn().mockResolvedValue([]),
+      }),
+    }),
+    order: vi.fn().mockReturnValue({
+      collect: vi.fn().mockResolvedValue([]),
+    }),
+    take: vi.fn().mockReturnValue({
+      collect: vi.fn().mockResolvedValue([]),
+    }),
+    collect: vi.fn().mockResolvedValue([]),
+  });
+
   return {
     auth: { getUserIdentity: async () => null },
     db: {
       insert: vi.fn().mockResolvedValue("invite_id"),
-      query: vi.fn().mockReturnValue({
-        withIndex: vi.fn().mockReturnValue({
-          first: vi.fn().mockResolvedValue(null),
-        }),
-      }),
+      query: mockQuery,
       withIndex: vi.fn(),
       filter: vi.fn(),
       first: vi.fn(),
@@ -67,6 +89,9 @@ function makeCtx() {
       patch: vi.fn(),
       get: vi.fn(),
     },
+    runQuery: vi.fn().mockResolvedValue(null),
+    runMutation: vi.fn().mockResolvedValue(undefined),
+    runAction: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -89,11 +114,13 @@ describe("orgs:create", () => {
 
   it("creates an org", async () => {
     const ctx = makeCtx();
-    ctx.db.insert.mockResolvedValueOnce({ id: "membership_id" });
+    ctx.db.insert
+      .mockResolvedValueOnce("org_id")
+      .mockResolvedValueOnce("membership_id");
     const { create } = await import("../../convex/functions/orgs");
     const result = await create.handler(ctx, { name: "Test", userId: "user_test" });
 
-    expect(result).toEqual({ orgId: "membership_id" });
+    expect(result).toEqual({ orgId: "org_id" });
   });
 });
 
@@ -141,22 +168,11 @@ describe("orgs:invite", () => {
     requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
 
     const ctx = makeCtx();
-    ctx.db.query.mockReturnValue({
-      withIndex: vi.fn().mockImplementation((indexName: string) => {
-        if (indexName === "by_org_user") {
-          return {
-            first: vi.fn().mockResolvedValue({
-              _id: "membership_1",
-              orgId: "org_test",
-              userId: "user_test",
-              role: "admin",
-            }),
-          };
-        }
-        return {
-          first: vi.fn().mockResolvedValue(null),
-        };
-      }),
+    ctx.runQuery.mockResolvedValueOnce({
+      _id: "membership_1",
+      orgId: "org_test",
+      userId: "user_test",
+      role: "admin",
     });
 
     mockFetch
@@ -200,11 +216,7 @@ describe("orgs:acceptInvite", () => {
     requireAuthenticatedUser.mockResolvedValue({ userId: "user_test" });
 
     const ctx = makeCtx();
-    ctx.db.query.mockReturnValue({
-      withIndex: vi.fn().mockReturnValue({
-        first: vi.fn().mockResolvedValue(null),
-      }),
-    });
+    ctx.runQuery.mockResolvedValue(null);
 
     const { acceptInvite } = await import("../../convex/functions/orgs");
     await expect(
@@ -216,20 +228,16 @@ describe("orgs:acceptInvite", () => {
     requireAuthenticatedUser.mockResolvedValue({ userId: "user_test" });
 
     const ctx = makeCtx();
-    ctx.db.query.mockReturnValue({
-      withIndex: vi.fn().mockReturnValue({
-        first: vi.fn().mockResolvedValue({
-          _id: "invite_123",
-          token: "expired_token",
-          orgId: "org_test",
-          orgName: "Test",
-          email: "test@example.com",
-          expiresAt: Date.now() - 1000,
-          createdAt: 0,
-          updatedAt: 0,
-          createdBy: "user_a",
-        }),
-      }),
+    ctx.runQuery.mockResolvedValueOnce({
+      _id: "invite_123",
+      token: "expired_token",
+      orgId: "org_test",
+      orgName: "Test",
+      email: "test@example.com",
+      expiresAt: Date.now() - 1000,
+      createdAt: 0,
+      updatedAt: 0,
+      createdBy: "user_a",
     });
 
     const { acceptInvite } = await import("../../convex/functions/orgs");
@@ -242,21 +250,24 @@ describe("orgs:acceptInvite", () => {
     requireAuthenticatedUser.mockResolvedValue({ userId: "user_test" });
 
     const ctx = makeCtx();
-    ctx.db.query.mockReturnValue({
-      withIndex: vi.fn().mockReturnValue({
-        first: vi.fn().mockResolvedValue({
-          _id: "invite_123",
-          token: "valid_token",
-          orgId: "org_test",
-          orgName: "Test",
-          email: "newuser@example.com",
-          expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
-          createdAt: 0,
-          updatedAt: 0,
-          createdBy: "user_a",
-        }),
-      }),
-    });
+    ctx.runQuery
+      .mockResolvedValueOnce({
+        _id: "invite_123",
+        token: "valid_token",
+        orgId: "org_test",
+        orgName: "Test",
+        email: "newuser@example.com",
+        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+        createdAt: 0,
+        updatedAt: 0,
+        createdBy: "user_a",
+      })
+      .mockResolvedValueOnce({
+        data: [
+          { id: "mem_1", user_id: "user_a" },
+          { id: "mem_2", user_id: "user_b" },
+        ],
+      });
 
     mockFetch.mockResolvedValueOnce({
       ok: true,

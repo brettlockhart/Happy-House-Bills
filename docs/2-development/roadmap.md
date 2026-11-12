@@ -1,8 +1,8 @@
 # Implementation Roadmap
 
 **Project:** Happy House Bills
-**Status:** Active
-**Last updated:** 30-October-2026
+**Status:** Active — Phase 1 complete; Phases 3–5 expansion complete
+**Last updated:** 07-November-2026
 
 Phases are sequential and build on one another. Each phase ends with a concrete milestone
 before the next begins. All work follows the doc lifecycle (`01-draft` → `02-in-progress` →
@@ -18,13 +18,13 @@ approve/reject expenses, record settlements, and see a real-time balance.
 
 **Dependencies:** None — this is the foundation.
 
-- [ ] **Project scaffolding**
+- [x] **Project scaffolding**
   - Nuxt 4 app at repo root with `nitro.preset: 'cloudflare-module'`
   - Convex project wiring (dev local, prod cloud)
-   - `@clerk/nuxt` integration
-   - `convex-vue` for Vue composables (Convex client reactivity in Nuxt)
-   - `convex` package for Convex backend functions
-   - `@convex-dev/r2` for R2 file storage
+  - `@clerk/nuxt` integration
+  - `convex-vue` for Vue composables (Convex client reactivity in Nuxt)
+  - `convex` package for Convex backend functions
+  - `@convex-dev/r2` for R2 file storage
 
 - [x] **Backend schema & auth**
   - `convex/schema.ts` with expenses, settlements tables (`orgId` scoped)
@@ -39,34 +39,29 @@ approve/reject expenses, record settlements, and see a real-time balance.
   - Soft-delete filtering on all queries (SEC-002)
 
 - [x] **Settlement API** (`settlements:create`, `settlements:list`)
-   - Records money transferred between partners
-   - Triggers email notification to recipient
-   - Draft: `docs/2-development/01-draft/d2-settlement-api.md`
+  - Records money transferred between partners
+  - Triggers email notification to recipient
 
 - [x] **Onboarding & organisation**
-   - User A signs up → creates organisation → generates invite link
-   - User B accepts via email (Resend)
-   - Both become members; exactly two members per organisation
-   - Draft: `docs/2-development/01-draft/d3-onboarding-flow.md`
+  - User A signs up → creates organisation → generates invite link
+  - User B accepts via email (Resend)
+  - Both become members; exactly two members per organisation
 
- - [x] **Receipt upload & OCR**
-   - `expenses:uploadReceipt` action → uploads to R2 via `@convex-dev/r2`
-   - Tesseract.js client-side OCR extracts store, date, total
-   - Pre-fills the Add Expense form
-   - Implemented: `docs/2-development/04-implemented/d4-receipt-upload-ocr.md`
+- [x] **Receipt upload & OCR**
+  - `expenses:uploadReceipt` action → uploads to R2 via `@convex-dev/r2`
+  - Tesseract.js client-side OCR extracts store, date, total
+  - Pre-fills the Add Expense form
 
- - [x] **Duplicate detection**
-   - dHash of receipt image compared against existing expenses in the same org
-   - Fingerprint check: `${store}|${date}|${total}`
-   - Near-duplicate check for manual entries (same date, amount within ±$0.01)
-   - Implemented: `docs/2-development/04-implemented/d5-duplicate-detection.md`
+- [x] **Duplicate detection**
+  - dHash of receipt image compared against existing expenses in the same org
+  - Fingerprint check: `${store}|${date}|${total}`
+  - Near-duplicate check for manual entries (same date, amount within ±$0.01)
 
 - [x] **Frontend UI**
-   - Single page, mobile-first
-   - Balance header (real-time via Convex subscription)
-   - Action buttons: "Add Expense" modal, "Settle Up" modal
-   - Entry list: chronological expenses + settlements, pending confirm/reject buttons
-    - Draft: `docs/2-development/04-implemented/d6-frontend-ui-shell.md`
+  - Single page, mobile-first
+  - Balance header (real-time via Convex subscription)
+  - Action buttons: "Add Expense" modal, "Settle Up" modal
+  - Entry list: chronological expenses + settlements, pending confirm/reject buttons
 
 - [x] **Email notifications** (Resend)
   - Expense created, approved, rejected
@@ -79,6 +74,7 @@ approve/reject expenses, record settlements, and see a real-time balance.
 
 - [x] **Mobile browser compatibility**
   - Works on iOS Safari and Android Chrome
+
 - [x] **Deployment < 10 minutes**
   - From clean repo to production
 
@@ -86,8 +82,10 @@ approve/reject expenses, record settlements, and see a real-time balance.
 other's expenses, settle up, and see their real-time balance on mobile browsers. Duplicate
 receipt detection warns on duplicates. Deploy from clean repo to production in under 10 minutes.
 
-**Completed slices:** D1 — Expense Management Foundation (`2-development/04-implemented/d1-expense-management.md`), D2 — Settlement API (`2-development/04-implemented/d2-settlement-api.md`), D3 — Onboarding Flow (`2-development/04-implemented/d3-onboarding-flow.md`), D4 — Receipt Upload & OCR (`2-development/04-implemented/d4-receipt-upload-ocr.md`), D5 — Duplicate Detection (`2-development/04-implemented/d5-duplicate-detection.md`), D6 — Frontend UI Shell (`2-development/04-implemented/d6-frontend-ui-shell.md`), D7 — Email Notifications (`2-development/04-implemented/d7-email-notifications.md`), D8 — CI/CD Pipeline (`2-development/04-implemented/d8-ci-cd-pipeline.md`), D9 — Mobile Browser Compatibility (`2-development/04-implemented/d9-mobile-browser-compat.md`), D10 — 10-Minute Deployment (`2-development/04-implemented/d10-10-minute-deployment.md`)
+**Completed slices:** D1 — Expense Management Foundation (`04-implemented/d1-expense-management.md`), D2 — Settlement API (`04-implemented/d2-settlement-api.md`), D3 — Onboarding Flow (`04-implemented/d3-onboarding-flow.md`), D4 — Receipt Upload & OCR (`04-implemented/d4-receipt-upload-ocr.md`), D5 — Duplicate Detection (`04-implemented/d5-duplicate-detection.md`), D6 — Frontend UI Shell (`04-implemented/d6-frontend-ui-shell.md`), D7 — Email Notifications (`04-implemented/d7-email-notifications.md`), D8 — CI/CD Pipeline (`04-implemented/d8-ci-cd-pipeline.md`), D9 — Mobile Browser Compatibility (`04-implemented/d9-mobile-browser-compat.md`), D10 — 10-Minute Deployment (`04-implemented/d10-10-minute-deployment.md`)
 
+| Slice | Draft → In-Progress | In-Progress → Review | Review → Implemented | Total Days | Status |
+|-------|---------------------|----------------------|---------------------|------------|--------|
 | D1 — Expense Management Foundation | 26-Oct | 26-Oct | 27-Oct | 2 days | Implemented |
 | D2 — Settlement API | 27-Oct | 27-Oct | 27-Oct | 1 day | Implemented |
 | D3 — Onboarding Flow | 26-Oct | 27-Oct | 28-Oct | 3 days | Implemented |
@@ -127,18 +125,31 @@ receipt detection warns on duplicates. Deploy from clean repo to production in u
 
 ---
 
+## Phase 3–5: Expansion (Post-MVP)
+
+**Goal:** Extend the product with advanced features, teams, integrations, analytics, and performance hardening.
+
+**Dependencies:** Phase 1 complete.
+
+**Completed slices:** D11 — Advanced Features (`04-implemented/d11-advanced-features.md`), D12 — Mobile-First UI/UX Shell (`04-implemented/d12-mobile-responsive-ui-shell.md`), D13 — Team Workspaces & Collaboration (`04-implemented/d13-team-workspaces-collaboration.md`), D14 — Advanced Integrations (`04-implemented/d14-advanced-integrations.md`), D15 — Advanced Analytics & Insights (`04-implemented/d15-advanced-analytics-insights.md`), D16 — Performance & Reliability (`04-implemented/d16-performance-reliability.md`)
+
+| Slice | Review → Implemented | Status |
+|-------|----------------------|--------|
+| D11 — Advanced Features | 03-November-2026 | Implemented |
+| D12 — Mobile-First UI/UX Shell | 04-November-2026 | Implemented |
+| D13 — Team Workspaces & Collaboration | 05-November-2026 | Implemented |
+| D14 — Advanced Integrations | 07-November-2026 | Implemented |
+| D15 — Advanced Analytics & Insights | 07-November-2026 | Implemented |
+| D16 — Performance & Reliability | 07-November-2026 | Implemented |
+
+> Note: Detailed draft→in-progress→review dates for D11–D16 were not consistently tracked in this table; promotion dates are recorded in `docs/2-development/README.md` and slice lifecycle reports.
+
+---
+
 ## Slice Cycle Time Tracking
 
 Track time from `01-draft` → `04-implemented` per slice to optimise process.
 
-| Slice | Draft → In-Progress | In-Progress → Review | Review → Implemented | Total Days | Status |
-|-------|---------------------|----------------------|---------------------|------------|--------|
-| D1 — Expense Management Foundation | 26-Oct | 26-Oct | 27-Oct | 2 days | Implemented |
-| D3 — Onboarding Flow | 26-Oct | 27-Oct | 28-Oct | 3 days | Implemented |
-| D4 — Receipt Upload & OCR | 28-Oct | 28-Oct | 28-Oct | 1 day | Implemented |
-| D5 — Duplicate Detection | 28-Oct | 28-Oct | 28-Oct | 1 day | Implemented |
-| D6 — Frontend UI Shell | 28-Oct | 28-Oct | 29-Oct | 2 days | Implemented |
-
 **Target:** < 5 days per slice (draft → implemented) for Phase 1.
 
-**Measurement:** Update this table on each `/slice-promote` with actual dates.
+**Measurement:** Update this table on each `/slice-promote` with actual dates. (Phase 1 details above; Phase 3–5 promotions recorded in slice docs.)

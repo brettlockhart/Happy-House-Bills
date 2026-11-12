@@ -1,35 +1,18 @@
 <script setup lang="ts">
 import { useAuth } from "~/composables/useAuth";
-import { formatCurrency } from "~/utils/formatting";
 import AddExpenseModal from "~/components/AddExpenseModal.vue";
 import EntryList from "~/components/EntryList.vue";
 import SettleUpModal from "~/components/SettleUpModal.vue";
+import AnalyticsDashboard from "~/components/AnalyticsDashboard.vue";
+import NotificationBell from "~/components/NotificationBell.vue";
 
-const { balance, owesWhom, data } = useBalance();
 const { userId, orgId } = useAuth();
 const { createExpense } = useExpenses();
 const { createSettlement } = useSettlements();
 
 const isAddModalOpen = ref(false);
 const isSettleModalOpen = ref(false);
-
-const partnerUserId = computed(() => {
-  if (!data.value) return "";
-  return data.value.owesWhom || "";
-});
-
-const balanceDisplay = computed(() => {
-  if (balance.value === 0) return "Balance: $0.00";
-  const sign = balance.value > 0 ? "+" : "-";
-  return `Balance: ${sign}${formatCurrency(Math.abs(balance.value))}`;
-});
-
-const owesDisplay = computed(() => {
-  if (!data.value || !owesWhom.value) return "";
-  if (balance.value > 0) return `You owe ${owesWhom.value}`;
-  if (balance.value < 0) return `${owesWhom.value} owes you`;
-  return "";
-});
+const isNotificationsOpen = ref(false);
 
 async function handleExpenseSubmit(expense: {
   amount: number;
@@ -45,7 +28,7 @@ async function handleExpenseSubmit(expense: {
 
   await createExpense({
     ...expense,
-    orgId: orgId.value,
+    receiptImageId: expense.receiptImageId as Id<"_storage"> | undefined,
   });
   isAddModalOpen.value = false;
 }
@@ -59,22 +42,23 @@ async function handleSettleSubmit(settlement: {
 
   await createSettlement({
     ...settlement,
-    orgId: orgId.value,
     date: new Date().toISOString(),
   });
   isSettleModalOpen.value = false;
+}
+
+function handleNotificationNavigate(path: string) {
+  navigateTo(path);
 }
 </script>
 
 <template>
   <div class="hhb-page">
     <header class="hhb-header">
-      <h1>Happy House Bills</h1>
-      <p v-if="data" class="hhb-balance">
-        {{ balanceDisplay }}
-        <span v-if="owesDisplay" class="hhb-balance-sub">{{ owesDisplay }}</span>
-      </p>
-      <p v-else>Loading...</p>
+      <div class="flex items-center justify-between">
+        <h1>Happy House Bills</h1>
+        <NotificationBell v-model="isNotificationsOpen" @navigate="handleNotificationNavigate" />
+      </div>
       <div class="hhb-actions">
         <button
           class="hhb-btn hhb-btn--primary"
@@ -94,6 +78,10 @@ async function handleSettleSubmit(settlement: {
 
     <div class="hhb-entry-list-container">
       <EntryList :current-user-id="userId ?? ''" />
+    </div>
+
+    <div class="hhb-analytics-section">
+      <AnalyticsDashboard />
     </div>
 
     <AddExpenseModal
@@ -170,6 +158,22 @@ async function handleSettleSubmit(settlement: {
   @media (min-width: 768px) {
     border-left: 1px solid var(--hhb-color-border);
     padding-left: var(--hhb-space-6);
+  }
+}
+
+.hhb-analytics-section {
+  margin-top: var(--hhb-space-6);
+  padding-top: var(--hhb-space-6);
+  border-top: 1px solid var(--hhb-color-border);
+}
+
+.hhb-analytics-section {
+  @media (min-width: 768px) {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--hhb-color-border);
+    border-left: none;
+    padding-left: var(--hhb-space-6);
+    padding-top: var(--hhb-space-6);
   }
 }
 </style>

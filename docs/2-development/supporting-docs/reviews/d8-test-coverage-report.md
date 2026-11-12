@@ -199,7 +199,7 @@ All 17 test files pass unchanged:
 - `__tests__/utils/imageUtils.test.ts`
 - `__tests__/components/SettleUpModal.test.ts`
 - `__tests__/components/EntryList.test.ts`
-- `__tests__/components/AddExpenseModal.spec.ts` (excluded from vitest run by config)
+- `__tests__/components/AddExpenseModal.test.ts`
 
 ---
 

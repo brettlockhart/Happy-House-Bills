@@ -31,13 +31,22 @@ vi.mock("../../convex/_generated/server", () => ({
     ...config,
     handler: config.handler.bind(config),
   }),
-  internal: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+  internalMutation: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
     ...config,
     handler: config.handler.bind(config),
   }),
+  internalAction: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+    ...config,
+    handler: config.handler.bind(config),
+  }),
+  action: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+    ...config,
+    handler: config.handler.bind(config),
+  }),
+  internal: {},
 }));
 
-vi.mock("../../convex/functions/shared-constants", () => ({
+vi.mock("../../convex/functions/shared_constants", () => ({
   checkPermission: vi.fn(() => true),
 }));
 
@@ -97,7 +106,7 @@ describe("integrations", () => {
 
     it("rejects without integration:read permission", async () => {
       requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
-      const { checkPermission } = await import("../../convex/functions/shared-constants");
+      const { checkPermission } = await import("../../convex/functions/shared_constants");
       (checkPermission as ReturnType<typeof vi.fn>).mockReturnValue(false);
       const { listIntegrations } = await import("../../convex/functions/integrations");
       await expect(

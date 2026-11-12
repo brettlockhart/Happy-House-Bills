@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 C:/Users/brett/Documents/Projects/Happy House Bills
+      Coverage enabled with v8
+
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  08:54:19
+   Duration  2.59s (environment 75%, setup 10%, tests 7%, worker 4%, transform 2%, import 2%)
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |    7.63 |     4.84 |    5.67 |    8.05 |                   
+ convex            |       0 |        0 |       0 |       0 |                   
+  auth.ts          |       0 |        0 |       0 |       0 | 3-38              
+  budgets.ts       |       0 |        0 |       0 |       0 | 9-217             
+  categories.ts    |       0 |        0 |       0 |       0 | 7-150             
+  health.ts        |       0 |      100 |       0 |       0 | 4-5               
+  http.ts          |       0 |        0 |       0 |       0 | 6-53              
+  reports.ts       |       0 |        0 |       0 |       0 | 16-152            
+ convex/functions  |   11.71 |     6.66 |    9.19 |   12.29 |                   
+  cleanup.ts       |       0 |      100 |       0 |       0 | 4-22              
+  clerk.ts         |   11.11 |        0 |       0 |   11.11 | 8-27              
+  ...eDetection.ts |       0 |        0 |       0 |       0 | 4-108             
+  email.ts         |    2.77 |        0 |       0 |    2.81 | 35,56-272,292     
+  expenses.ts      |       0 |        0 |       0 |       0 | 12-270            
+  formatting.ts    |       0 |        0 |       0 |       0 | 2-4               
+  orgs.ts          |       0 |        0 |       0 |       0 | 7-219             
+  settlements.ts   |       0 |        0 |       0 |       0 | 19-134            
+  teams.ts         |   55.88 |    41.66 |    42.1 |   56.43 | ...18,329,333,342 
+  uploadReceipt.ts |       0 |        0 |       0 |       0 | 5-208             
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 7.63% ( 60/786 )
+Branches     : 4.84% ( 25/516 )
+Functions    : 5.67% ( 8/141 )
+Lines        : 8.05% ( 60/745 )
+================================================================================

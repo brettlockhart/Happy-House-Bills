@@ -1,10 +1,24 @@
-import type { UserIdentity } from "../_generated/server";
+import type { UserIdentity } from "convex/server";
 
 const CLERK_ORG_ID = "org_id";
 
+function getBypassAuth(): { userId: string; orgId: string } | null {
+  // Explicit dev-only bypass. Set in Convex env for a NON-production deployment only.
+  if (process.env.AUTH_BYPASS !== "1") return null;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_BYPASS is not allowed in production");
+  }
+  const userId = process.env.AUTH_BYPASS_USER_ID?.trim() || "dev-user";
+  const orgId = process.env.AUTH_BYPASS_ORG_ID?.trim() || "dev-org";
+  return { userId, orgId };
+}
+
 export async function requireAuthenticatedUser(
-  ctx: { auth: { getUserIdentity: () => Promise<UserIdentity | null> } }
+  ctx: { auth: { getUserIdentity: () => Promise<UserIdentity | null> } },
 ): Promise<{ userId: string }> {
+  const bypass = getBypassAuth();
+  if (bypass) return { userId: bypass.userId };
+
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     throw new Error("Unauthenticated");
@@ -17,19 +31,20 @@ export async function requireAuthenticatedUser(
 }
 
 export async function requireAuthenticatedOrg(
-  ctx: { auth: { getUserIdentity: () => Promise<UserIdentity | null> } }
+  ctx: { auth: { getUserIdentity: () => Promise<UserIdentity | null> } },
 ): Promise<{ userId: string; orgId: string }> {
+  const bypass = getBypassAuth();
+  if (bypass) return bypass;
+
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     throw new Error("Unauthenticated");
   }
 
   const userId = identity.subject;
-
-  // Extract orgId from the Clerk JWT org_id claim.
-  // Requires a Clerk JWT template configured to include `org_id` as a custom claim.
-  // See: domains/01-auth/onboarding-auth.md §8 (Clerk JWT Template Configuration)
-  const orgId = (identity as Record<string, unknown>)[CLERK_ORG_ID] as string | undefined;
+  const orgId = (identity as Record<string, unknown>)[CLERK_ORG_ID] as
+    | string
+    | undefined;
 
   if (!userId || !orgId) {
     throw new Error("Unauthenticated or no organisation");

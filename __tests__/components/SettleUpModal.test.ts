@@ -83,7 +83,7 @@ describe("SettleUpModal", () => {
       },
     });
 
-    await wrapper.find("button[type=\"button\"]").trigger("click");
+    await wrapper.find("button[type=\"button\"]").element.click();
     expect(wrapper.emitted("close")).toBeTruthy();
   });
 
@@ -97,8 +97,10 @@ describe("SettleUpModal", () => {
       },
     });
 
-    await wrapper.find('input[type="number"]').setValue("25.50");
-    await wrapper.find("form").trigger("submit.prevent");
+    const input = wrapper.find('input[type="number"]').element as HTMLInputElement;
+    input.value = "25.50";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    await wrapper.find("form").element.dispatchEvent(new Event("submit", { cancelable: true }));
 
     expect(wrapper.emitted("submit")).toBeTruthy();
     const submitPayload = wrapper.emitted("submit")![0][0] as { amount: number; fromUser: string; toUser: string };
@@ -117,7 +119,7 @@ describe("SettleUpModal", () => {
       },
     });
 
-    await wrapper.find("form").trigger("submit.prevent");
+    await wrapper.find("form").element.dispatchEvent(new Event("submit", { cancelable: true }));
     expect(wrapper.emitted("submit")).toBeUndefined();
   });
 
@@ -131,8 +133,9 @@ describe("SettleUpModal", () => {
       },
     });
 
-    await wrapper.find('input[type="number"]').setValue("-10");
-    await wrapper.find("form").trigger("submit.prevent");
+    const input = wrapper.find('input[type="number"]').element as HTMLInputElement;
+    input.value = "-10";
+    await wrapper.find("form").element.dispatchEvent(new Event("submit", { cancelable: true }));
     expect(wrapper.emitted("submit")).toBeUndefined();
   });
 
@@ -146,9 +149,10 @@ describe("SettleUpModal", () => {
       },
     });
 
-    await wrapper.find('input[type="number"]').setValue("15");
-    await wrapper.find("form").trigger("submit.prevent");
-    // The component doesn't reset form internally, so we just verify emit
+    const input = wrapper.find('input[type="number"]').element as HTMLInputElement;
+    input.value = "15";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    await wrapper.find("form").element.dispatchEvent(new Event("submit", { cancelable: true }));
     expect(wrapper.emitted("submit")).toBeTruthy();
   });
 });

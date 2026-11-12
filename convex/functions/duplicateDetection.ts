@@ -1,7 +1,17 @@
-import type { GenericQueryCtx } from "../_generated/server";
-import type { Doc, Id } from "../_generated/dataModel";
+import type { Doc } from "../_generated/dataModel";
 
 const DHASH_HAMMING_THRESHOLD = 10;
+
+export function hammingDistance(a: string, b: string): number {
+  const len = Math.max(a.length, b.length);
+  let distance = 0;
+  for (let i = 0; i < len; i++) {
+    const ca = i < a.length ? a.charCodeAt(i) : 0;
+    const cb = i < b.length ? b.charCodeAt(i) : 0;
+    if (ca !== cb) distance++;
+  }
+  return distance;
+}
 
 interface DuplicateMatch {
   id: string;
@@ -19,91 +29,82 @@ interface DuplicateCheckInput {
   date?: string;
 }
 
+interface DuplicateCtx {
+  db: {
+    query: (table: "expenses") => {
+      withIndex: (
+        indexName: "by_org",
+        q: (q: { eq: (field: "orgId", value: string) => unknown }) => unknown,
+      ) => {
+        filter: (q: { eq: (field: string, value: unknown) => unknown }) => ({ collect: () => Promise<Doc<"expenses">[]> });
+      };
+    };
+  };
+}
+
 export async function runDuplicateCheck(
-  ctx: GenericQueryCtx,
-  expense: DuplicateCheckInput,
-): Promise<{
-  isDuplicate: boolean;
-  matches: DuplicateMatch[];
-}> {
-  if (
-    !expense.receiptPHash &&
-    !expense.receiptFingerprint &&
-    !(expense.amount && expense.date)
-  ) {
-    return { isDuplicate: false, matches: [] };
-  }
+  ctx: DuplicateCtx,
+  input: DuplicateCheckInput,
+): Promise<{ isDuplicate: boolean; matches: Array<DuplicateMatch> }> {
+  const matches: Array<DuplicateMatch> = [];
+  const seenIds = new Set<string>();
 
-  const existing = await ctx.db
-    .query("expenses")
-    .withIndex("by_org", (q) => q.eq("orgId", expense.orgId))
-    .filter((q) =>
-      q.and(
-        q.eq(q.field("deletedAt"), undefined),
-      ),
-    )
-    .collect();
+  const query = ctx.db.query("expenses");
 
-  const matches: DuplicateMatch[] = [];
+  if (input.orgId) {
+    const filtered = query.withIndex(
+      "by_org",
+      (q) => q.eq("orgId", input.orgId),
+    );
 
-  for (const exp of existing as (Doc<"expenses"> & { _id: Id<"expenses"> })[]) {
-    if (
-      exp.receiptFingerprint &&
-      expense.receiptFingerprint &&
-      exp.receiptFingerprint === expense.receiptFingerprint
-    ) {
-      matches.push({
-        id: exp._id.toString(),
-        store: exp.notes ?? null,
-        date: exp.date,
-        total: exp.amount,
-        status: exp.status,
-      });
-      continue;
+    if (input.receiptPHash) {
+      const candidates = filtered.filter((q) => q.eq("deletedAt", undefined)).collect() as Array<Doc<"expenses">>;
+      for (const exp of candidates) {
+        if (exp.receiptPHash && hammingDistance(input.receiptPHash, exp.receiptPHash) <= DHASH_HAMMING_THRESHOLD && !seenIds.has(exp._id)) {
+          seenIds.add(exp._id);
+          matches.push({
+            id: exp._id,
+            store: null,
+            date: exp.date,
+            total: exp.amount,
+            status: exp.status,
+          });
+        }
+      }
     }
 
-    if (
-      exp.receiptPHash &&
-      expense.receiptPHash &&
-      hammingDistance(exp.receiptPHash, expense.receiptPHash) <=
-        DHASH_HAMMING_THRESHOLD
-    ) {
-      matches.push({
-        id: exp._id.toString(),
-        store: exp.notes ?? null,
-        date: exp.date,
-        total: exp.amount,
-        status: exp.status,
-      });
+    if (input.receiptFingerprint) {
+      const candidates = filtered.filter((q) => q.eq("deletedAt", undefined)).collect() as Array<Doc<"expenses">>;
+      for (const exp of candidates) {
+        if (exp.receiptFingerprint && exp.receiptFingerprint === input.receiptFingerprint && !seenIds.has(exp._id)) {
+          seenIds.add(exp._id);
+          matches.push({
+            id: exp._id,
+            store: null,
+            date: exp.date,
+            total: exp.amount,
+            status: exp.status,
+          });
+        }
+      }
     }
 
-    if (
-      expense.amount !== undefined &&
-      expense.date &&
-      exp.date === expense.date &&
-      Math.abs(exp.amount - expense.amount) <= 0.01
-    ) {
-      const alreadyMatched = matches.some((m) => m.id === exp._id.toString());
-      if (!alreadyMatched) {
-        matches.push({
-          id: exp._id.toString(),
-          store: exp.notes ?? null,
-          date: exp.date,
-          total: exp.amount,
-          status: exp.status,
-        });
+    if (input.amount !== undefined && input.date) {
+      const candidates = filtered.filter((q) => q.eq("deletedAt", undefined)).collect() as Array<Doc<"expenses">>;
+      for (const exp of candidates) {
+        if (exp.amount === input.amount && exp.date === input.date && !seenIds.has(exp._id)) {
+          seenIds.add(exp._id);
+          matches.push({
+            id: exp._id,
+            store: null,
+            date: exp.date,
+            total: exp.amount,
+            status: exp.status,
+          });
+        }
       }
     }
   }
 
   return { isDuplicate: matches.length > 0, matches };
-}
-
-export function hammingDistance(hashA: string, hashB: string): number {
-  const maxLen = Math.max(hashA.length, hashB.length);
-  let distance = 0;
-  for (let i = 0; i < maxLen; i++) {
-    if (hashA[i] !== hashB[i]) distance++;
-  }
-  return distance;
 }

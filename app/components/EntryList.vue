@@ -4,6 +4,8 @@ import { useExpenses, usePendingExpenses } from "~/composables/useExpenses";
 import { useSettlements } from "~/composables/useSettlements";
 import { formatCurrency, formatRelativeDate } from "~/utils/formatting";
 
+import type { Id } from "~/convex/_generated/dataModel";
+
 const props = withDefaults(defineProps<{
   currentUserId?: string;
 }>(), {
@@ -17,7 +19,7 @@ const { data: settlements } = useSettlements();
 const entries = computed(() => {
   const all: Array<{
     type: "expense" | "settlement";
-    id: string;
+    id: Id<"expenses"> | Id<"settlements">;
     date: string;
     amount: number;
     description: string;
@@ -57,15 +59,15 @@ const entries = computed(() => {
   return all.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 });
 
-async function handleApprove(expense: { id: string; type: "expense" | "settlement" }) {
+async function handleApprove(expense: { id: Id<"expenses"> | Id<"settlements">; type: "expense" | "settlement" }) {
   if (expense.type === "expense") {
-    await approveExpense(expense.id);
+    await approveExpense({ expenseId: expense.id as Id<"expenses"> });
   }
 }
 
-async function handleReject(expense: { id: string; type: "expense" | "settlement" }) {
+async function handleReject(expense: { id: Id<"expenses"> | Id<"settlements">; type: "expense" | "settlement" }) {
   if (expense.type === "expense") {
-    await rejectExpense(expense.id);
+    await rejectExpense({ expenseId: expense.id as Id<"expenses"> });
   }
 }
 </script>

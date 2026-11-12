@@ -1,9 +1,13 @@
+import { computed } from "vue";
 import { useConvexQuery, useConvexMutation } from "convex-vue";
 import { api } from "~/convex/_generated/api";
-import type { BalanceResult, Expense } from "~/convex/_generated/api";
+import type { Doc } from "~/convex/_generated/dataModel";
+
+type Expense = Doc<"expenses">;
+type BalanceResult = { balance: number; owesWhom: string };
 
 export function useBalance() {
-  const result = useConvexQuery(api.expenses.balance, {});
+  const result = useConvexQuery(api.functions.expenses.balance, {});
   return {
     data: computed(() => result.data.value as BalanceResult | undefined),
     balance: computed(() => (result.data.value as BalanceResult | undefined)?.balance ?? 0),
@@ -13,8 +17,8 @@ export function useBalance() {
 }
 
 export function useExpenses() {
-  const result = useConvexQuery(api.expenses.list, {});
-  const createMutation = useConvexMutation(api.expenses.create);
+  const result = useConvexQuery(api.functions.expenses.list, {});
+  const createMutation = useConvexMutation(api.functions.expenses.create);
 
   return {
     data: computed(() => (result.data.value as Expense[] | undefined) ?? []),
@@ -24,9 +28,9 @@ export function useExpenses() {
 }
 
 export function usePendingExpenses() {
-  const result = useConvexQuery(api.expenses.pending, {});
-  const approveMutation = useConvexMutation(api.expenses.approve);
-  const rejectMutation = useConvexMutation(api.expenses.reject);
+  const result = useConvexQuery(api.functions.expenses.pending, {});
+  const approveMutation = useConvexMutation(api.functions.expenses.approve);
+  const rejectMutation = useConvexMutation(api.functions.expenses.reject);
 
   return {
     data: computed(() => (result.data.value as Expense[] | undefined) ?? []),

@@ -1,4 +1,4 @@
-import { query } from "convex/server";
+import { query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedOrg } from "./auth";
 
@@ -92,8 +92,8 @@ export const exportReportCsv = query({
 
     filtered.sort((a, b) => b.date.localeCompare(a.date));
 
-    // Generate CSV with proper escaping
-    const headers = ["Date", "Category", "Amount", "Paid By", "Status", "Notes", "Receipt"];
+    // Generate CSV with proper escaping. Avoid exporting direct PII/user identifiers.
+    const headers = ["Date", "Category", "Amount", "Status", "Has Receipt"];
     const escapeCsv = (val: string) => {
       if (val.includes(",") || val.includes('"') || val.includes("\n") || val.includes("\r")) {
         return '"' + val.replace(/"/g, '""') + '"';
@@ -104,9 +104,7 @@ export const exportReportCsv = query({
       escapeCsv(exp.date),
       escapeCsv(exp.category),
       escapeCsv((exp.amount / 100).toFixed(2)),
-      escapeCsv(exp.paidBy),
       escapeCsv(exp.status),
-      escapeCsv(exp.notes || ""),
       escapeCsv(exp.receiptImageId ? "Yes" : "No"),
     ]);
 

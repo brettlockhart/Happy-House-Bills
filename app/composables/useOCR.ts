@@ -55,7 +55,7 @@ export function useOCR() {
 
       state.value = { status: "uploading", progress: 40 };
 
-      const uploadResult = (await client.action(api.uploadReceipt, {
+      const uploadResult = (await client.action(api.functions.uploadReceipt.uploadReceipt, {
         image: base64,
         contentType: "image/jpeg",
       })) as UploadResult;

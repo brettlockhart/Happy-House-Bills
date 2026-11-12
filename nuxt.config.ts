@@ -36,6 +36,9 @@ export default defineNuxtConfig({
     public: {
       clerkPublishableKey: process.env.NUXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
       convexUrl: process.env.CONVEX_URL,
+      authBypass: process.env.NUXT_PUBLIC_AUTH_BYPASS === "1",
+      authBypassUserId: process.env.NUXT_PUBLIC_AUTH_BYPASS_USER_ID || "dev-user",
+      authBypassOrgId: process.env.NUXT_PUBLIC_AUTH_BYPASS_ORG_ID || "dev-org",
     },
     clerkSecretKey: process.env.NUXT_CLERK_SECRET_KEY,
     resendApiKey: process.env.RESEND_API_KEY,

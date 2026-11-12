@@ -1,7 +1,6 @@
-import { httpAction } from "convex/server";
-import type { HttpAction } from "convex/server";
+import { httpAction } from "./_generated/server";
 
-export const healthCheck: HttpAction = httpAction(async () => {
+export const healthCheck = httpAction(async () => {
   return new Response(JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }), {
     status: 200,
     headers: {

@@ -29,7 +29,7 @@ updated: 29-October-2026
 | **Blocks** | None — leaf slice at end of Phase 1 |
 | **Lifecycle** | `04-implemented` |
 | **Files created** | `app/app.vue`, `app/components/EntryList.vue`, `app/components/SettleUpModal.vue`, `app/assets/css/tokens.css`, `app/utils/formatting.ts`, `__tests__/components/EntryList.test.ts`, `__tests__/utils/formatting.test.ts` |
-| **Files modified** | `app/pages/index.vue`, `app/middleware/auth.global.ts`, `nuxt.config.ts`, `__tests__/components/AddExpenseModal.spec.ts` |
+| **Files modified** | `app/pages/index.vue`, `app/middleware/auth.global.ts`, `nuxt.config.ts`, `__tests__/components/AddExpenseModal.test.ts` |
 
 ---
 
@@ -123,7 +123,7 @@ Existing test coverage verified:
 
 - `__tests__/components/EntryList.test.ts` — 2 tests: empty state rendering and `formatCurrency` formatting (no longer a no-op).
 - `__tests__/utils/formatting.test.ts` — 11 tests covering `formatCurrency`, `formatDate`, and `formatRelativeDate`.
-- `__tests__/components/AddExpenseModal.spec.ts` — 5 tests for modal visibility, heading, close/submit events.
+- `__tests__/components/AddExpenseModal.test.ts` — 5 tests for modal visibility, heading, close/submit events.
 - **Total:** 183 tests, all passing.
 
 **Remaining LOW (non-blocking):** No dedicated test file exists for `SettleUpModal.vue`. The `formatDate` utility still only accepts `string | number` (not `Date` objects). These are tracked as test-improvement items for Phase 2.
@@ -193,7 +193,7 @@ The spec proposal accurately describes the intended implementation. The implemen
 |------|-------|----------------|
 | `__tests__/components/EntryList.test.ts` | 2 | Empty state; `formatCurrency` formatting |
 | `__tests__/utils/formatting.test.ts` | 11 | Currency, date, relative-date formatting |
-| `__tests__/components/AddExpenseModal.spec.ts` | 5 | Modal visibility, heading, close/submit events |
+| `__tests__/components/AddExpenseModal.test.ts` | 5 | Modal visibility, heading, close/submit events |
 | **New tests for D6** | **18** |  |
 | **Total project tests** | **183** | All passing |
 

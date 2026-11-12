@@ -4,7 +4,7 @@ import MobileDashboard from "~/pages/MobileDashboard.vue";
 
 // Mock composables
 vi.mock("~/composables/useResponsiveStore", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = await importOriginal() as unknown;
   return {
     ...actual,
     useResponsiveStore: vi.fn(() => {
@@ -29,7 +29,7 @@ vi.mock("~/composables/useResponsiveStore", async (importOriginal) => {
 });
 
 vi.mock("~/composables/useOfflineState", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = await importOriginal() as unknown;
   return {
     ...actual,
     useOfflineState: vi.fn(() => {
@@ -51,7 +51,7 @@ vi.mock("~/composables/useOfflineState", async (importOriginal) => {
 });
 
 vi.mock("~/composables/useAccessibility", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = await importOriginal() as unknown;
   return {
     ...actual,
     useAccessibility: vi.fn(() => {
@@ -70,7 +70,7 @@ vi.mock("~/composables/useAccessibility", async (importOriginal) => {
 });
 
 vi.mock("~/components/mobile/ResponsiveLayout.vue", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = await importOriginal() as unknown;
   return {
     ...actual,
     default: {
@@ -173,7 +173,7 @@ describe("MobileDashboard.vue", () => {
   it("shows reconnection message when offline", async () => {
     // Update offline state mock
     vi.mock("~/composables/useOfflineState", async (importOriginal) => {
-      const actual = await importOriginal() as any;
+      const actual = await importOriginal() as unknown;
       return {
         ...actual,
         useOfflineState: vi.fn(() => {

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useAuth } from "~/composables/useAuth";
-import { SignIn } from "@clerk/vue";
+import NotificationToast from "~/components/NotificationToast.vue";
 
 const { isSignedIn, isLoaded, hasOrg } = useAuth();
+const SignIn = defineAsyncComponent(async () => (await import("@clerk/vue")).SignIn);
 </script>
 
 <template>
@@ -12,6 +13,7 @@ const { isSignedIn, isLoaded, hasOrg } = useAuth();
   <SignIn v-else-if="!isSignedIn" />
   <NuxtLayout v-else-if="hasOrg">
     <NuxtPage />
+    <NotificationToast />
   </NuxtLayout>
   <NuxtPage v-else />
 </template>

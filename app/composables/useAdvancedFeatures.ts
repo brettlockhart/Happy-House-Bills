@@ -1,7 +1,17 @@
 import { computed, ref } from "vue";
 import { useConvexQuery, useConvexMutation } from "convex-vue";
 import { api } from "~/convex/_generated/api";
-import type { Category, Budget, ExpenseSummary, Expense } from "~/convex/_generated/api";
+import type { Doc } from "~/convex/_generated/dataModel";
+
+type Category = Doc<"categories">;
+type Budget = Doc<"budgets">;
+type Expense = Doc<"expenses">;
+type ExpenseSummary = {
+  total: number;
+  byCategory: Record<string, number>;
+  byMonth: Record<string, number>;
+  byPayer: Record<string, number>;
+};
 
 export function useCategories() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

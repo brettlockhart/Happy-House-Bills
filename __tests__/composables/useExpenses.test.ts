@@ -15,11 +15,13 @@ vi.mock("convex-vue", () => ({
 
 vi.mock("~/convex/_generated/api", () => ({
   api: {
-    expenses: {
-      create: { _name: "create" },
-      list: { _name: "list" },
-      pending: { _name: "pending" },
-      balance: { _name: "balance" },
+    functions: {
+      expenses: {
+        create: { _name: "create" },
+        list: { _name: "list" },
+        pending: { _name: "pending" },
+        balance: { _name: "balance" },
+      },
     },
   },
   BalanceResult: {} as never,

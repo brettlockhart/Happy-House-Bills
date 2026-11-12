@@ -1,13 +1,15 @@
-import { ref, computed, readonly } from "vue";
+import { ref, readonly, type Ref } from "vue";
+
+type SyncStatus = "idle" | "syncing" | "failed" | "completed";
 
 export interface OfflineState {
-  isOnline: boolean;
-  wasOffline: boolean;
-  queuedActions: Array<() => Promise<void>>;
-  syncStatus: "idle" | "syncing" | "failed" | "completed";
-  retryCount: number;
-  maxRetries: number;
-  lastSyncTime: Date | null;
+  isOnline: Readonly<Ref<boolean>>;
+  wasOffline: Readonly<Ref<boolean>>;
+  queuedActions: Readonly<Ref<readonly (() => Promise<void>)[]>>;
+  syncStatus: Readonly<Ref<SyncStatus>>;
+  retryCount: Readonly<Ref<number>>;
+  maxRetries: Readonly<Ref<number>>;
+  lastSyncTime: Readonly<Ref<Date | null>>;
   sync: () => Promise<void>;
   addToQueue: (action: () => Promise<void>) => void;
   removeFromQueue: (index: number) => void;
@@ -17,7 +19,7 @@ export interface OfflineState {
 const isOnlineState = ref<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true);
 const wasOfflineState = ref<boolean>(false);
 const queuedActions = ref<Array<() => Promise<void>>>([]);
-const syncStatusState = ref<OfflineState["syncStatus"]>("idle");
+const syncStatusState = ref<SyncStatus>("idle");
 const retryCountState = ref<number>(0);
 const maxRetriesState = ref<number>(3);
 const lastSyncTimeState = ref<Date | null>(null);
@@ -38,9 +40,12 @@ const sync = async () => {
   try {
     for (let i = 0; i < queuedActions.value.length; i++) {
       try {
-        await queuedActions.value[i]();
-        queuedActions.value.splice(i, 1);
-        i--;
+        const action = queuedActions.value[i];
+        if (action) {
+          await action();
+          queuedActions.value.splice(i, 1);
+          i--;
+        }
       } catch (error) {
         retryCountState.value++;
         if (retryCountState.value >= maxRetriesState.value) {
@@ -64,7 +69,7 @@ const addToQueue = (action: () => Promise<void>) => {
   queuedActions.value.push(action);
   if (!isOnlineState.value) {
     syncStatusState.value = "syncing";
-    sync();
+    void sync().catch(() => {});
   }
 };
 

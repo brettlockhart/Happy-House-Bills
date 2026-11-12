@@ -109,7 +109,7 @@ Per `domains/01-auth/onboarding-auth.md` §8.1, the Clerk JWT template must incl
 | `app/pages/index.vue` | Create — balance header + AddExpense button |
 | `__tests__/convex/expenses.test.ts` | Create — 49 Convex function tests (11 SEC-XXX security tests) |
 | `__tests__/composables/useExpenses.test.ts` | Create — composable tests |
-| `__tests__/components/AddExpenseModal.spec.ts` | Create — component tests |
+| `__tests__/components/AddExpenseModal.test.ts` | Create — component tests |
 | `vitest.config.ts` | Create — test + coverage configuration |
 | `tsconfig.json` | Modify — added `~/convex/*` path alias |
 

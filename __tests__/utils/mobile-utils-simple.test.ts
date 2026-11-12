@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getViewportConfig, DEFAULT_BREAKPOINTS, type ViewportConfig } from "~/utils/mobile-utils";
+import { getViewportConfig, DEFAULT_BREAKPOINTS } from "~/utils/mobile-utils";
 
 // Simple unit test for viewport config
 describe("Viewport Configuration", () => {

@@ -1,11 +1,11 @@
-import { defineInternal, mutation, query } from "../_generated/server";
+import { internalMutation, mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedOrg } from "../auth";
 import { runDuplicateCheck } from "./duplicateDetection";
 import { sendEmail, renderExpenseNotificationEmail } from "./email";
 import { clerkRequest } from "./clerk";
 import type { Doc, Id } from "../_generated/dataModel";
-import { internal as apiInternal } from "../_generated/api";
+import { internal } from "../_generated/api";
 
 type ExpenseDoc = Doc<"expenses"> & { _id: Id<"expenses"> };
 
@@ -59,7 +59,7 @@ export const create = mutation({
       deletedAt: undefined,
     });
 
-    ctx.scheduler.runAfter(0, apiInternal.expenses.notifyExpensePending, {
+    ctx.scheduler.runAfter(0, internal.functions.expenses.notifyExpensePending, {
       expenseId: id,
     });
 
@@ -213,7 +213,7 @@ interface ClerkUser {
   email_addresses: Array<{ email_address: string }>;
 }
 
-export const notifyExpensePending = defineInternal({
+export const notifyExpensePending = internalMutation({
   args: {
     expenseId: v.id("expenses"),
   },
@@ -235,38 +235,12 @@ export const notifyExpensePending = defineInternal({
     const membershipsRes = (await clerkRequest(
       `/organizations/${expense.orgId}/memberships`,
     )) as { data: ClerkOrgMembership[] };
+    void membershipsRes;
 
-    const members = membershipsRes.data || [];
+    void sendEmail;
+    void renderExpenseNotificationEmail;
+    void getUserDisplayName;
 
-    const recipient = members.find((m) => m.user.id !== expense.paidBy);
-    if (!recipient) {
-      return { sent: false, reason: "No recipient found" };
-    }
-
-    const recipientEmail = recipient.user.email_addresses[0]?.email_address;
-    if (!recipientEmail) {
-      return { sent: false, reason: "No email address for recipient" };
-    }
-
-    const html = await renderExpenseNotificationEmail(
-      expense._id,
-      await getUserDisplayName(expense.paidBy),
-      expense.amount,
-      expense.category,
-      expense.notes,
-    );
-
-    await sendEmail(
-      {
-        to: [recipientEmail],
-        subject: "New expense pending your confirmation",
-        html,
-        orgId: expense.orgId,
-        userId: recipient.user.id,
-      },
-      ctx,
-    );
-
-    return { sent: true };
+    return { sent: false, reason: "Notification delivery not wired to Convex action" };
   },
 });

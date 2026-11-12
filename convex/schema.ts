@@ -26,6 +26,8 @@ export default defineSchema({
   })
   .index("by_org", ["orgId"])
   .index("by_org_date", ["orgId", "date"])
+  .index("by_org_status_date", ["orgId", "status", "date"])
+  .index("by_org_deletedAt_status", ["orgId", "deletedAt", "status"])
   .index("by_receiptImageId", ["receiptImageId"]),
 
   settlements: defineTable({
@@ -215,4 +217,24 @@ export default defineSchema({
     .index("by_integration", ["integrationId"])
     .index("by_status", ["status"])
     .index("by_created", ["createdAt"]),
+
+  notifications: defineTable({
+    orgId: v.string(),
+    userId: v.string(),
+    type: v.union(
+      v.literal("expense_pending"),
+      v.literal("expense_approved"),
+      v.literal("expense_rejected"),
+      v.literal("settlement_created"),
+      v.literal("invite_sent"),
+    ),
+    title: v.string(),
+    body: v.string(),
+    data: v.optional(v.any()),
+    read: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_org_user_read", ["orgId", "userId", "read"])
+    .index("by_org_user_created", ["orgId", "userId", "createdAt"])
+    .index("by_createdAt", ["createdAt"]),
 });

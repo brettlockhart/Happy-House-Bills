@@ -281,8 +281,8 @@ describe("EntryList", () => {
       props: { currentUserId: "user1" },
     });
 
-    await wrapper.find('[aria-label="Approve expense"]').trigger("click");
-    expect(mockApprove).toHaveBeenCalledWith("exp1");
+    await wrapper.find('[aria-label="Approve expense"]').element.click();
+    expect(mockApprove).toHaveBeenCalledWith({ expenseId: "exp1" });
   });
 
   it("calls rejectExpense when reject button clicked", async () => {
@@ -305,8 +305,8 @@ describe("EntryList", () => {
       props: { currentUserId: "user1" },
     });
 
-    await wrapper.find('[aria-label="Reject expense"]').trigger("click");
-    expect(mockReject).toHaveBeenCalledWith("exp1");
+    await wrapper.find('[aria-label="Reject expense"]').element.click();
+    expect(mockReject).toHaveBeenCalledWith({ expenseId: "exp1" });
   });
 
   it("falls back to category when notes is empty", () => {
