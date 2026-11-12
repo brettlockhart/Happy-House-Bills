@@ -1,11 +1,11 @@
 ---
-status: Draft
+status: In Progress
 package: app
 priority: high
 created: 11-November-2026
-updated: 11-November-2026
+updated: 12-November-2026
 tags: [ocr, line-items, receipts, phase2]
-lifecycle: 01-draft
+lifecycle: 02-in-progress
 ---
 
 # Slice D19: Line-Item Extraction from Receipts

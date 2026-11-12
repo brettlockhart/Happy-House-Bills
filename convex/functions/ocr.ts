@@ -122,6 +122,15 @@ interface DocumentAIResponse {
         layout: { confidence: number; boundingPoly: { vertices: Array<{ x: number; y: number }> } };
         textAnchor: { textSegments: Array<{ startIndex: string; endIndex: string }> };
       }>;
+      lineItems: Array<{
+        textAnchor: { textSegments: Array<{ startIndex: string; endIndex: string }> };
+        properties: Array<{
+          type: string;
+          mentionText: string;
+          confidence: number;
+          textAnchor: { textSegments: Array<{ startIndex: string; endIndex: string }> };
+        }>;
+      }>;
     }>;
     entities: Array<{
       type: string;
@@ -132,6 +141,16 @@ interface DocumentAIResponse {
   };
 }
 
+interface LineItem {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  categoryHint: 'groceries' | 'utilities' | 'other';
+  confidence: number;
+  lowConfidence: boolean;
+}
+
 interface OcrResult {
   store?: string;
   date?: string;
@@ -139,6 +158,7 @@ interface OcrResult {
   confidence: number;
   rawText: string;
   lowConfidence: boolean;
+  lineItems: LineItem[];
 }
 
 function extractText(textAnchor: { textSegments: Array<{ startIndex: string; endIndex: string }> }, fullText: string): string {
@@ -152,6 +172,84 @@ function extractText(textAnchor: { textSegments: Array<{ startIndex: string; end
     }
   }
   return result.trim();
+}
+
+function inferCategoryFromDescription(description: string): 'groceries' | 'utilities' | 'other' {
+  const lower = description.toLowerCase();
+  const groceryKeywords = ['grocery', 'food', 'market', 'supermarket', 'produce', 'meat', 'dairy', 'bakery', 'deli', 'frozen', 'beverage', 'snack', 'fruit', 'vegetable', 'bread', 'milk', 'cheese', 'egg', 'yogurt', 'juice', 'water', 'soda', 'coffee', 'tea', 'wine', 'beer', 'liquor', 'alcohol'];
+  const utilityKeywords = ['electric', 'electricity', 'gas', 'water', 'sewer', 'trash', 'garbage', 'waste', 'internet', 'cable', 'phone', 'telephone', 'mobile', 'utility', 'power', 'heating', 'cooling', 'hvac'];
+  for (const kw of groceryKeywords) {
+    if (lower.includes(kw)) return 'groceries';
+  }
+  for (const kw of utilityKeywords) {
+    if (lower.includes(kw)) return 'utilities';
+  }
+  return 'other';
+}
+
+function extractLineItems(document: DocumentAIResponse["document"]): LineItem[] {
+  const lineItems: LineItem[] = [];
+
+  for (const page of document.pages || []) {
+    for (const item of page.lineItems || []) {
+      let description = "";
+      let quantity = 1;
+      let unitPrice = 0;
+      let totalPrice = 0;
+      let confidenceSum = 0;
+      let confidenceCount = 0;
+
+      for (const prop of item.properties || []) {
+        const propType = prop.type.toLowerCase();
+        const propText = prop.mentionText?.trim();
+        const propConf = prop.confidence || 0;
+
+        if (!propText) continue;
+
+        confidenceSum += propConf;
+        confidenceCount++;
+
+        if (propType.includes("description") || propType === "line_item/description") {
+          description = propText;
+        } else if (propType.includes("quantity") || propType === "line_item/quantity") {
+          const qty = parseFloat(propText.replace(/[^\d.]/g, ""));
+          if (!isNaN(qty)) quantity = qty;
+        } else if (propType.includes("unit_price") || propType.includes("unit price") || propType === "line_item/unit_price") {
+          const price = parseFloat(propText.replace(/[^\d.]/g, ""));
+          if (!isNaN(price)) unitPrice = price;
+        } else if (propType.includes("amount") || propType.includes("total") || propType === "line_item/amount" || propType === "line_item/total_price") {
+          const price = parseFloat(propText.replace(/[^\d.]/g, ""));
+          if (!isNaN(price)) totalPrice = price;
+        }
+      }
+
+      if (!description) continue;
+
+      if (totalPrice === 0 && unitPrice > 0 && quantity > 0) {
+        totalPrice = unitPrice * quantity;
+      } else if (unitPrice === 0 && totalPrice > 0 && quantity > 0) {
+        unitPrice = totalPrice / quantity;
+      } else if (unitPrice === 0 && totalPrice === 0) {
+        continue;
+      }
+
+      const avgConfidence = confidenceCount > 0 ? confidenceSum / confidenceCount : 0;
+      const lowConfidence = avgConfidence < 0.6;
+      const categoryHint = inferCategoryFromDescription(description);
+
+      lineItems.push({
+        description,
+        quantity,
+        unitPrice,
+        totalPrice,
+        categoryHint,
+        confidence: avgConfidence,
+        lowConfidence,
+      });
+    }
+  }
+
+  return lineItems;
 }
 
 function extractEntities(document: DocumentAIResponse["document"]): OcrResult {
@@ -258,6 +356,7 @@ function extractEntities(document: DocumentAIResponse["document"]): OcrResult {
 
   const avgConfidence = confidenceCount > 0 ? confidenceSum / confidenceCount : 0;
   const lowConfidence = avgConfidence < 60;
+  const lineItems = extractLineItems(document);
 
   return {
     store,
@@ -266,6 +365,7 @@ function extractEntities(document: DocumentAIResponse["document"]): OcrResult {
     confidence: avgConfidence,
     rawText,
     lowConfidence,
+    lineItems,
   };
 }
 

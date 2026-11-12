@@ -3,17 +3,31 @@ import { useConvexClient } from "convex-vue";
 import { api } from "~/convex/_generated/api";
 import { applyOcrToForm, parseOcrText } from "~/utils/ocrParser";
 
+export interface LineItem {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  categoryHint: "groceries" | "utilities" | "other";
+  confidence: number;
+  lowConfidence: boolean;
+}
+
+export interface OcrResult {
+  store?: string;
+  date?: string;
+  total?: string;
+  rawText?: string;
+  storageId?: string;
+  confidence?: number;
+  lowConfidence?: boolean;
+  lineItems?: LineItem[];
+}
+
 export interface OcrState {
   status: "idle" | "preprocessing" | "uploading" | "processing" | "done" | "error";
   progress: number;
-  result?: {
-    store?: string;
-    date?: string;
-    total?: string;
-    storageId?: string;
-    confidence?: number;
-    lowConfidence?: boolean;
-  };
+  result?: OcrResult;
   error?: string;
 }
 
@@ -66,7 +80,7 @@ export function useGoogleOCR() {
 
       state.value = { status: "processing", progress: 50, result: state.value.result };
 
-      let ocrResult: { store?: string; date?: string; total?: string; confidence: number; rawText: string; lowConfidence?: boolean };
+      let ocrResult: OcrResult;
 
       try {
         ocrResult = await client.action(api.functions.ocr.processReceipt, {
@@ -89,7 +103,7 @@ export function useGoogleOCR() {
       };
 
       return applyOcrToForm(
-        { store: ocrResult.store, date: ocrResult.date, total: ocrResult.total, raw: ocrResult.rawText },
+        { store: ocrResult.store, date: ocrResult.date, total: ocrResult.total, raw: ocrResult.rawText ?? "" },
         form,
       );
     } catch (e: unknown) {
@@ -102,7 +116,7 @@ export function useGoogleOCR() {
     }
   }
 
-  async function processWithTesseract(file: File): Promise<{ store?: string; date?: string; total?: string; confidence: number; rawText: string }> {
+  async function processWithTesseract(file: File): Promise<OcrResult> {
     const Tesseract = (await import("tesseract.js")).default;
     const dataUrl = await fileToDataUrl(file);
 
@@ -126,6 +140,7 @@ export function useGoogleOCR() {
       total: ocrResult.total,
       confidence: 70,
       rawText: text,
+      lineItems: [],
     };
   }
 

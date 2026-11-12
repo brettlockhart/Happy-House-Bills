@@ -489,6 +489,128 @@ describe("extractEntities (via processReceipt)", () => {
     expect(result.confidence).toBeCloseTo((0.8 + 0.9) / 2);
   });
 
+  it("extracts line items from document AI line item entities", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+    mockProcessDocument.mockResolvedValue([
+      {
+        document: {
+          text: "WALMART SUPERCENTER\nLine items:\n2x Milk $6.00\n3x Bread $5.00\nTotal $45.99",
+          entities: [
+            { type: "invoice_total", mentionText: "$45.99", confidence: 0.95 },
+          ],
+          pages: [
+            {
+              lineItems: [
+                {
+                  textAnchor: { textSegments: [{ startIndex: "0", endIndex: "3" }] },
+                  properties: [
+                    { type: "line_item/description", mentionText: "Milk", confidence: 0.9 },
+                    { type: "line_item/quantity", mentionText: "2", confidence: 0.85 },
+                    { type: "line_item/unit_price", mentionText: "$6.00", confidence: 0.9 },
+                    { type: "line_item/amount", mentionText: "$12.00", confidence: 0.9 },
+                  ],
+                },
+                {
+                  textAnchor: { textSegments: [{ startIndex: "4", endIndex: "9" }] },
+                  properties: [
+                    { type: "line_item/description", mentionText: "Bread", confidence: 0.8 },
+                    { type: "line_item/quantity", mentionText: "3", confidence: 0.75 },
+                    { type: "line_item/unit_price", mentionText: "$5.00", confidence: 0.8 },
+                    { type: "line_item/amount", mentionText: "$15.00", confidence: 0.8 },
+                  ],
+                },
+              ],
+              formFields: [],
+              paragraphs: [],
+            },
+          ],
+        },
+      },
+    ]);
+
+    const { processReceipt } = await importOcr();
+    const result = await processReceipt.handler(makeCtx(), {
+      image: VALID_JPEG_BASE64,
+      contentType: "image/jpeg",
+    });
+
+    expect(result.lineItems).toHaveLength(2);
+    expect(result.lineItems![0]).toMatchObject({
+      description: "Milk",
+      quantity: 2,
+      unitPrice: 6,
+      totalPrice: 12,
+      categoryHint: "groceries",
+      lowConfidence: false,
+    });
+    expect(result.lineItems![1]).toMatchObject({
+      description: "Bread",
+      quantity: 3,
+      unitPrice: 5,
+      totalPrice: 15,
+      categoryHint: "groceries",
+      lowConfidence: false,
+    });
+  });
+
+  it("flags low-confidence line items below the threshold", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+    mockProcessDocument.mockResolvedValue([
+      {
+        document: {
+          text: "Store text",
+          entities: [],
+          pages: [
+            {
+              lineItems: [
+                {
+                  textAnchor: { textSegments: [{ startIndex: "0", endIndex: "5" }] },
+                  properties: [
+                    { type: "line_item/description", mentionText: "Mystery Item", confidence: 0.5 },
+                    { type: "line_item/amount", mentionText: "$3.99", confidence: 0.4 },
+                  ],
+                },
+              ],
+              formFields: [],
+              paragraphs: [],
+            },
+          ],
+        },
+      },
+    ]);
+
+    const { processReceipt } = await importOcr();
+    const result = await processReceipt.handler(makeCtx(), {
+      image: VALID_JPEG_BASE64,
+      contentType: "image/jpeg",
+    });
+
+    expect(result.lineItems).toHaveLength(1);
+    expect(result.lineItems![0]!.lowConfidence).toBe(true);
+    expect(result.lineItems![0]!.categoryHint).toBe("other");
+  });
+
+  it("returns empty line items array when document has no line items", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+    mockProcessDocument.mockResolvedValue([
+      {
+        document: {
+          text: "Simple receipt text",
+          entities: [],
+          pages: [],
+        },
+      },
+    ]);
+
+    const { processReceipt } = await importOcr();
+    const result = await processReceipt.handler(makeCtx(), {
+      image: VALID_JPEG_BASE64,
+      contentType: "image/jpeg",
+    });
+
+    expect(result.lineItems).toEqual([]);
+  });
+
   it("uses default location 'us' when GOOGLE_CLOUD_LOCATION is unset", async () => {
     requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
     setEnv({ GOOGLE_CLOUD_LOCATION: undefined });

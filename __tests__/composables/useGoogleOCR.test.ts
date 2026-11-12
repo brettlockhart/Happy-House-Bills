@@ -93,6 +93,28 @@ describe("useGoogleOCR — success path", () => {
     expect(calls[1][1].contentType).toBe("image/jpeg");
   });
 
+  it("exposes line items from OCR result", async () => {
+    const lineItems = [
+      {
+        description: "Milk",
+        quantity: 2,
+        unitPrice: 6,
+        totalPrice: 12,
+        categoryHint: "groceries",
+        confidence: 0.9,
+        lowConfidence: false,
+      },
+    ];
+    givenOcrResult({ store: "Target", date: "2024-12-25", total: "45.99", confidence: 0.9, rawText: "Target\nTotal $45.99", lineItems });
+    mockApplyOcrToForm.mockReturnValue({});
+
+    const { state, processReceipt } = useGoogleOCR();
+    await processReceipt(makeFile(), {});
+
+    expect(state.value.status).toBe("done");
+    expect(state.value.result?.lineItems).toEqual(lineItems);
+  });
+
   it("advances progress to 100 on success", async () => {
     givenOcrResult({ store: "X", date: "2024-01-01", total: "1.00", confidence: 0.8, rawText: "x" });
     mockApplyOcrToForm.mockReturnValue({});
