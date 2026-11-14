@@ -11,7 +11,7 @@ lifecycle: 02-in-progress
 # Slice D19: Line-Item Extraction from Receipts
 
 **Date:** 11-November-2026
-**Status:** Draft
+**Status:** In Progress
 **Phase:** Phase 2 Enhancement
 
 ## 1. Purpose
@@ -50,9 +50,9 @@ Extend the Google Document AI OCR pipeline (D17) to extract individual line item
 
 | ID | Question | Status | Notes |
 |----|----------|--------|-------|
-| P2-Q4 | `INVOICE_PROCESSOR` vs custom trained model for accuracy? | Open | Start with `INVOICE_PROCESSOR`; evaluate on real receipts |
-| P2-Q5 | How to handle split expense UX — multiple expenses or single with items? | Open | Design review needed |
-| P2-Q6 | Should line items persist for audit/receipt view? | Open | Storage cost vs utility trade-off |
+| LI-Q1 | `INVOICE_PROCESSOR` vs custom trained model for accuracy? | Open | Start with `INVOICE_PROCESSOR`; evaluate on real receipts |
+| LI-Q2 | How to handle split expense UX — multiple expenses or single with items? | Open | Design review needed |
+| LI-Q3 | Should line items persist for audit/receipt view? | Open | Storage cost vs utility trade-off |
 
 ## 5. Cross-References
 
@@ -134,6 +134,6 @@ interface OcrResult {
 
 ## Lifecycle
 
-- `01-draft` → `02-in-progress`: TBD
+- `01-draft` → `02-in-progress`: 12-November-2026
 - `02-in-progress` → `03-ready-for-review`: TBD
 - `03-ready-for-review` → `04-implemented`: TBD

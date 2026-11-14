@@ -177,12 +177,12 @@ function extractText(textAnchor: { textSegments: Array<{ startIndex: string; end
 function inferCategoryFromDescription(description: string): 'groceries' | 'utilities' | 'other' {
   const lower = description.toLowerCase();
   const groceryKeywords = ['grocery', 'food', 'market', 'supermarket', 'produce', 'meat', 'dairy', 'bakery', 'deli', 'frozen', 'beverage', 'snack', 'fruit', 'vegetable', 'bread', 'milk', 'cheese', 'egg', 'yogurt', 'juice', 'water', 'soda', 'coffee', 'tea', 'wine', 'beer', 'liquor', 'alcohol'];
-  const utilityKeywords = ['electric', 'electricity', 'gas', 'water', 'sewer', 'trash', 'garbage', 'waste', 'internet', 'cable', 'phone', 'telephone', 'mobile', 'utility', 'power', 'heating', 'cooling', 'hvac'];
-  for (const kw of groceryKeywords) {
-    if (lower.includes(kw)) return 'groceries';
-  }
+  const utilityKeywords = ['electric', 'electricity', 'gas', 'sewer', 'trash', 'garbage', 'waste', 'internet', 'cable', 'phone', 'telephone', 'mobile', 'utility', 'power', 'heating', 'cooling', 'hvac', 'water bill', 'water utility', 'water service', 'water charge'];
   for (const kw of utilityKeywords) {
     if (lower.includes(kw)) return 'utilities';
+  }
+  for (const kw of groceryKeywords) {
+    if (lower.includes(kw)) return 'groceries';
   }
   return 'other';
 }
@@ -355,7 +355,7 @@ function extractEntities(document: DocumentAIResponse["document"]): OcrResult {
   }
 
   const avgConfidence = confidenceCount > 0 ? confidenceSum / confidenceCount : 0;
-  const lowConfidence = avgConfidence < 60;
+  const lowConfidence = avgConfidence < 0.6;
   const lineItems = extractLineItems(document);
 
   return {

@@ -590,7 +590,7 @@ describe("extractEntities (via processReceipt)", () => {
     expect(result.lineItems![0]!.categoryHint).toBe("other");
   });
 
-  it("returns empty line items array when document has no line items", async () => {
+it("returns empty line items array when document has no line items", async () => {
     requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
     mockProcessDocument.mockResolvedValue([
       {
@@ -609,6 +609,205 @@ describe("extractEntities (via processReceipt)", () => {
     });
 
     expect(result.lineItems).toEqual([]);
+  });
+
+  it("categorises electric bill line item as utilities", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+    mockProcessDocument.mockResolvedValue([
+      {
+        document: {
+          text: "Store text",
+          entities: [],
+          pages: [
+            {
+              lineItems: [
+                {
+                  textAnchor: { textSegments: [{ startIndex: "0", endIndex: "12" }] },
+                  properties: [
+                    { type: "line_item/description", mentionText: "Electric Bill", confidence: 0.9 },
+                    { type: "line_item/amount", mentionText: "$120.50", confidence: 0.95 },
+                  ],
+                },
+              ],
+              formFields: [],
+              paragraphs: [],
+            },
+          ],
+        },
+      },
+    ]);
+
+    const { processReceipt } = await importOcr();
+    const result = await processReceipt.handler(makeCtx(), {
+      image: VALID_JPEG_BASE64,
+      contentType: "image/jpeg",
+    });
+
+    expect(result.lineItems).toHaveLength(1);
+    expect(result.lineItems![0]!.categoryHint).toBe("utilities");
+    expect(result.lineItems![0]!.lowConfidence).toBe(false);
+  });
+
+  it("categorises gas line item as utilities", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+    mockProcessDocument.mockResolvedValue([
+      {
+        document: {
+          text: "Store text",
+          entities: [],
+          pages: [
+            {
+              lineItems: [
+                {
+                  textAnchor: { textSegments: [{ startIndex: "0", endIndex: "4" }] },
+                  properties: [
+                    { type: "line_item/description", mentionText: "Gas", confidence: 0.85 },
+                    { type: "line_item/amount", mentionText: "$35.00", confidence: 0.9 },
+                  ],
+                },
+              ],
+              formFields: [],
+              paragraphs: [],
+            },
+          ],
+        },
+      },
+    ]);
+
+    const { processReceipt } = await importOcr();
+    const result = await processReceipt.handler(makeCtx(), {
+      image: VALID_JPEG_BASE64,
+      contentType: "image/jpeg",
+    });
+
+    expect(result.lineItems).toHaveLength(1);
+    expect(result.lineItems![0]!.categoryHint).toBe("utilities");
+  });
+
+  it("computes totalPrice = unitPrice * quantity when amount is missing", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+    mockProcessDocument.mockResolvedValue([
+      {
+        document: {
+          text: "Store text",
+          entities: [],
+          pages: [
+            {
+              lineItems: [
+                {
+                  textAnchor: { textSegments: [{ startIndex: "0", endIndex: "5" }] },
+                  properties: [
+                    { type: "line_item/description", mentionText: "Apples", confidence: 0.95 },
+                    { type: "line_item/unit_price", mentionText: "$2.50", confidence: 0.9 },
+                    { type: "line_item/quantity", mentionText: "4", confidence: 0.9 },
+                  ],
+                },
+              ],
+              formFields: [],
+              paragraphs: [],
+            },
+          ],
+        },
+      },
+    ]);
+
+    const { processReceipt } = await importOcr();
+    const result = await processReceipt.handler(makeCtx(), {
+      image: VALID_JPEG_BASE64,
+      contentType: "image/jpeg",
+    });
+
+    expect(result.lineItems).toHaveLength(1);
+    expect(result.lineItems![0]!.totalPrice).toBe(10); // 2.50 * 4
+    expect(result.lineItems![0]!.unitPrice).toBe(2.5);
+    expect(result.lineItems![0]!.quantity).toBe(4);
+  });
+
+  it("returns empty line items when description is missing", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+    mockProcessDocument.mockResolvedValue([
+      {
+        document: {
+          text: "Store text",
+          entities: [],
+          pages: [
+            {
+              lineItems: [
+                {
+                  textAnchor: { textSegments: [{ startIndex: "0", endIndex: "5" }] },
+                  properties: [
+                    { type: "line_item/quantity", mentionText: "3", confidence: 0.9 },
+                    { type: "line_item/unit_price", mentionText: "$5.00", confidence: 0.9 },
+                  ],
+                },
+              ],
+              formFields: [],
+              paragraphs: [],
+            },
+          ],
+        },
+      },
+    ]);
+
+    const { processReceipt } = await importOcr();
+    const result = await processReceipt.handler(makeCtx(), {
+      image: VALID_JPEG_BASE64,
+      contentType: "image/jpeg",
+    });
+
+    expect(result.lineItems).toEqual([]);
+  });
+
+  it("processes multi-page receipt with line items on second page", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+    mockProcessDocument.mockResolvedValue([
+      {
+        document: {
+          text: "Store text",
+          entities: [],
+          pages: [
+            {
+              lineItems: [
+                {
+                  textAnchor: { textSegments: [{ startIndex: "0", endIndex: "5" }] },
+                  properties: [
+                    { type: "line_item/description", mentionText: "Item A", confidence: 0.9 },
+                    { type: "line_item/unit_price", mentionText: "$3.00", confidence: 0.9 },
+                    { type: "line_item/amount", mentionText: "$9.00", confidence: 0.9 },
+                  ],
+                },
+              ],
+              formFields: [],
+              paragraphs: [],
+            },
+            {
+              lineItems: [
+                {
+                  textAnchor: { textSegments: [{ startIndex: "6", endIndex: "11" }] },
+                  properties: [
+                    { type: "line_item/description", mentionText: "Item B", confidence: 0.85 },
+                    { type: "line_item/unit_price", mentionText: "$4.50", confidence: 0.85 },
+                    { type: "line_item/amount", mentionText: "$9.00", confidence: 0.85 },
+                  ],
+                },
+              ],
+              formFields: [],
+              paragraphs: [],
+            },
+          ],
+        },
+      },
+    ]);
+
+    const { processReceipt } = await importOcr();
+    const result = await processReceipt.handler(makeCtx(), {
+      image: VALID_JPEG_BASE64,
+      contentType: "image/jpeg",
+    });
+
+    expect(result.lineItems).toHaveLength(2);
+    expect(result.lineItems![0]!.description).toBe("Item A");
+    expect(result.lineItems![1]!.description).toBe("Item B");
   });
 
   it("uses default location 'us' when GOOGLE_CLOUD_LOCATION is unset", async () => {

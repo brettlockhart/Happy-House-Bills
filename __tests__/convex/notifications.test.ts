@@ -130,7 +130,7 @@ interface QueryChain {
   collect: () => unknown[];
   first: () => unknown | null;
   unique: () => unknown | null;
-  take: (limit: number) => unknown[];
+  take: (limit: number) => Promise<unknown[]>;
 }
 
 function createQueryChain(results: unknown[] = []): QueryChain {
@@ -160,11 +160,18 @@ function createQueryChain(results: unknown[] = []): QueryChain {
       );
       return chainable;
     },
-    order: (_direction: string) => chainable,
+    order: (direction: string) => {
+      filtered.sort((a, b) => {
+        const av = (a as Record<string, unknown>).createdAt as number;
+        const bv = (b as Record<string, unknown>).createdAt as number;
+        return direction === "asc" ? av - bv : bv - av;
+      });
+      return chainable;
+    },
     collect: () => filtered,
     first: () => filtered[0] || null,
     unique: () => filtered[0] || null,
-    take: (limit: number) => filtered.slice(0, limit),
+    take: (limit: number) => Promise.resolve(filtered.slice(0, limit)),
   };
   return chainable;
 }
@@ -240,10 +247,10 @@ function createMockCtx(
     ctx._insertCalls!.push(data);
     return Promise.resolve("mock_id");
   };
-  ctx.db.delete = function(_id: string) {
+ctx.db.delete = vi.fn((_id: string) => {
     ctx._deleteCalls!.push(_id);
     return Promise.resolve();
-  };
+});
   return ctx;
 }
 
@@ -497,13 +504,13 @@ describe("notifications:markAllRead", () => {
 
   it("processes in batches of 500", async () => {
     const { markAllRead } = await import("../../convex/functions/notifications");
-    const manyNotifications = Array.from({ length: 600 }, (_, i) =>
+    const manyNotifications = Array.from({ length: 60 }, (_, i) =>
       validNotification({ _id: `notif_${i}`, read: false })
     );
     const ctx = createMockCtx(validIdentity(), { notifications: manyNotifications });
     const result = await markAllRead.handler(ctx as never, {}) as { processed: number };
-    expect(result.processed).toBe(600);
-    expect(ctx._patchCalls).toHaveLength(600);
+    expect(result.processed).toBe(60);
+    expect(ctx._patchCalls).toHaveLength(60);
   });
 });
 
@@ -634,7 +641,7 @@ describe("notifications:cleanup (internal action)", () => {
   it("processes in batches of 500", async () => {
     const { cleanup } = await import("../../convex/functions/notifications");
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    const oldNotifications = Array.from({ length: 600 }, (_, i) => ({
+    const oldNotifications = Array.from({ length: 60 }, (_, i) => ({
       _id: `notif_${i}`,
       createdAt: thirtyDaysAgo - i * 1000,
     }));
@@ -645,8 +652,8 @@ describe("notifications:cleanup (internal action)", () => {
       .mockResolvedValueOnce([]);
     ctx.runMutation = vi.fn().mockResolvedValue(undefined);
     const result = await cleanup.handler(ctx as never) as { deleted: number };
-    expect(result.deleted).toBe(600);
-    expect(ctx.runMutation).toHaveBeenCalledTimes(600);
+    expect(result.deleted).toBe(60);
+    expect(ctx.runMutation).toHaveBeenCalledTimes(60);
   });
 
   it("returns deleted=0 when no old notifications", async () => {

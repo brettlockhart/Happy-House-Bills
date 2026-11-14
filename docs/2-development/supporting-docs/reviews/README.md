@@ -75,6 +75,7 @@ All reviews are complete for D1–D16. The following slices have been promoted t
 | D16 — Performance & Reliability | Implementation | implementation-reviewer | Pass | 07-November-2026 |
 | D16 — Performance & Reliability | Security | security-engineer | Pass (Conditional) | 07-November-2026 |
 | D16 — Performance & Reliability | Test Coverage | test-engineer | Pass (18 tests) | 07-November-2026 |
+| D19 — Line-Item Extraction | Implementation | implementation-reviewer | Pass | 13-November-2026 |
 
 ## Review Process
 
