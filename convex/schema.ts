@@ -123,13 +123,19 @@ export default defineSchema({
   categories: defineTable({
     orgId: v.string(),
     name: v.string(),
+    icon: v.optional(v.string()),
     color: v.string(),
+    parentId: v.optional(v.id("categories")),
+    budgetMonthly: v.optional(v.number()),
+    isDefault: v.boolean(),
+    sortOrder: v.number(),
     createdBy: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),
   })
-    .index("by_org", ["orgId"]),
+    .index("by_org", ["orgId"])
+    .index("by_org_parent", ["orgId", "parentId"]),
 
   budgets: defineTable({
     orgId: v.string(),

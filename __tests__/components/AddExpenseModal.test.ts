@@ -40,6 +40,11 @@ vi.mock("convex-vue", () => ({
     isPending: { value: false },
     error: { value: null },
   }),
+  useConvexQuery: () => ({
+    data: { value: undefined },
+    isPending: { value: false },
+    error: { value: null },
+  }),
 }));
 
 describe("AddExpenseModal.vue", () => {
@@ -78,8 +83,10 @@ describe("AddExpenseModal.vue", () => {
     const wrapper = mount(AddExpenseModal, {
       props: { isOpen: true, currentUserId: "user_1" },
     });
-    await wrapper.find('button[type="button"]').element.click();
+    const cancelButton = wrapper.findAll('button[type="button"]').find((b) => b.text() === "Cancel");
+    await cancelButton!.element.click();
     expect(wrapper.emitted("close")).toBeTruthy();
+    wrapper.unmount();
   });
 
   it("emits submit with form data and paidBy from currentUserId", async () => {

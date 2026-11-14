@@ -43,6 +43,7 @@ vi.mock("convex/values", () => ({
     number: () => ({ _isValidator: true }),
     union: () => ({ _isValidator: true }),
     literal: () => ({ _isValidator: true }),
+    boolean: () => ({ _isValidator: true }),
     optional: () => ({ _isValidator: true }),
     id: () => ({ _isValidator: true }),
     array: () => ({ _isValidator: true }),
@@ -61,11 +62,18 @@ function makeCtx() {
   const mockQuery = vi.fn().mockReturnValue({
     withIndex: vi.fn().mockReturnValue({
       first: vi.fn().mockResolvedValue(null),
+      filter: vi.fn().mockReturnValue({
+        order: vi.fn().mockReturnValue({
+          collect: vi.fn().mockResolvedValue([]),
+        }),
+        collect: vi.fn().mockResolvedValue([]),
+      }),
     }),
     filter: vi.fn().mockReturnValue({
       order: vi.fn().mockReturnValue({
         collect: vi.fn().mockResolvedValue([]),
       }),
+      collect: vi.fn().mockResolvedValue([]),
     }),
     order: vi.fn().mockReturnValue({
       collect: vi.fn().mockResolvedValue([]),

@@ -5,6 +5,7 @@ import { renderInviteEmail } from "./email";
 import { clerkRequest, isClerkConfigured } from "./clerk";
 import { ROLES, INVITE_TOKEN_TTL_MS, checkPermission } from "./shared_constants";
 import { internal } from "../_generated/api";
+import { seedDefaultCategories } from "../categories";
 import { displayNameForUserId } from "./directory";
 
 interface ClerkUser {
@@ -48,8 +49,7 @@ export const insertOrg = internalMutation({
       createdAt: now,
       updatedAt: now,
     });
-
-    await ctx.db.insert("memberships", {
+await ctx.db.insert("memberships", {
       orgId: orgDocId as unknown as string,
       userId,
       role: ROLES.ADMIN,
@@ -58,6 +58,8 @@ export const insertOrg = internalMutation({
       createdAt: now,
       updatedAt: now,
     });
+
+    await seedDefaultCategories(ctx, orgDocId as unknown as string);
 
     return { orgId: orgDocId as unknown as string };
   },
@@ -95,6 +97,9 @@ export const createOrg = mutation({
       createdAt: now,
       updatedAt: now,
     });
+
+    await seedDefaultCategories(ctx, orgDocId as unknown as string);
+
     return { orgId: orgDocId as unknown as string };
   },
 });

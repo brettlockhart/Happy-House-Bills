@@ -46,6 +46,7 @@ vi.mock("convex/values", () => ({
     number: () => ({ _isValidator: true }),
     union: () => ({ _isValidator: true }),
     literal: () => ({ _isValidator: true }),
+    boolean: () => ({ _isValidator: true }),
     optional: () => ({ _isValidator: true }),
     id: () => ({ _isValidator: true }),
     array: () => ({ _isValidator: true }),

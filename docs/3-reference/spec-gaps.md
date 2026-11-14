@@ -218,14 +218,18 @@ then domain specs).
 | ANL-Q3 | What's the optimal visualization approach? | Resolved | `docs/2-development/04-implemented/d15-advanced-analytics-insights.md` | frontend-engineer | Phase 3 — Chart.js with computed series from Convex queries; evaluate lighter alternatives (uPlot, ApexCharts) in Phase 4 |
 | LI-Q1 | `INVOICE_PROCESSOR` vs custom trained model for accuracy? | Open | `docs/2-development/02-in-progress/d19-line-item-extraction.md` | backend-engineer | Phase 2 — Start with `INVOICE_PROCESSOR`; evaluate on real receipts |
 | LI-Q2 | How to handle split expense UX — multiple expenses or single with items? | Open | `docs/2-development/02-in-progress/d19-line-item-extraction.md` | frontend-engineer | Phase 2 — Design review needed |
-| LI-Q3 | Should line items persist for audit/receipt view? | Open | `docs/2-development/02-in-progress/d19-line-item-extraction.md` | backend-engineer | Phase 2 — Storage cost vs utility trade-off |
+| LI-Q3 | Should line items persist for audit/receipt view? | Open | `docs/2-development/04-implemented/d19-line-item-extraction.md` | backend-engineer | Phase 2 — Storage cost vs utility trade-off |
+| CAT-Q1 | How many default categories? (8 proposed) | Open | `docs/2-development/01-draft/d20-expense-categories-enhancement.md` | backend-engineer | Phase 2 — Balance completeness vs overwhelm |
+| CAT-Q2 | Allow users to create unlimited categories? | Open | `docs/2-development/01-draft/d20-expense-categories-enhancement.md` | frontend-engineer | Phase 2 — Cap at 20? Performance/UX |
+| CAT-Q3 | Category icons: emoji or icon font? | Open | `docs/2-development/01-draft/d20-expense-categories-enhancement.md` | frontend-engineer | Phase 2 — Emoji simpler; icons more consistent |
+| CAT-Q4 | Budget period: calendar month or rolling 30 days? | Open | `docs/2-development/01-draft/d20-expense-categories-enhancement.md` | backend-engineer | Phase 2 — Calendar month simpler for users |
 
 ## 7. Appendix: Gap Count Summary
 
 | Metric | Count |
 |--------|-------|
 | Missing referenced documents | 0 |
-| Open questions | 4 |
+| Open questions | 7 |
 | Domains | 11 |
 | Total next actions | 0 |
 

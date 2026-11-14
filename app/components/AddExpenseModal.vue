@@ -36,12 +36,34 @@
 
         <label>
           Category
-          <select v-model="form.category">
-            <option value="groceries">Groceries</option>
-            <option value="utilities">Utilities</option>
-            <option value="other">Other</option>
-          </select>
+          <div class="hhb-flex hhb-gap-2 hhb-items-center">
+            <input
+              v-model="form.category"
+              type="text"
+              placeholder="Type category name"
+              class="hhb-input hhb-flex-1"
+            >
+            <button
+              type="button"
+              class="hhb-btn hhb-btn-secondary"
+              @click="categoryPickerOpen = true"
+            >
+              Browse
+            </button>
+          </div>
+          <div v-if="selectedCategory" class="hhb-mt-1">
+            <CategoryBadge
+              :category="selectedCategory.name"
+              :color="selectedCategory.color"
+              :icon="selectedCategory.icon"
+            />
+          </div>
         </label>
+
+        <CategoryPicker
+          v-model="categoryPickerOpen"
+          @select="handleCategorySelect"
+        />
 
         <label>
           Notes
@@ -63,12 +85,17 @@
 import { ref, computed, watch, reactive } from "vue";
 import { useGoogleOCR } from "~/composables/useGoogleOCR";
 import ReceiptUploader from "~/components/ReceiptUploader.vue";
+import CategoryPicker from "~/components/CategoryPicker.vue";
+import CategoryBadge from "~/components/CategoryBadge.vue";
+import type { Doc } from "~/convex/_generated/dataModel";
+
+type Category = Doc<"categories">;
 
 interface Expense {
   _id: string;
   amount: number;
   date: string;
-  category: "groceries" | "utilities" | "other";
+  category: string;
   notes?: string;
   paidBy: string;
   status: "pending" | "approved" | "rejected";
@@ -96,7 +123,7 @@ const emit = defineEmits<{
   (e: "submit", expense: {
     amount: number;
     date: string;
-    category: "groceries" | "utilities" | "other";
+    category: string;
     notes?: string;
     paidBy: string;
     receiptImageId?: string;
@@ -109,7 +136,7 @@ const emit = defineEmits<{
 const form = reactive({
   amount: 0,
   date: new Date().toISOString().split("T")[0] as string,
-  category: "other" as "groceries" | "utilities" | "other",
+  category: "other" as string,
   notes: "",
   paidBy: props.currentUserId,
   store: "",
@@ -117,6 +144,9 @@ const form = reactive({
 
 const receiptFile = ref<File | null>(null);
 const { state: ocrState, processReceipt, reset: resetOcr } = useGoogleOCR();
+
+const categoryPickerOpen = ref(false);
+const selectedCategory = ref<Category | null>(null);
 
 const ocrStatusText = computed(() => {
   const status = ocrState.value.status;
@@ -131,6 +161,7 @@ const ocrStatusText = computed(() => {
 watch(() => props.isOpen, (open) => {
   if (open) {
     resetForm();
+    selectedCategory.value = null;
   }
 });
 
@@ -138,12 +169,14 @@ watch(() => props.expense, (expense) => {
   if (expense) {
     form.amount = expense.amount;
     form.date = expense.date;
-    form.category = expense.category;
+    form.category = expense.category || "other";
     form.notes = expense.notes || "";
     form.paidBy = expense.paidBy;
     form.store = "";
+    selectedCategory.value = null;
   } else {
     resetForm();
+    selectedCategory.value = null;
   }
 }, { immediate: true });
 
@@ -170,6 +203,11 @@ async function handleReceiptChange(file: File | null) {
   } catch {
     // Error handled in UI
   }
+}
+
+function handleCategorySelect(category: Category) {
+  form.category = category.name;
+  selectedCategory.value = category;
 }
 
 function handleSubmit() {

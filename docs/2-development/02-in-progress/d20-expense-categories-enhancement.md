@@ -1,17 +1,17 @@
 ---
-status: Draft
+status: In Progress
 package: app
 priority: high
 created: 11-November-2026
-updated: 11-November-2026
+updated: 14-November-2026
 tags: [expenses, categories, ui, phase2]
-lifecycle: 01-draft
+lifecycle: 02-in-progress
 ---
 
 # Slice D20: Expense Categories Enhancement
 
 **Date:** 11-November-2026
-**Status:** Draft
+**Status:** In Progress
 **Phase:** Phase 2 Enhancement
 
 ## 1. Purpose
@@ -54,10 +54,10 @@ Expand the hardcoded three-category system (groceries, utilities, other) to a fl
 
 | ID | Question | Status | Notes |
 |----|----------|--------|-------|
-| P2-Q7 | How many default categories? (8 proposed) | Open | Balance completeness vs overwhelm |
-| P2-Q8 | Allow users to create unlimited categories? | Open | Cap at 20? Performance/UX |
-| P2-Q9 | Category icons: emoji or icon font? | Open | Emoji simpler; icons more consistent |
-| P2-Q10 | Budget period: calendar month or rolling 30 days? | Open | Calendar month simpler for users |
+| CAT-Q1 | How many default categories? (8 proposed) | Open | Balance completeness vs overwhelm |
+| CAT-Q2 | Allow users to create unlimited categories? | Open | Cap at 20? Performance/UX |
+| CAT-Q3 | Category icons: emoji or icon font? | Open | Emoji simpler; icons more consistent |
+| CAT-Q4 | Budget period: calendar month or rolling 30 days? | Open | Calendar month simpler for users |
 
 ## 5. Cross-References
 

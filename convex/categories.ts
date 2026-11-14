@@ -1,6 +1,18 @@
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedOrg } from "./auth";
+
+const DEFAULT_CATEGORIES = [
+  { name: "Groceries", icon: "shopping-cart", color: "#22c55e", sortOrder: 0 },
+  { name: "Utilities", icon: "zap", color: "#f59e0b", sortOrder: 1 },
+  { name: "Transport", icon: "car", color: "#3b82f6", sortOrder: 2 },
+  { name: "Dining", icon: "utensils", color: "#ef4444", sortOrder: 3 },
+  { name: "Entertainment", icon: "film", color: "#a855f7", sortOrder: 4 },
+  { name: "Health", icon: "heart-pulse", color: "#ec4899", sortOrder: 5 },
+  { name: "Shopping", icon: "shopping-bag", color: "#06b6d4", sortOrder: 6 },
+  { name: "Other", icon: "more-horizontal", color: "#6b7280", sortOrder: 7 },
+] as const;
 
 // Categories
 
@@ -8,6 +20,11 @@ export const create = mutation({
   args: {
     name: v.string(),
     color: v.string(),
+    icon: v.optional(v.string()),
+    parentId: v.optional(v.id("categories")),
+    budgetMonthly: v.optional(v.number()),
+    isDefault: v.optional(v.boolean()),
+    sortOrder: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     // Input validation
@@ -41,6 +58,11 @@ export const create = mutation({
       orgId,
       name: args.name,
       color: args.color,
+      icon: args.icon,
+      parentId: args.parentId,
+      budgetMonthly: args.budgetMonthly,
+      isDefault: args.isDefault ?? false,
+      sortOrder: args.sortOrder ?? 0,
       createdBy: userId,
       createdAt: now,
       updatedAt: now,
@@ -69,6 +91,11 @@ export const update = mutation({
     id: v.id("categories"),
     name: v.optional(v.string()),
     color: v.optional(v.string()),
+    icon: v.optional(v.string()),
+    parentId: v.optional(v.id("categories")),
+    budgetMonthly: v.optional(v.number()),
+    isDefault: v.optional(v.boolean()),
+    sortOrder: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const { orgId } = await requireAuthenticatedOrg(ctx);
@@ -99,6 +126,21 @@ export const update = mutation({
 
     if (args.color !== undefined) {
       updates.color = args.color;
+    }
+    if (args.icon !== undefined) {
+      updates.icon = args.icon;
+    }
+    if (args.parentId !== undefined) {
+      updates.parentId = args.parentId;
+    }
+    if (args.budgetMonthly !== undefined) {
+      updates.budgetMonthly = args.budgetMonthly;
+    }
+    if (args.isDefault !== undefined) {
+      updates.isDefault = args.isDefault;
+    }
+    if (args.sortOrder !== undefined) {
+      updates.sortOrder = args.sortOrder;
     }
 
     updates.updatedAt = Date.now();
@@ -148,3 +190,33 @@ export const deleteCategory = mutation({
 export const delete_ = deleteCategory;
 export { deleteCategory as remove };
 export const del = deleteCategory;
+
+export async function seedDefaultCategories(ctx: MutationCtx, orgId: string): Promise<void> {
+  const now = Date.now();
+  for (const c of DEFAULT_CATEGORIES) {
+    const existing = await ctx.db.query("categories")
+      .withIndex("by_org", (q) => q.eq("orgId", orgId))
+      .filter((q) => q.eq(q.field("name"), c.name))
+      .collect();
+    if (existing.length > 0) continue;
+    await ctx.db.insert("categories", {
+      orgId,
+      name: c.name,
+      color: c.color,
+      icon: c.icon,
+      isDefault: true,
+      sortOrder: c.sortOrder,
+      createdBy: orgId,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+}
+
+export const seedDefaults = internalMutation({
+  args: { orgId: v.string() },
+  handler: async (ctx, args) => {
+    await seedDefaultCategories(ctx, args.orgId);
+    return true;
+  },
+});

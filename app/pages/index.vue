@@ -17,7 +17,7 @@ const isNotificationsOpen = ref(false);
 async function handleExpenseSubmit(expense: {
   amount: number;
   date: string;
-  category: "groceries" | "utilities" | "other";
+  category: string;
   notes?: string;
   paidBy: string;
   receiptImageId?: string;
@@ -28,7 +28,6 @@ async function handleExpenseSubmit(expense: {
 
   await createExpense({
     ...expense,
-    receiptImageId: expense.receiptImageId as Id<"_storage"> | undefined,
   });
   isAddModalOpen.value = false;
 }

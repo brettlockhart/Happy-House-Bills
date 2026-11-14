@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useAnalytics } from "~/composables/useAnalytics";
+import { useBudgets } from "~/composables/useAdvancedFeatures";
 
 const {
   period,
@@ -18,6 +19,8 @@ const {
   setPeriod,
 } = useAnalytics();
 
+const { data: budgets } = useBudgets();
+
 const periods: Array<{ value: "week" | "month" | "quarter" | "year"; label: string }> = [
   { value: "week", label: "Week" },
   { value: "month", label: "Month" },
@@ -28,6 +31,19 @@ const periods: Array<{ value: "week" | "month" | "quarter" | "year"; label: stri
 const maxDaily = computed(() => {
   if (dailyTotals.value.length === 0) return 1;
   return Math.max(...dailyTotals.value.map((d) => d.amount));
+});
+
+// Budget progress: match budgets to category spending
+const budgetProgress = computed(() => {
+  const catSpend = new Map((categories.value || []).map((c) => [c.category, c.amount]));
+  return (budgets.value || [])
+    .filter((b) => b.period === "monthly")
+    .map((budget) => {
+      const spent = catSpend.get(budget.category) ?? 0;
+      const limit = budget.amount / 100; // cents to dollars
+      const pct = limit > 0 ? (spent / limit) * 100 : 0;
+      return { budget, spent, limit, pct };
+    });
 });
 
 const severityClass = (severity: string): string => {
@@ -41,6 +57,12 @@ const severityClass = (severity: string): string => {
     default:
       return "bg-gray-100 text-gray-800";
   }
+};
+
+const budgetBarClass = (pct: number): string => {
+  if (pct >= 100) return "bg-red-500";
+  if (pct >= 80) return "bg-yellow-500";
+  return "bg-emerald-500";
 };
 </script>
 
@@ -119,6 +141,33 @@ const severityClass = (severity: string): string => {
           </div>
         </div>
         <p v-else class="text-gray-400">No spending data available for this period.</p>
+      </div>
+
+      <!-- Budget Progress -->
+      <div v-if="budgetProgress.length > 0" class="chart-section">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Budget Progress</h3>
+        <div class="budget-list">
+          <div
+            v-for="{ budget, spent, limit, pct } in budgetProgress"
+            :key="budget._id"
+            class="budget-row"
+          >
+            <div class="budget-info">
+              <span class="budget-name">{{ budget.category }}</span>
+              <span class="budget-amount">${{ spent.toFixed(2) }} / ${{ limit.toFixed(2) }}</span>
+            </div>
+            <div class="budget-bar">
+              <div
+                class="budget-bar-fill"
+                :class="budgetBarClass(pct)"
+                :style="{ width: `${Math.min(pct, 100)}%` }"
+              />
+            </div>
+            <div v-if="pct >= 80" class="budget-warning">
+              {{ pct >= 100 ? "Over budget" : "Near limit" }}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-if="topCategory" class="chart-section">
@@ -214,6 +263,39 @@ const severityClass = (severity: string): string => {
 
 .category-bar-fill {
   @apply bg-emerald-500 h-2 rounded-full transition-all duration-300;
+}
+
+/* Budget progress styles */
+.budget-list {
+  @apply space-y-3;
+}
+
+.budget-row {
+  @apply flex flex-col gap-1;
+}
+
+.budget-info {
+  @apply flex justify-between text-sm;
+}
+
+.budget-name {
+  @apply font-medium text-gray-700;
+}
+
+.budget-amount {
+  @apply text-gray-500;
+}
+
+.budget-bar {
+  @apply w-full bg-gray-200 rounded-full h-2;
+}
+
+.budget-bar-fill {
+  @apply h-2 rounded-full transition-all duration-300;
+}
+
+.budget-warning {
+  @apply text-xs text-red-600 mt-1;
 }
 
 .daily-chart {
