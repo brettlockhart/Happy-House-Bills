@@ -26,6 +26,7 @@ All reviews are complete for D1–D16. The following slices have been promoted t
 | Slice | Type | Reviewer | Status | Submitted | Last updated |
 |-------|------|----------|---------|-----------|---------------|
 | — | — | — | — | — | No active reviews |
+| D20 — Expense Categories Enhancement | Implementation | implementation-reviewer | Awaiting review | 14-November-2026 | 14-November-2026 |
 
 ## Completed Reviews
 

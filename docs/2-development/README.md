@@ -28,6 +28,7 @@ Happy House Bills is a web app for couples to track shared household spending, s
 | P0 | Mobile browser compatibility | `tech-specs/frontend/mobile-compat.md` | 04-implemented | ✅ D9 complete |
 | P0 | < 10 min deploy time | `tech-specs/architecture/deployment.md` | 04-implemented | ✅ D10 complete |
 | P0 | Advanced features & enhancements | `tech-specs/advanced-features.md` | 04-implemented | ✅ D11 complete |
+| P0 | Expense Categories Enhancement | `docs/2-development/03-ready-for-review/d20-expense-categories-enhancement.md` | 03-ready-for-review | Awaiting review |
 | P0 | Mobile-first UI/UX shell | `tech-specs/frontend/mobile-compat.md` | 04-implemented | ✅ D12 complete |
 | P0 | Team Workspaces & Collaboration | `tech-specs/teams/team-workspaces.md` | 04-implemented | ✅ D13 complete |
 | P0 | Advanced Integrations | `docs/2-development/04-implemented/d14-advanced-integrations.md` | 04-implemented | ✅ D14 complete |

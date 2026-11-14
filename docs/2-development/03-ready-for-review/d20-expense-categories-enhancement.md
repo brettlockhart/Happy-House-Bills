@@ -1,17 +1,17 @@
 ---
-status: In Progress
+status: Ready for Review
 package: app
 priority: high
 created: 11-November-2026
 updated: 14-November-2026
 tags: [expenses, categories, ui, phase2]
-lifecycle: 02-in-progress
+lifecycle: 03-ready-for-review
 ---
 
 # Slice D20: Expense Categories Enhancement
 
 **Date:** 11-November-2026
-**Status:** In Progress
+**Status:** Ready for Review
 **Phase:** Phase 2 Enhancement
 
 ## 1. Purpose
@@ -152,6 +152,33 @@ const DEFAULT_CATEGORIES = [
 
 ## Lifecycle
 
-- `01-draft` → `02-in-progress`: TBD
-- `02-in-progress` → `03-ready-for-review`: TBD
-- `03-ready-for-review` → `04-implemented`: TBD
+- `01-draft` → `02-in-progress`: 13-November-2026 (implementation started)
+- `02-in-progress` → `03-ready-for-review`: 14-November-2026 (implementation complete)
+
+## Lifecycle Report — D20 Expense Categories Enhancement
+
+**Promoted to:** 03-ready-for-review (14-November-2026)
+**Commit:** a782751
+**Tests:** 46 files, 694 passed
+**Lint:** 0 problems
+**Typecheck:** 24 errors (pre-existing baseline)
+**Docs audit:** 0 errors, 59 pre-existing warnings
+
+### Completed
+- Convex schema: `categories` table (org-scoped, user-configurable) with `by_org` and `by_org_parent` indexes
+- Default categories seeded on org creation: Groceries, Utilities, Transport, Dining, Entertainment, Health, Shopping, Other (8 defaults)
+- Category CRUD (create, list, update, delete) via Convex mutations/queries with auth & IDOR protection
+- Seed idempotency (does not duplicate existing defaults)
+- `seedDefaults` internalMutation for org creation
+- CategoryPicker component: searchable, grouped by parent, inline category creation
+- CategoryBadge component: coloured dot + icon + name
+- AnalyticsDashboard: budget progress bars with colour tiers (green <80%, yellow 80–100%, red 100%+), over-budget / near-limit warnings
+- Test coverage: `__tests__/convex/categories.test.ts` (17 tests), `__tests__/components/CategoryBadge.test.ts` (5), `__tests__/components/CategoryPicker.test.ts` (10), `__tests__/components/AnalyticsDashboard.test.ts` (11)
+
+### Open Questions Resolved
+- CAT-Q1: 8 default categories — decided and seeded
+- CAT-Q3: Icons from Lucide/heroicons set — decided
+- CAT-Q4: Budget period — calendar month — decided
+
+### Open Questions Remaining
+- CAT-Q2: Allow users to create unlimited categories? (Open — no cap implemented)
