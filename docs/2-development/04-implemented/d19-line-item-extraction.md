@@ -1,11 +1,11 @@
 ---
-status: In Progress
+status: Implemented
 package: app
 priority: high
 created: 11-November-2026
-updated: 12-November-2026
+updated: 14-November-2026
 tags: [ocr, line-items, receipts, phase2]
-lifecycle: 02-in-progress
+lifecycle: 04-implemented
 ---
 
 # Slice D19: Line-Item Extraction from Receipts
@@ -135,5 +135,27 @@ interface OcrResult {
 ## Lifecycle
 
 - `01-draft` → `02-in-progress`: 12-November-2026
-- `02-in-progress` → `03-ready-for-review`: TBD
-- `03-ready-for-review` → `04-implemented`: TBD
+- `02-in-progress` → `03-ready-for-review`: 14-November-2026
+- `03-ready-for-review` → `04-implemented`: 14-November-2026
+
+## Lifecycle Report
+
+**Summary:** Slice D19 line-item extraction implemented, reviewed, and promoted to `04-implemented`.
+
+**Implementation:**
+- `convex/functions/ocr.ts`: extended `DocumentAIResponse` page type with `lineItems`, added `LineItem` interface, `extractLineItems()`, `inferCategoryFromDescription()` (groceries/utilities/other), confidence threshold 0.6 per line item, `lineItems: LineItem[]` in `OcrResult`.
+- `app/composables/useGoogleOCR.ts`: exported `LineItem`/`OcrResult` interfaces, `lineItems` pass-through into `OcrState.result`, Tesseract fallback returns `lineItems: []`.
+- Tests: 3 OCR tests + 1 composable test added; 5 additional edge-case tests after review fixes.
+
+**Verification:**
+- Lint: clean
+- Tests: 651/651 pass (42 files)
+- Typecheck: 22 pre-existing errors, 0 in D19 files
+- `docs:lint`: 0 errors
+- `docs:audit`: 0 errors
+- Code review: Pass (fixes applied — threshold scale, category priority, test coverage)
+
+**Open Questions (registered in spec-gaps.md):**
+- LI-Q1: INVOICE_PROCESSOR vs custom trained model
+- LI-Q2: Split expense UX (multiple expenses vs single with items) — pending UI integration in AddExpenseModal
+- LI-Q3: Line item persistence for audit — pending
