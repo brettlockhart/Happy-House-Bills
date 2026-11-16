@@ -7,6 +7,7 @@ export default defineSchema({
     amount: v.number(),
     date: v.string(),
     category: v.string(),
+    categoryId: v.optional(v.id("categories")),
     paidBy: v.string(),
     notes: v.optional(v.string()),
     receiptImageId: v.optional(v.id("_storage")),
@@ -28,7 +29,9 @@ export default defineSchema({
   .index("by_org_date", ["orgId", "date"])
   .index("by_org_status_date", ["orgId", "status", "date"])
   .index("by_org_deletedAt_status", ["orgId", "deletedAt", "status"])
-  .index("by_receiptImageId", ["receiptImageId"]),
+  .index("by_receiptImageId", ["receiptImageId"])
+  .index("by_org_categoryId", ["orgId", "categoryId"])
+  .index("by_org_category", ["orgId", "category"]),
 
   settlements: defineTable({
     orgId: v.string(),
@@ -129,6 +132,7 @@ export default defineSchema({
     budgetMonthly: v.optional(v.number()),
     isDefault: v.boolean(),
     sortOrder: v.number(),
+    subCategories: v.optional(v.array(v.string())),
     createdBy: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -243,4 +247,30 @@ export default defineSchema({
     .index("by_org_user_read", ["orgId", "userId", "read"])
     .index("by_org_user_created", ["orgId", "userId", "createdAt"])
     .index("by_createdAt", ["createdAt"]),
+
+  reports: defineTable({
+    orgId: v.string(),
+    userId: v.string(),
+    name: v.string(),
+    type: v.union(
+      v.literal("monthly_summary"),
+      v.literal("category_breakdown"),
+      v.literal("settlement_history"),
+      v.literal("budget_variance"),
+      v.literal("custom"),
+    ),
+    config: v.any(),
+    format: v.union(v.literal("csv"), v.literal("json")),
+    status: v.union(v.literal("generating"), v.literal("ready"), v.literal("failed")),
+    storageId: v.optional(v.id("_storage")),
+    downloadUrl: v.optional(v.string()),
+    expiresAt: v.number(),
+    scheduled: v.optional(v.boolean()),
+    scheduleCron: v.optional(v.string()),
+    lastGeneratedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_org_user", ["orgId", "userId"])
+    .index("by_org_scheduled", ["orgId", "scheduled"])
+    .index("by_expires", ["expiresAt"]),
 });

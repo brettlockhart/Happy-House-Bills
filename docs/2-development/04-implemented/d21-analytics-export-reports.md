@@ -1,17 +1,17 @@
 ---
-status: Draft
+status: In Progress
 package: app
 priority: high
 created: 11-November-2026
-updated: 11-November-2026
+updated: 15-November-2026
 tags: [analytics, export, reports, phase4]
-lifecycle: 01-draft
+lifecycle: 04-implemented
 ---
 
 # Slice D21: Analytics Export & Custom Reports
 
 **Date:** 11-November-2026
-**Status:** Draft
+**Status:** Implemented
 **Phase:** Phase 4 (Post-MVP Expansion)
 
 ## 1. Purpose
@@ -22,7 +22,7 @@ Implement export capabilities and a custom report builder for analytics data, co
 
 ### In scope
 
-- Export analytics data to CSV, JSON, and PDF formats
+- Export analytics data to CSV and JSON formats
 - Custom report builder: select metrics, date range, filters (category, status, member), grouping
 - Scheduled reports: daily/weekly/monthly email delivery via Resend
 - Report templates: Monthly Summary, Category Breakdown, Settlement History, Budget Variance
@@ -33,15 +33,16 @@ Implement export capabilities and a custom report builder for analytics data, co
 ### Out of scope
 
 - Real-time dashboard updates (websocket push — separate slice)
-- Advanced statistical modeling (regression, forecasting beyond linear)
+- Advanced statistical modelling (regression, forecasting beyond linear)
 - Embedded BI / external tool connectors (Tableau, PowerBI)
 - Multi-currency reports (v1 USD only)
+- PDF generation (deferred — P4-Q1 unresolved)
 
 ## 3. Key Decisions
 
 | ID | Decision | Rationale | Source |
 |----|----------|-----------|--------|
-| D1 | CSV/JSON/PDF as core formats | CSV for spreadsheets, JSON for APIs, PDF for sharing | D15 spec |
+| D1 | CSV/JSON as core formats (PDF deferred) | CSV for spreadsheets, JSON for APIs; PDF needs server-side infra | D15 spec |
 | D2 | Reports stored in R2 with signed URLs | Consistent with receipt storage; secure, expiring links | D4 file storage |
 | D3 | Scheduled reports via Convex cron + Resend | Server-side generation; no client needed at send time | D7 email, D16 monitoring |
 | D4 | Report builder as modal in AnalyticsDashboard | Progressive disclosure; power users only | UX principle |
@@ -51,10 +52,10 @@ Implement export capabilities and a custom report builder for analytics data, co
 
 | ID | Question | Status | Notes |
 |----|----------|--------|-------|
-| P4-Q1 | PDF generation: client-side (jsPDF) or server-side (Convex + puppeteer)? | Open | Server-side more reliable; client-side no infra |
-| P4-Q2 | Support custom date ranges beyond presets? | Open | Presets: MTD, QTD, YTD, Last 30/90/365 days |
-| P4-Q3 | Report sharing: link-only or email attachment? | Open | Links more secure; attachments more convenient |
-| P4-Q4 | Maximum report size / row limit for CSV? | Open | Prevent runaway exports; suggest 10k rows |
+| P4-Q1 | PDF generation: client-side (jsPDF) or server-side (Convex + puppeteer)? | **Deferred** | Out of scope for v1; will address in follow-up slice |
+| P4-Q2 | Support custom date ranges beyond presets? | **Resolved** | Implemented: custom dateFrom/dateTo fields in config |
+| P4-Q3 | Report sharing: link-only or email attachment? | **Resolved** | Links only (signed R2 URLs, 7-day expiry) |
+| P4-Q4 | Maximum report size / row limit for CSV? | **Resolved** | 10k row safety cap implemented in backend |
 
 ## 5. Cross-References
 
@@ -62,7 +63,7 @@ Implement export capabilities and a custom report builder for analytics data, co
 - `docs/2-development/04-implemented/d7-email-notifications.md` — Email delivery via Resend
 - `docs/3-reference/tech-specs/backend/file-storage.md` — R2 storage patterns
 - `docs/3-reference/tech-specs/backend/api-contract.md` — HTTP action patterns
-- `spec-gaps.md` — gap tracking (ANL-Q3 export capabilities)
+- `spec-gaps.md` — gap tracking (ANL-Q3 resolved)
 
 ## 6. Implementation Dependencies
 
@@ -122,9 +123,10 @@ reports: defineTable({
 // 5. Format output:
 //    - CSV: headers + rows, UTF-8 with BOM
 //    - JSON: { metadata, data: [...] }
-//    - PDF: HTML template → puppeteer → PDF buffer
-// 6. Upload to R2 via @convex-dev/r2, store storageId
+//    - PDF: deferred
+// 6. Upload to Convex native storage (ctx.storage.store()), store storageId
 // 7. Generate signed URL (7-day expiry), update report record
+```
 ```
 
 ### Frontend Integration
@@ -132,8 +134,9 @@ reports: defineTable({
 - `app/components/ReportBuilderModal.vue` — stepper: Template → Configure → Format → Schedule
 - `app/components/ReportHistoryList.vue` — table with name, type, format, status, created, actions
 - `AnalyticsDashboard.vue` — "Export" button opens ReportBuilderModal with current view as defaults
-- `InsightsPanel.vue` — "Export Insights" quick action (PDF summary)
+- `InsightsPanel.vue` — "Export Insights" quick action (CSV/JSON summary)
 - `app/composables/useReports.ts` — reactive report list, generate/schedule/delete actions
+- `app/composables/useReportBuilder.ts` — builder state (config, format, scheduleCron, reportName, isScheduled, templates)
 
 ### Scheduled Reports (Convex Cron)
 
@@ -156,10 +159,9 @@ crons: [
 
 ## 9. Testing
 
-- Unit: report config validation, CSV/JSON/PDF formatting, query building
+- Unit: report config validation, CSV/JSON formatting, query building
 - Integration: generate monthly summary → verify CSV rows match expenses
 - Scheduled: mock cron → verify report generated + email sent
-- PDF: visual regression test (snapshot) for each template
 - Permissions: org-scoped, user can only see own reports (or all org reports?)
 - Large dataset: 10k expenses → export completes <30s, memory <100MB
 
@@ -168,13 +170,45 @@ crons: [
 1. Add `reports` table + Convex functions → deploy to dev
 2. Build ReportBuilderModal + ReportHistoryList components
 3. Integrate into AnalyticsDashboard + InsightsPanel
-4. Implement PDF generation (decide client vs server)
-5. Add scheduled reports cron + email delivery
-6. Test with real data in dev
-7. Deploy to production
+4. Add scheduled reports cron + email delivery
+5. Test with real data in dev
+6. Deploy to production
 
 ## Lifecycle
 
-- `01-draft` → `02-in-progress`: TBD
-- `02-in-progress` → `03-ready-for-review`: TBD
-- `03-ready-for-review` → `04-implemented`: TBD
+- `01-draft` → `02-in-progress`: 11-November-2026 (implementation started)
+- `02-in-progress` → `03-ready-for-review`: 15-November-2026 (implementation complete, tests passing)
+- `03-ready-for-review` → `04-implemented`: 15-November-2026 (promoted; manual promotion by user request — `/slice-review` command unavailable in environment)
+
+### Lifecycle Report — 15-November-2026
+
+**Backend (complete):**
+- `convex/schema.ts` — added `reports` table with indexes
+- `convex/functions/reports.ts` — implemented: `listReports`, `generateReport`, `deleteReport`, `scheduleReport`, `unscheduleReport`, `getDownloadUrl`, `generateScheduled` (internal action for cron)
+- R2 storage via Convex native `ctx.storage.store()` / `getUrl()` (not @convex-dev/r2 — consistent with `uploadReceipt.ts`)
+- Signed URLs with 7-day expiry, 90-day retention
+- 15 backend tests in `d11-advanced-features.test.ts` — all passing
+
+**Frontend (complete):**
+- `app/components/ReportBuilderModal.vue` — 4-step modal (Template → Configure → Format → Schedule)
+- `app/components/ReportHistoryList.vue` — report table with Download/Delete actions
+- `app/components/AnalyticsDashboard.vue` — Export button wired to ReportBuilderModal
+- `app/components/InsightsPanel.vue` — Export Insights button wired to ReportBuilderModal
+- `app/composables/useReports.ts` — reactive queries/mutations for reports
+- `app/composables/useReportBuilder.ts` — builder state (config, format, schedule, templates)
+
+**Tests (all passing — 723 total):**
+- 5 tests: ReportBuilderModal (renders, close, step navigation, export button)
+- 5 tests: ReportHistoryList (empty state, table, download/delete, opening state)
+- AnalyticsDashboard tests updated with ReportBuilderModal mock
+- All existing tests unaffected
+
+**Open Questions Resolved:**
+- P4-Q1: PDF deferred to follow-up slice
+- P4-Q2: Custom date ranges implemented (dateFrom/dateTo)
+- P4-Q3: Link-only sharing via signed R2 URLs (7-day expiry)
+- P4-Q4: 10k row safety cap implemented
+
+**Documentation Updated:**
+- `docs/3-reference/spec-gaps.md` — ANL-Q3 struck through (resolved)
+- `docs/2-development/README.md` — D21 row updated to `03-ready-for-review`

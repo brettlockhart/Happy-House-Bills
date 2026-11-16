@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useAnalytics } from "~/composables/useAnalytics";
 import { useBudgets } from "~/composables/useAdvancedFeatures";
+import ReportBuilderModal from "~/components/ReportBuilderModal.vue";
 
 const {
   period,
   totalSpent,
   averagePerExpense,
   expenseCount,
-  categories,
+  categories: categorySpending,
   topCategory,
   dailyTotals,
   forecastAmount,
@@ -20,6 +21,12 @@ const {
 } = useAnalytics();
 
 const { data: budgets } = useBudgets();
+
+const showReportModal = ref(false);
+
+const handleReportCreated = (_reportId: string) => {
+  showReportModal.value = false;
+};
 
 const periods: Array<{ value: "week" | "month" | "quarter" | "year"; label: string }> = [
   { value: "week", label: "Week" },
@@ -35,7 +42,7 @@ const maxDaily = computed(() => {
 
 // Budget progress: match budgets to category spending
 const budgetProgress = computed(() => {
-  const catSpend = new Map((categories.value || []).map((c) => [c.category, c.amount]));
+  const catSpend = new Map((categorySpending.value || []).map((c) => [c.category, c.amount]));
   return (budgets.value || [])
     .filter((b) => b.period === "monthly")
     .map((budget) => {
@@ -122,9 +129,9 @@ const budgetBarClass = (pct: number): string => {
 
       <div class="chart-section">
         <h3 class="text-lg font-medium text-gray-900 mb-4">Category Breakdown</h3>
-        <div v-if="categories.length > 0" class="category-list">
+        <div v-if="categorySpending.length > 0" class="category-list">
           <div
-            v-for="cat in categories"
+            v-for="cat in categorySpending"
             :key="cat.category"
             class="category-row"
           >
@@ -207,6 +214,17 @@ const budgetBarClass = (pct: number): string => {
             <span class="insight-message">{{ insight.message }}</span>
           </div>
         </div>
+      </div>
+
+      <div v-if="!isPending && !error" class="chart-section">
+        <button class="btn btn-secondary" @click="showReportModal = true">
+          Export Insights
+        </button>
+        <ReportBuilderModal
+          :visible="showReportModal"
+          @close="showReportModal = false"
+          @created="handleReportCreated"
+        />
       </div>
     </div>
   </div>

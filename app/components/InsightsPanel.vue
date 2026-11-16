@@ -19,14 +19,24 @@
         </span>
         <span class="insight-message">{{ insight.message }}</span>
       </div>
+      <button class="export-insights-btn" @click="showExportModal = true">
+        Export Insights
+      </button>
     </div>
     <p v-else class="text-gray-400">No insights available.</p>
+
+    <ReportBuilderModal
+      :visible="showExportModal"
+      @close="showExportModal = false"
+      @created="handleReportCreated"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useAnalytics } from "~/composables/useAnalytics";
+import ReportBuilderModal from "~/components/ReportBuilderModal.vue";
 
 const {
   isPending,
@@ -34,19 +44,21 @@ const {
   insightsList,
 } = useAnalytics();
 
+const showExportModal = ref(false);
+
+const handleReportCreated = () => {
+  showExportModal.value = false;
+};
+
 const insights = computed(() => insightsList.value);
 
-const severityClass = (severity: string): string => {
-  switch (severity) {
-    case "warning":
-      return "bg-yellow-100 text-yellow-800";
-    case "info":
-      return "bg-blue-100 text-blue-800";
-    case "positive":
-      return "bg-green-100 text-green-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
+const severityClass = (severity: string) => {
+  const classes: Record<string, string> = {
+    warning: "warning",
+    info: "info",
+    positive: "positive",
+  };
+  return classes[severity] ?? "info";
 };
 </script>
 

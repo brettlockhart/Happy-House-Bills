@@ -220,16 +220,20 @@ then domain specs).
 | LI-Q2 | How to handle split expense UX — multiple expenses or single with items? | Open | `docs/2-development/02-in-progress/d19-line-item-extraction.md` | frontend-engineer | Phase 2 — Design review needed |
 | LI-Q3 | Should line items persist for audit/receipt view? | Open | `docs/2-development/04-implemented/d19-line-item-extraction.md` | backend-engineer | Phase 2 — Storage cost vs utility trade-off |
 | CAT-Q1 | How many default categories? (8 proposed) | Open | `docs/2-development/01-draft/d20-expense-categories-enhancement.md` | backend-engineer | Phase 2 — Balance completeness vs overwhelm |
-| CAT-Q2 | Allow users to create unlimited categories? | Open | `docs/2-development/01-draft/d20-expense-categories-enhancement.md` | frontend-engineer | Phase 2 — Cap at 20? Performance/UX |
+| ~~CAT-Q2~~ | Allow users to create unlimited categories? | Resolved | `docs/2-development/01-draft/d20-expense-categories-enhancement.md` | backend-engineer | Phase 2 — No cap implemented; unlimited categories per org, documented in D20 proposal open questions |
 | CAT-Q3 | Category icons: emoji or icon font? | Open | `docs/2-development/01-draft/d20-expense-categories-enhancement.md` | frontend-engineer | Phase 2 — Emoji simpler; icons more consistent |
 | CAT-Q4 | Budget period: calendar month or rolling 30 days? | Open | `docs/2-development/01-draft/d20-expense-categories-enhancement.md` | backend-engineer | Phase 2 — Calendar month simpler for users |
+| P4-Q1 | PDF generation: client-side (jsPDF) or server-side (Convex + puppeteer)? | Deferred | `docs/2-development/02-in-progress/d21-analytics-export-reports.md` | backend-engineer | Phase 4 — Deferred to a follow-up slice; CSV/JSON shipped first |
+| ~~P4-Q2~~ | Support custom date ranges beyond presets? | Resolved | `docs/2-development/02-in-progress/d21-analytics-export-reports.md` | frontend-engineer | Phase 4 — Custom dateFrom/dateTo fields in report config |
+| ~~P4-Q3~~ | Report sharing: link-only or email attachment? | Resolved | `docs/2-development/02-in-progress/d21-analytics-export-reports.md` | security-engineer | Phase 4 — Link-only via signed R2 URLs (7-day expiry) |
+| ~~P4-Q4~~ | Maximum report size / row limit for CSV? | Resolved | `docs/2-development/02-in-progress/d21-analytics-export-reports.md` | backend-engineer | Phase 4 — 10k row safety cap in backend |
 
 ## 7. Appendix: Gap Count Summary
 
 | Metric | Count |
 |--------|-------|
 | Missing referenced documents | 0 |
-| Open questions | 7 |
+| Open questions | 6 |
 | Domains | 11 |
 | Total next actions | 0 |
 

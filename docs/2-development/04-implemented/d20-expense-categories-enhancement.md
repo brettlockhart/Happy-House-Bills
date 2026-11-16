@@ -1,17 +1,17 @@
 ---
-status: Ready for Review
+status: Implemented
 package: app
 priority: high
 created: 11-November-2026
-updated: 14-November-2026
+updated: 15-November-2026
 tags: [expenses, categories, ui, phase2]
-lifecycle: 03-ready-for-review
+lifecycle: 04-implemented
 ---
 
 # Slice D20: Expense Categories Enhancement
 
 **Date:** 11-November-2026
-**Status:** Ready for Review
+**Status:** Implemented
 **Phase:** Phase 2 Enhancement
 
 ## 1. Purpose
@@ -54,10 +54,10 @@ Expand the hardcoded three-category system (groceries, utilities, other) to a fl
 
 | ID | Question | Status | Notes |
 |----|----------|--------|-------|
-| CAT-Q1 | How many default categories? (8 proposed) | Open | Balance completeness vs overwhelm |
-| CAT-Q2 | Allow users to create unlimited categories? | Open | Cap at 20? Performance/UX |
-| CAT-Q3 | Category icons: emoji or icon font? | Open | Emoji simpler; icons more consistent |
-| CAT-Q4 | Budget period: calendar month or rolling 30 days? | Open | Calendar month simpler for users |
+| ~~CAT-Q1~~ | How many default categories? (8 proposed) | Resolved | 8 default categories seeded on org creation |
+| ~~CAT-Q2~~ | Allow users to create unlimited categories? | Resolved | No cap implemented; unlimited categories per org (Phase 2, 2026-11-15); documented in `docs/2-development/supporting-docs/reviews/d20-expense-categories-enhancement-review.md` |
+| ~~CAT-Q3~~ | Category icons: emoji or icon font? | Resolved | Icons from Lucide/heroicons set |
+| ~~CAT-Q4~~ | Budget period: calendar month or rolling 30 days? | Resolved | Calendar month |
 
 ## 5. Cross-References
 
@@ -154,15 +154,16 @@ const DEFAULT_CATEGORIES = [
 
 - `01-draft` → `02-in-progress`: 13-November-2026 (implementation started)
 - `02-in-progress` → `03-ready-for-review`: 14-November-2026 (implementation complete)
+- `03-ready-for-review` → `04-implemented`: 15-November-2026 (Big Three reviews passed; all blocking findings resolved)
 
 ## Lifecycle Report — D20 Expense Categories Enhancement
 
-**Promoted to:** 03-ready-for-review (14-November-2026)
+**Promoted to:** 04-implemented (15-November-2026)
 **Commit:** a782751
-**Tests:** 46 files, 694 passed
+**Tests:** 46 files, 698 passed
 **Lint:** 0 problems
 **Typecheck:** 24 errors (pre-existing baseline)
-**Docs audit:** 0 errors, 59 pre-existing warnings
+**Docs audit:** 0 errors, 16 pre-existing warnings
 
 ### Completed
 - Convex schema: `categories` table (org-scoped, user-configurable) with `by_org` and `by_org_parent` indexes
@@ -173,12 +174,15 @@ const DEFAULT_CATEGORIES = [
 - CategoryPicker component: searchable, grouped by parent, inline category creation
 - CategoryBadge component: coloured dot + icon + name
 - AnalyticsDashboard: budget progress bars with colour tiers (green <80%, yellow 80–100%, red 100%+), over-budget / near-limit warnings
-- Test coverage: `__tests__/convex/categories.test.ts` (17 tests), `__tests__/components/CategoryBadge.test.ts` (5), `__tests__/components/CategoryPicker.test.ts` (10), `__tests__/components/AnalyticsDashboard.test.ts` (11)
+- Migration backfill: `backfillLegacyCategories` maps legacy lowercase names → new defaults
+- Foreign key + rename cascade: `categoryId` on expenses + update cascade
+- Test coverage: `__tests__/convex/categories.test.ts` (18 tests), `__tests__/convex/d11-advanced-features.test.ts` (34 tests), `__tests__/components/CategoryPicker.test.ts` (11 tests), `__tests__/components/AnalyticsDashboard.test.ts` (11 tests), `__tests__/convex/expenses.test.ts` (49 tests)
 
 ### Open Questions Resolved
 - CAT-Q1: 8 default categories — decided and seeded
+- CAT-Q2: Unlimited categories — resolved, no cap implemented
 - CAT-Q3: Icons from Lucide/heroicons set — decided
 - CAT-Q4: Budget period — calendar month — decided
 
 ### Open Questions Remaining
-- CAT-Q2: Allow users to create unlimited categories? (Open — no cap implemented)
+- None for D20 (all resolved)

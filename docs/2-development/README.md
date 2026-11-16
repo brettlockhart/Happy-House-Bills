@@ -28,11 +28,12 @@ Happy House Bills is a web app for couples to track shared household spending, s
 | P0 | Mobile browser compatibility | `tech-specs/frontend/mobile-compat.md` | 04-implemented | ✅ D9 complete |
 | P0 | < 10 min deploy time | `tech-specs/architecture/deployment.md` | 04-implemented | ✅ D10 complete |
 | P0 | Advanced features & enhancements | `tech-specs/advanced-features.md` | 04-implemented | ✅ D11 complete |
-| P0 | Expense Categories Enhancement | `docs/2-development/03-ready-for-review/d20-expense-categories-enhancement.md` | 03-ready-for-review | Awaiting review |
+| P0 | Expense Categories Enhancement | `docs/2-development/04-implemented/d20-expense-categories-enhancement.md` | 04-implemented | ✅ D20 complete |
 | P0 | Mobile-first UI/UX shell | `tech-specs/frontend/mobile-compat.md` | 04-implemented | ✅ D12 complete |
 | P0 | Team Workspaces & Collaboration | `tech-specs/teams/team-workspaces.md` | 04-implemented | ✅ D13 complete |
 | P0 | Advanced Integrations | `docs/2-development/04-implemented/d14-advanced-integrations.md` | 04-implemented | ✅ D14 complete |
 | P0 | Advanced Analytics & Insights | `docs/2-development/04-implemented/d15-advanced-analytics-insights.md` | 04-implemented | ✅ D15 complete |
+| P0 | Analytics Export & Custom Reports | `docs/2-development/04-implemented/d21-analytics-export-reports.md` | 04-implemented | ✅ D21 complete |
 | P0 | Performance & Reliability | `docs/2-development/04-implemented/d16-performance-reliability.md` | 04-implemented | ✅ D16 complete |
 
 ## Review Queue
@@ -65,3 +66,8 @@ Active reviews are tracked in [`supporting-docs/reviews/README.md`](supporting-d
 | D14 — Advanced Integrations | 07-November-2026 | implementation-reviewer | Pass |
 | D15 — Advanced Analytics & Insights | 07-November-2026 | implementation-reviewer | Pass |
 | D16 — Performance & Reliability | 07-November-2026 | implementation-reviewer | Pass |
+| D17 — Google Document AI OCR | 07-November-2026 | implementation-reviewer | Pass |
+| D18 — Push Notifications | 08-November-2026 | implementation-reviewer | Pass |
+| D19 — Line Item Extraction | 08-November-2026 | implementation-reviewer | Pass |
+| D20 — Expense Categories Enhancement | 07-November-2026 | implementation-reviewer | Pass |
+| D21 — Analytics Export & Custom Reports | 15-November-2026 | manual promotion (agent) | Complete |
