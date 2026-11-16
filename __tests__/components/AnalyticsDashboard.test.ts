@@ -40,6 +40,16 @@ vi.mock("~/composables/useAdvancedFeatures", () => ({
   }),
 }));
 
+vi.mock("~/components/ReportBuilderModal.vue", () => ({
+  default: {
+    name: "ReportBuilderModal",
+    render: () => null,
+    setup() {
+      return { visible: false };
+    },
+  },
+}));
+
 describe("AnalyticsDashboard.vue", () => {
   beforeEach(() => {
     vi.resetAllMocks();

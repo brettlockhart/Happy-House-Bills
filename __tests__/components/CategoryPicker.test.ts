@@ -3,22 +3,30 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { computed } from "vue";
-import { mount } from "@vue/test-utils";
+import { mount, flushPromises } from "@vue/test-utils";
 import CategoryPicker from "../../app/components/CategoryPicker.vue";
+import { useCategories } from "~/composables/useAdvancedFeatures";
 
-vi.mock("~/composables/useAdvancedFeatures", () => ({
-  useCategories: () => ({
-    data: computed(() => [
-      { _id: "cat_1", name: "Groceries", icon: "cart", color: "#22c55e", sortOrder: 0 },
-      { _id: "cat_2", name: "Utilities", icon: "zap", color: "#f59e0b", sortOrder: 1, parentId: "cat_1" },
-      { _id: "cat_3", name: "Transport", icon: "car", color: "#3b82f6", sortOrder: 2 },
-    ]),
-    isLoading: false,
-    createCategory: vi.fn().mockResolvedValue({ id: "new_cat" }),
-    updateCategory: vi.fn().mockResolvedValue({ id: "cat_1" }),
-    deleteCategory: vi.fn().mockResolvedValue({ id: "cat_1" }),
-  }),
-}));
+vi.mock("~/composables/useAdvancedFeatures", () => {
+  const createCategory = vi.fn().mockResolvedValue({ id: "new_cat" });
+  const updateCategory = vi.fn().mockResolvedValue({ id: "cat_1" });
+  const deleteCategory = vi.fn().mockResolvedValue({ id: "cat_1" });
+  return {
+    useCategories: () => ({
+      data: computed(() => [
+        { _id: "cat_1", name: "Groceries", icon: "cart", color: "#22c55e", sortOrder: 0 },
+        { _id: "cat_2", name: "Utilities", icon: "zap", color: "#f59e0b", sortOrder: 1, parentId: "cat_1" },
+        { _id: "cat_3", name: "Transport", icon: "car", color: "#3b82f6", sortOrder: 2 },
+      ]),
+      isLoading: false,
+      createCategory,
+      updateCategory,
+      deleteCategory,
+    }),
+  };
+});
+
+const { createCategory } = vi.mocked(useCategories)();
 
 function makeComponent(open = false) {
   return mount(CategoryPicker, { props: { modelValue: open } });
@@ -98,6 +106,22 @@ describe("CategoryPicker.vue", () => {
   it("emits close when closing from hidden state", () => {
     const comp = makeComponent(false);
     expect(comp.emitted("close")).toBeFalsy();
+  });
+
+  it("creates a new category via inline create form and calls createCategory", async () => {
+    const comp = makeComponent(true);
+    clickElement(comp, ".picker-footer button");
+    await comp.vm.$nextTick();
+    expect(comp.find(".picker-create").exists()).toBe(true);
+
+    setInputValue(comp, ".picker-create input[type='text']", "NewCategory");
+    await comp.vm.$nextTick();
+
+    const formEl = comp.find(".picker-create").element as HTMLFormElement;
+    formEl.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flushPromises();
+
+    expect(createCategory).toHaveBeenCalledWith({ name: "NewCategory", color: "#10b981" });
   });
 
   it("emits select with category data", async () => {

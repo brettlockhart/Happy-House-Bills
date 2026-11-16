@@ -49,8 +49,6 @@ export const createBudget = mutation({
   },
 });
 
-export const create = createBudget;
-
 export const list = query({
   args: {},
   handler: async (ctx, _args) => {
@@ -60,8 +58,6 @@ export const list = query({
       .collect();
   },
 });
-
-export const listBudgets = list;
 
 export const updateBudget = mutation({
   args: {
@@ -111,8 +107,6 @@ export const updateBudget = mutation({
     return args.id;
   },
 });
-
-export const update = updateBudget;
 
 export const deleteBudget = mutation({
   args: { id: v.id("budgets") },
@@ -201,7 +195,7 @@ export const checkBudget = internalMutation({
         await sendEmail({
           to: ["admin@happyhousebills.com"],
           subject: `Budget alert: ${escapeHtml(budget.category)}`,
-          html: `<p>You have spent ${total/100} on ${escapeHtml(budget.category)}, exceeding ${budget.alertThreshold}% of your budget of ${budget.amount/100}.</p>`,
+          html: `<p>You have spent ${total} on ${escapeHtml(budget.category)}, exceeding ${budget.alertThreshold}% of your budget of ${budget.amount}.</p>`,
           orgId: orgId as string,
           userId: "admin",
         });

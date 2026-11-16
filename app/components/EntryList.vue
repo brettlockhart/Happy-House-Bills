@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { useExpenses, usePendingExpenses } from "~/composables/useExpenses";
 import { useSettlements } from "~/composables/useSettlements";
 import { formatCurrency, formatRelativeDate } from "~/utils/formatting";
+import CategoryBadge from "~/components/CategoryBadge.vue";
 
 import type { Id } from "~/convex/_generated/dataModel";
 
@@ -23,6 +24,9 @@ const entries = computed(() => {
     date: string;
     amount: number;
     description: string;
+    category?: string;
+    categoryColor?: string;
+    categoryIcon?: string;
     isPending: boolean;
     isMine: boolean;
     paidBy: string;
@@ -35,6 +39,9 @@ const entries = computed(() => {
       date: exp.date,
       amount: exp.amount,
       description: exp.notes || exp.category,
+      category: exp.category,
+      categoryColor: exp.categoryColor,
+      categoryIcon: exp.categoryIcon,
       isPending: exp.status === "pending",
       isMine: exp.enteredBy === props.currentUserId,
       paidBy: exp.paidBy,
@@ -79,13 +86,19 @@ async function handleReject(expense: { id: Id<"expenses"> | Id<"settlements">; t
       <p>Add an expense to get started.</p>
     </div>
 
-    <div v-else class="hhb-entries">
+<div v-else class="hhb-entries">
       <div v-for="entry in entries" :key="`${entry.type}-${entry.id}`" class="hhb-entry">
         <div class="hhb-entry-main">
           <span class="hhb-entry-type" :class="entry.type">
-            {{ entry.type === "expense" ? (entry.description || "Expense") : "Settlement" }}
+            {{ entry.type === "settlement" ? "Settlement" : (entry.description || "Expense") }}
           </span>
           <span class="hhb-entry-date">{{ formatRelativeDate(entry.date) }}</span>
+          <CategoryBadge
+            v-if="entry.categoryColor"
+            :category="entry.category || ''"
+            :color="entry.categoryColor"
+            :icon="entry.categoryIcon"
+          />
         </div>
         <div class="hhb-entry-amount">
           {{ formatCurrency(entry.amount) }}

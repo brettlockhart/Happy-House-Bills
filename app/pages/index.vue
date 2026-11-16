@@ -5,6 +5,7 @@ import EntryList from "~/components/EntryList.vue";
 import SettleUpModal from "~/components/SettleUpModal.vue";
 import AnalyticsDashboard from "~/components/AnalyticsDashboard.vue";
 import NotificationBell from "~/components/NotificationBell.vue";
+import type { Id } from "~/convex/_generated/dataModel";
 
 const { userId, orgId } = useAuth();
 const { createExpense } = useExpenses();
@@ -18,6 +19,7 @@ async function handleExpenseSubmit(expense: {
   amount: number;
   date: string;
   category: string;
+  categoryId?: Id<"categories">;
   notes?: string;
   paidBy: string;
   receiptImageId?: string;

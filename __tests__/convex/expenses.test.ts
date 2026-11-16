@@ -538,6 +538,36 @@ describe("expenses:create", () => {
       })
     ).rejects.toThrow("Unauthenticated");
   });
+
+  it("succeeds with new user-created category name (e.g. Entertainment)", async () => {
+    const { create } = await import("../../convex/functions/expenses");
+    const ctx = createMockCtx(validIdentity(), { expenses: [] });
+    const result = await create.handler(ctx as never, {
+      amount: 4500,
+      date: "2024-01-15",
+      category: "Entertainment",
+      categoryId: undefined,
+      paidBy: "user_1",
+    });
+    expect((result as { id: string }).id).toBe("mock_id");
+    expect((result as { isDuplicate: boolean }).isDuplicate).toBe(false);
+    expect(ctx._insertCalls![0]).toMatchObject({ category: "Entertainment" });
+  });
+
+  it("succeeds with capitalised default category name (e.g. Groceries)", async () => {
+    const { create } = await import("../../convex/functions/expenses");
+    const ctx = createMockCtx(validIdentity(), { expenses: [] });
+    const result = await create.handler(ctx as never, {
+      amount: 12000,
+      date: "2024-01-10",
+      category: "Groceries",
+      categoryId: undefined,
+      paidBy: "user_1",
+    });
+    expect((result as { id: string }).id).toBe("mock_id");
+    expect((result as { isDuplicate: boolean }).isDuplicate).toBe(false);
+    expect(ctx._insertCalls![0]).toMatchObject({ category: "Groceries" });
+  });
 });
 
 describe("SEC-002: GDPR retention — deletedAt soft-delete", () => {

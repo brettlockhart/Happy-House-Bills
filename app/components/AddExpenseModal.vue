@@ -87,7 +87,7 @@ import { useGoogleOCR } from "~/composables/useGoogleOCR";
 import ReceiptUploader from "~/components/ReceiptUploader.vue";
 import CategoryPicker from "~/components/CategoryPicker.vue";
 import CategoryBadge from "~/components/CategoryBadge.vue";
-import type { Doc } from "~/convex/_generated/dataModel";
+import type { Doc, Id } from "~/convex/_generated/dataModel";
 
 type Category = Doc<"categories">;
 
@@ -96,6 +96,7 @@ interface Expense {
   amount: number;
   date: string;
   category: string;
+  categoryId?: Id<"categories">;
   notes?: string;
   paidBy: string;
   status: "pending" | "approved" | "rejected";
@@ -124,6 +125,7 @@ const emit = defineEmits<{
     amount: number;
     date: string;
     category: string;
+    categoryId?: Id<"categories">;
     notes?: string;
     paidBy: string;
     receiptImageId?: string;
@@ -137,6 +139,7 @@ const form = reactive({
   amount: 0,
   date: new Date().toISOString().split("T")[0] as string,
   category: "other" as string,
+  categoryId: undefined as Id<"categories"> | undefined,
   notes: "",
   paidBy: props.currentUserId,
   store: "",
@@ -170,6 +173,7 @@ watch(() => props.expense, (expense) => {
     form.amount = expense.amount;
     form.date = expense.date;
     form.category = expense.category || "other";
+    form.categoryId = expense.categoryId;
     form.notes = expense.notes || "";
     form.paidBy = expense.paidBy;
     form.store = "";
@@ -184,6 +188,7 @@ function resetForm() {
   form.amount = 0;
   form.date = new Date().toISOString().split("T")[0] as string;
   form.category = "other";
+  form.categoryId = undefined;
   form.notes = "";
   form.paidBy = props.currentUserId;
   form.store = "";
@@ -207,6 +212,7 @@ async function handleReceiptChange(file: File | null) {
 
 function handleCategorySelect(category: Category) {
   form.category = category.name;
+  form.categoryId = category._id;
   selectedCategory.value = category;
 }
 

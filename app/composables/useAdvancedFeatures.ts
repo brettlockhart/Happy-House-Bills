@@ -15,13 +15,13 @@ type ExpenseSummary = {
 
 export function useCategories() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = useConvexQuery((api as any).categories?.list || (api as any).categories?.listCategories, {});
+  const result = useConvexQuery((api as any).categories?.list, {});
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const createMutation = useConvexMutation((api as any).categories?.create || (api as any).categories?.createCategory);
+  const createMutation = useConvexMutation((api as any).categories?.create);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const updateMutation = useConvexMutation((api as any).categories?.update || (api as any).categories?.updateCategory);
+  const updateMutation = useConvexMutation((api as any).categories?.update);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const deleteMutation = useConvexMutation((api as any).categories?.delete || (api as any).categories?.deleteCategory || (api as any).categories?.del);
+  const deleteMutation = useConvexMutation((api as any).categories?.deleteCategory);
 
   return {
     data: computed(() => (result.data.value as Category[] | undefined) ?? []),
@@ -34,13 +34,13 @@ export function useCategories() {
 
 export function useBudgets() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = useConvexQuery((api as any).budgets?.list || (api as any).budgets?.listBudgets, {});
+  const result = useConvexQuery((api as any).budgets?.list, {});
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const createMutation = useConvexMutation((api as any).budgets?.create || (api as any).budgets?.createBudget);
+  const createMutation = useConvexMutation((api as any).budgets?.createBudget);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const updateMutation = useConvexMutation((api as any).budgets?.update || (api as any).budgets?.updateBudget);
+  const updateMutation = useConvexMutation((api as any).budgets?.updateBudget);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const deleteMutation = useConvexMutation((api as any).budgets?.delete || (api as any).budgets?.deleteBudget || (api as any).budgets?.del);
+  const deleteMutation = useConvexMutation((api as any).budgets?.deleteBudget);
 
   return {
     data: computed(() => (result.data.value as Budget[] | undefined) ?? []),

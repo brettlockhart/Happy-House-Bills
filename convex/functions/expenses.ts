@@ -13,11 +13,8 @@ export const create = mutation({
   args: {
     amount: v.number(),
     date: v.string(),
-    category: v.union(
-      v.literal("groceries"),
-      v.literal("utilities"),
-      v.literal("other")
-    ),
+    category: v.string(),
+    categoryId: v.optional(v.id("categories")),
     paidBy: v.string(),
     notes: v.optional(v.string()),
     receiptImageId: v.optional(v.id("_storage")),
@@ -30,6 +27,13 @@ export const create = mutation({
 
     if (userId !== args.paidBy) {
       throw new Error("Expense paidBy must match authenticated user");
+    }
+
+    if (args.categoryId) {
+      const cat = await ctx.db.get(args.categoryId);
+      if (!cat || cat.orgId !== orgId) {
+        throw new Error("Category not found in this organization");
+      }
     }
 
     const duplicateResult = await runDuplicateCheck(ctx, {
@@ -45,6 +49,7 @@ export const create = mutation({
       amount: args.amount,
       date: args.date,
       category: args.category,
+      categoryId: args.categoryId,
       paidBy: args.paidBy,
       notes: args.notes,
       status: "pending" as const,
@@ -125,12 +130,38 @@ export const list = query({
   args: {},
   handler: async (ctx) => {
     const { orgId } = await requireAuthenticatedOrg(ctx);
-    return ctx.db
+
+    const expenses = await ctx.db
       .query("expenses")
       .withIndex("by_org_date", (q) => q.eq("orgId", orgId))
       .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .order("desc")
       .collect();
+
+    const categories = await ctx.db
+      .query("categories")
+      .withIndex("by_org", (q) => q.eq("orgId", orgId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
+      .collect();
+
+    const categoryMap = new Map<string, { name: string; color: string; icon?: string }>();
+    for (const cat of categories) {
+      categoryMap.set(cat._id as unknown as string, {
+        name: cat.name,
+        color: cat.color,
+        icon: cat.icon,
+      });
+    }
+
+    return expenses.map((exp) => {
+      const catInfo = exp.categoryId ? categoryMap.get(exp.categoryId as unknown as string) : undefined;
+      return {
+        ...exp,
+        categoryColor: catInfo?.color,
+        categoryIcon: catInfo?.icon,
+        category: catInfo?.name ?? exp.category,
+      };
+    });
   },
 });
 

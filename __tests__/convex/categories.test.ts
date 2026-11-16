@@ -67,26 +67,12 @@ function makeCtx() {
   const queryChain = {
     withIndex: vi.fn().mockReturnValue({
       first: vi.fn().mockResolvedValue(null),
-      filter: vi.fn().mockReturnValue({
-        order: vi.fn().mockReturnValue({
-          collect: vi.fn().mockResolvedValue([]),
-        }),
-        collect: vi.fn().mockResolvedValue([]),
-      }),
+      filter: vi.fn(() => queryChain),
       collect: vi.fn().mockResolvedValue([]),
-      order: vi.fn().mockReturnValue({
-        collect: vi.fn().mockResolvedValue([]),
-      }),
+      order: vi.fn().mockReturnValue({ collect: vi.fn().mockResolvedValue([]) }),
     }),
-    filter: vi.fn().mockReturnValue({
-      order: vi.fn().mockReturnValue({
-        collect: vi.fn().mockResolvedValue([]),
-      }),
-      collect: vi.fn().mockResolvedValue([]),
-    }),
-    order: vi.fn().mockReturnValue({
-      collect: vi.fn().mockResolvedValue([]),
-    }),
+    filter: vi.fn(() => queryChain),
+    order: vi.fn().mockReturnValue({ collect: vi.fn().mockResolvedValue([]) }),
     collect: vi.fn().mockResolvedValue([]),
   };
   ctx.db.query = vi.fn().mockReturnValue(queryChain);
@@ -171,12 +157,14 @@ describe("convex/categories", () => {
     it("returns org-scoped categories ordered by sortOrder", async () => {
       const ctx = makeCtx();
       ctx.db.query().withIndex().collect.mockResolvedValueOnce([
-        { _id: "cat_1", name: "Groceries", sortOrder: 0, orgId: "org_test" },
-        { _id: "cat_2", name: "Utilities", sortOrder: 1, orgId: "org_test" },
+        { _id: "cat_1", name: "Groceries", sortOrder: 2, orgId: "org_test" },
+        { _id: "cat_2", name: "Utilities", sortOrder: 0, orgId: "org_test" },
       ]);
       const { list } = await import("../../convex/categories");
       const result = await list.handler(ctx);
       expect(result).toHaveLength(2);
+      expect(result[0].name).toBe("Utilities");
+      expect(result[1].name).toBe("Groceries");
       expect(ctx.db.query).toHaveBeenCalledWith("categories");
     });
   });
@@ -255,6 +243,48 @@ describe("convex/categories", () => {
       expect(id).toBe("cat_1");
       expect(ctx.db.delete).toHaveBeenCalledWith("cat_1");
     });
+
+    it("reassigns expenses referencing the deleted category to Other", async () => {
+      const ctx = makeCtx();
+      const existing = { _id: "cat_1", orgId: "org_test", name: "Food" };
+      ctx.db.get.mockResolvedValueOnce(existing);
+
+      const byIdExpense = { _id: "exp_1", orgId: "org_test", category: "Food", categoryId: "cat_1", deletedAt: undefined };
+      const legacyExpense = { _id: "exp_2", orgId: "org_test", category: "food", deletedAt: undefined };
+      const otherCat = { _id: "cat_other", orgId: "org_test", name: "Other" };
+
+      function chain(collectValues: unknown[][]) {
+        let call = 0;
+        const self: Record<string, unknown> = {};
+        self.withIndex = vi.fn(() => self);
+        self.filter = vi.fn(() => self);
+        self.first = vi.fn().mockResolvedValue(otherCat);
+        self.collect = vi.fn(() => Promise.resolve(collectValues[call++] ?? []));
+        return self;
+      }
+
+      const expenseChain = chain([[byIdExpense], [legacyExpense]]);
+      const categoryChain = chain([[otherCat]]);
+
+      ctx.db.query.mockImplementation((table: string) => {
+        if (table === "expenses") return expenseChain;
+        if (table === "categories") return categoryChain;
+        return chain([[]]);
+      });
+
+      const { deleteCategory } = await import("../../convex/categories");
+      await deleteCategory.handler(ctx, { id: "cat_1" });
+
+      expect(ctx.db.delete).toHaveBeenCalledWith("cat_1");
+      expect(ctx.db.patch).toHaveBeenCalledWith("exp_1", expect.objectContaining({
+        category: "Other",
+        categoryId: "cat_other",
+      }));
+      expect(ctx.db.patch).toHaveBeenCalledWith("exp_2", expect.objectContaining({
+        category: "Other",
+        categoryId: "cat_other",
+      }));
+    });
   });
 
   describe("seedDefaultCategories", () => {
@@ -269,17 +299,21 @@ describe("convex/categories", () => {
       expect(ctx.db.insert).not.toHaveBeenCalled();
     });
 
-    it("inserts 8 default categories when none exist", async () => {
+    it("inserts default roots and sub-categories when none exist", async () => {
       const ctx = makeCtx();
       const collectMock = ctx.db.query().withIndex().filter().collect;
       collectMock.mockResolvedValue([]);
       const { seedDefaultCategories } = await import("../../convex/categories");
       await seedDefaultCategories(ctx, "org_test");
-      expect(ctx.db.insert).toHaveBeenCalledTimes(8);
-      expect(ctx.db.insert).toHaveBeenNthCalledWith(1, "categories", expect.objectContaining({
+      // 8 default roots + sub-categories for each root that has children
+      const insertCalls = (ctx.db.insert as ReturnType<typeof vi.fn>).mock.calls;
+      expect(insertCalls.length).toBeGreaterThan(8);
+      expect(insertCalls[0][0]).toBe("categories");
+      expect(insertCalls[0][1]).toMatchObject({
         name: "Groceries",
         isDefault: true,
-      }));
+        subCategories: expect.any(Array),
+      });
     });
   });
 

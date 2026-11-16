@@ -3,7 +3,11 @@ import { useConvexQuery, useConvexMutation } from "convex-vue";
 import { api } from "~/convex/_generated/api";
 import type { Doc } from "~/convex/_generated/dataModel";
 
-type Expense = Doc<"expenses">;
+type Expense = Doc<"expenses"> & {
+  categoryColor?: string;
+  categoryIcon?: string;
+  category?: string;
+};
 type BalanceResult = { balance: number; owesWhom: string };
 
 export function useBalance() {

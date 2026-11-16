@@ -59,7 +59,7 @@ await ctx.db.insert("memberships", {
       updatedAt: now,
     });
 
-    await seedDefaultCategories(ctx, orgDocId as unknown as string);
+    await seedDefaultCategories(ctx, orgDocId as unknown as string, userId);
 
     return { orgId: orgDocId as unknown as string };
   },
@@ -98,7 +98,7 @@ export const createOrg = mutation({
       updatedAt: now,
     });
 
-    await seedDefaultCategories(ctx, orgDocId as unknown as string);
+    await seedDefaultCategories(ctx, orgDocId as unknown as string, userId);
 
     return { orgId: orgDocId as unknown as string };
   },
