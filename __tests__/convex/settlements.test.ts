@@ -170,7 +170,17 @@ function createMockCtx(
       getUserIdentity: () => Promise.resolve(user),
     },
     db: {
-      query: () => createQueryChain(options?.settlements || []),
+      query: (table: string) => {
+        if (table === "memberships") {
+          return createQueryChain([{
+            orgId: user?.org_id || "org_1",
+            userId: user?.subject || "user_1",
+            role: "member",
+            status: "active",
+          }]);
+        }
+        return createQueryChain(options?.settlements || []);
+      },
       get: () => Promise.resolve(options?.settlementToGet || null),
       patch: (_id: string, _data: Record<string, unknown>) => Promise.resolve(),
       insert: (_table: string, _data: Record<string, unknown>) => Promise.resolve("mock_settlement_id"),

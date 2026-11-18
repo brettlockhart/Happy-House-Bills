@@ -29,6 +29,7 @@
     "happy-dom": "^21.0.4",
     "husky": "^9.0.0",
     "typescript": "^5.0.0",
+    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^5.0.0",
     "vue-tsc": "^3.3.13"
   },

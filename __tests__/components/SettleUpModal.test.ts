@@ -8,7 +8,7 @@ import SettleUpModal from "../../app/components/SettleUpModal.vue";
 
 const mockForm = ref({ amount: 0, fromUser: "user1", toUser: "user2" });
 
-vi.mock("~/convex/_generated/api", () => ({
+vi.mock("~~/convex/_generated/api", () => ({
   api: {
     settlements: {
       create: { _name: "create" },
@@ -17,7 +17,7 @@ vi.mock("~/convex/_generated/api", () => ({
   Settlement: {} as never,
 }));
 
-vi.mock("~/convex/_generated/dataModel", () => ({
+vi.mock("~~/convex/_generated/dataModel", () => ({
   Doc: {} as never,
   Id: {} as never,
 }));

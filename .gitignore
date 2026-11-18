@@ -31,3 +31,6 @@ coverage/
 
 -- Slice baselines (local only)
 .slice-baseline/
+
+# clerk configuration (can include secrets)
+/.clerk/

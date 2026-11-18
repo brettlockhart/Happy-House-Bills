@@ -83,21 +83,21 @@ describe("AnalyticsDashboard.vue", () => {
   it("shows green bar for budget < 80%", () => {
     const comp = mount(AnalyticsDashboard);
     const bars = comp.findAll(".budget-bar-fill");
-    const transportBar = bars.find(b => b.element.classList.contains("bg-emerald-500"));
+    const transportBar = bars.find(b => b.element.classList.contains("hhb-progress-fill--ok"));
     expect(transportBar).toBeDefined();
   });
 
   it("shows yellow bar for budget 80-100%", () => {
     const comp = mount(AnalyticsDashboard);
     const bars = comp.findAll(".budget-bar-fill");
-    const diningBar = bars.find(b => b.element.classList.contains("bg-yellow-500"));
+    const diningBar = bars.find(b => b.element.classList.contains("hhb-progress-fill--warn"));
     expect(diningBar).toBeDefined();
   });
 
   it("shows red bar for budget >= 100%", () => {
     const comp = mount(AnalyticsDashboard);
     const bars = comp.findAll(".budget-bar-fill");
-    const overBudgetBar = bars.find(b => b.element.classList.contains("bg-red-500"));
+    const overBudgetBar = bars.find(b => b.element.classList.contains("hhb-progress-fill--over"));
     expect(overBudgetBar).toBeDefined();
   });
 

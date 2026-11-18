@@ -13,7 +13,7 @@ vi.mock("convex-vue", () => ({
   }),
 }));
 
-vi.mock("~/convex/_generated/api", () => ({
+vi.mock("~~/convex/_generated/api", () => ({
   api: {
     functions: {
       expenses: {
@@ -28,7 +28,7 @@ vi.mock("~/convex/_generated/api", () => ({
   Expense: {} as never,
 }));
 
-vi.mock("~/convex/_generated/dataModel", () => ({
+vi.mock("~~/convex/_generated/dataModel", () => ({
   Doc: {} as never,
   Id: {} as never,
 }));

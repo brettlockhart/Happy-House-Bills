@@ -3,6 +3,8 @@
   "compilerOptions": {
     "types": ["node"],
     "paths": {
+      "~~/convex/*": ["./convex/*"],
+      "~~/convex": ["./convex"],
       "~/convex/*": ["./convex/*"],
       "~/convex": ["./convex"],
       "~/utils/*": ["./app/utils/*"],

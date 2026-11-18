@@ -1,6 +1,7 @@
 import { internalMutation, mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedOrg } from "../auth";
+import { assertOrgAdminAccess } from "./permissions";
 import { checkPermission } from "./shared_constants";
 
 export const INTEGRATION_TYPES = [
@@ -85,6 +86,7 @@ export const createIntegration = mutation({
   },
   handler: async (ctx, args) => {
     const { orgId, userId } = await requireAuthenticatedOrg(ctx);
+    await assertOrgAdminAccess(ctx, orgId, userId);
 
     if (!checkPermission("admin", "integration:create")) {
       throw new Error("Insufficient permissions to create integrations");
@@ -135,7 +137,8 @@ export const updateIntegration = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const { orgId } = await requireAuthenticatedOrg(ctx);
+    const { userId, orgId } = await requireAuthenticatedOrg(ctx);
+    await assertOrgAdminAccess(ctx, orgId, userId);
 
     if (!checkPermission("admin", "integration:update")) {
       throw new Error("Insufficient permissions to update integrations");
@@ -162,7 +165,8 @@ export const updateIntegration = mutation({
 export const deleteIntegration = mutation({
   args: { integrationId: v.id("integrations") },
   handler: async (ctx, args) => {
-    const { orgId } = await requireAuthenticatedOrg(ctx);
+    const { userId, orgId } = await requireAuthenticatedOrg(ctx);
+    await assertOrgAdminAccess(ctx, orgId, userId);
 
     if (!checkPermission("admin", "integration:delete")) {
       throw new Error("Insufficient permissions to delete integrations");

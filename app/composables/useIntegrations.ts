@@ -1,6 +1,6 @@
 import { computed, ref } from "vue";
 import { apiGateway } from "~/utils/api-gateway";
-import type { IntegrationType } from "~/convex/functions/integrations";
+import type { IntegrationType } from "~~/convex/functions/integrations";
 
 export interface Integration {
   id: string;

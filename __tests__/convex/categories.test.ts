@@ -75,7 +75,25 @@ function makeCtx() {
     order: vi.fn().mockReturnValue({ collect: vi.fn().mockResolvedValue([]) }),
     collect: vi.fn().mockResolvedValue([]),
   };
-  ctx.db.query = vi.fn().mockReturnValue(queryChain);
+  const membershipChain = {
+    withIndex: vi.fn().mockReturnValue({
+      first: vi.fn().mockResolvedValue({
+        orgId: "org_test",
+        userId: "user_test",
+        role: "admin",
+        status: "active",
+      }),
+      filter: vi.fn(() => membershipChain),
+      collect: vi.fn().mockResolvedValue([]),
+      order: vi.fn().mockReturnValue({ collect: vi.fn().mockResolvedValue([]) }),
+    }),
+    filter: vi.fn(() => membershipChain),
+    order: vi.fn().mockReturnValue({ collect: vi.fn().mockResolvedValue([]) }),
+    collect: vi.fn().mockResolvedValue([]),
+  };
+  ctx.db.query = vi.fn((table?: string) =>
+    table === "memberships" ? membershipChain : queryChain,
+  );
   return ctx;
 }
 
@@ -265,10 +283,13 @@ describe("convex/categories", () => {
 
       const expenseChain = chain([[byIdExpense], [legacyExpense]]);
       const categoryChain = chain([[otherCat]]);
+      const membershipChain = chain([[{ orgId: "org_test", userId: "user_test", role: "admin", status: "active" }]]);
+      membershipChain.first = vi.fn().mockResolvedValue({ orgId: "org_test", userId: "user_test", role: "admin", status: "active" });
 
       ctx.db.query.mockImplementation((table: string) => {
         if (table === "expenses") return expenseChain;
         if (table === "categories") return categoryChain;
+        if (table === "memberships") return membershipChain;
         return chain([[]]);
       });
 

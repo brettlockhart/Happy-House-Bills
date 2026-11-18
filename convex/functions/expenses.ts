@@ -1,7 +1,9 @@
 import { internalMutation, mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedOrg } from "../auth";
+import { assertOrgWriteAccess } from "./permissions";
 import { runDuplicateCheck } from "./duplicateDetection";
+import { assertReceiptUploadsOwned } from "./receiptUpgrades";
 import { sendEmail, renderExpenseNotificationEmail } from "./email";
 import { clerkRequest } from "./clerk";
 import type { Doc, Id } from "../_generated/dataModel";
@@ -18,15 +20,75 @@ export const create = mutation({
     paidBy: v.string(),
     notes: v.optional(v.string()),
     receiptImageId: v.optional(v.id("_storage")),
+    receiptImageIds: v.optional(v.array(v.id("_storage"))),
     receiptPHash: v.optional(v.string()),
     receiptFingerprint: v.optional(v.string()),
+    store: v.optional(v.string()),
+    ocrSource: v.optional(v.string()),
+    ocrConfidence: v.optional(v.number()),
+    ocrRawText: v.optional(v.string()),
+    ocrNeedsReview: v.optional(v.boolean()),
+    clientRequestId: v.optional(v.string()),
+    lineItems: v.optional(v.array(v.object({
+      description: v.string(),
+      quantity: v.optional(v.number()),
+      unitPrice: v.optional(v.number()),
+      totalPrice: v.optional(v.number()),
+      categoryHint: v.optional(v.string()),
+    }))),
   },
   handler: async (ctx, args) => {
     const { userId, orgId } = await requireAuthenticatedOrg(ctx);
+    await assertOrgWriteAccess(ctx, orgId, userId);
+
     const now = Date.now();
 
     if (userId !== args.paidBy) {
       throw new Error("Expense paidBy must match authenticated user");
+    }
+
+    if (!Number.isFinite(args.amount) || args.amount <= 0 || args.amount > 1_000_000) {
+      throw new Error("Amount must be a positive number up to 1,000,000");
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(args.date) || Number.isNaN(Date.parse(args.date))) {
+      throw new Error("Date must be a valid YYYY-MM-DD value");
+    }
+    if ((args.notes?.length ?? 0) > 2000 || (args.store?.length ?? 0) > 200) {
+      throw new Error("Notes or store name is too long");
+    }
+    if (args.ocrRawText && args.ocrRawText.length > 20000) {
+      throw new Error("OCR text exceeds the 20,000 character limit");
+    }
+    if (args.ocrConfidence !== undefined && (args.ocrConfidence < 0 || args.ocrConfidence > 100)) {
+      throw new Error("OCR confidence must be between 0 and 100");
+    }
+    if (args.ocrSource && !["openrouter", "tesseract", "document-ai", "manual"].includes(args.ocrSource)) {
+      throw new Error("Invalid OCR source");
+    }
+    if (args.lineItems) {
+      if (args.lineItems.length > 200) throw new Error("Too many line items (maximum 200)");
+      for (const item of args.lineItems) {
+        if (!item.description.trim() || item.description.length > 200) {
+          throw new Error("Line item descriptions must be 1-200 characters");
+        }
+        for (const value of [item.quantity, item.unitPrice, item.totalPrice]) {
+          if (value !== undefined && (!Number.isFinite(value) || value < 0 || value > 1_000_000)) {
+            throw new Error("Line item values must be finite numbers between 0 and 1,000,000");
+          }
+        }
+      }
+    }
+
+    if (args.clientRequestId) {
+      const existing = await ctx.db
+        .query("expenses")
+        .withIndex("by_org_clientRequest", (q) =>
+          q.eq("orgId", orgId).eq("clientRequestId", args.clientRequestId!),
+        )
+        .first();
+      if (existing) {
+        return { id: existing._id, isDuplicate: false, duplicateMatches: [] };
+      }
     }
 
     if (args.categoryId) {
@@ -35,6 +97,9 @@ export const create = mutation({
         throw new Error("Category not found in this organization");
       }
     }
+
+    const storageIds = args.receiptImageIds ?? (args.receiptImageId ? [args.receiptImageId] : []);
+    await assertReceiptUploadsOwned(ctx, storageIds, orgId);
 
     const duplicateResult = await runDuplicateCheck(ctx, {
       orgId,
@@ -56,9 +121,17 @@ export const create = mutation({
       enteredBy: userId,
       approvedBy: undefined,
       rejectReason: undefined,
-      receiptImageId: args.receiptImageId,
+      receiptImageId: args.receiptImageId ?? args.receiptImageIds?.[0],
+      receiptImageIds: args.receiptImageIds ?? (args.receiptImageId ? [args.receiptImageId] : undefined),
       receiptPHash: args.receiptPHash,
       receiptFingerprint: args.receiptFingerprint,
+      store: args.store,
+      ocrSource: args.ocrSource,
+      ocrConfidence: args.ocrConfidence,
+      ocrRawText: args.ocrRawText,
+      ocrNeedsReview: args.ocrNeedsReview,
+      clientRequestId: args.clientRequestId,
+      lineItems: args.lineItems,
       createdAt: now,
       updatedAt: now,
       deletedAt: undefined,
@@ -80,6 +153,7 @@ export const approve = mutation({
   args: { expenseId: v.id("expenses") },
   handler: async (ctx, args) => {
     const { userId, orgId } = await requireAuthenticatedOrg(ctx);
+    await assertOrgWriteAccess(ctx, orgId, userId);
 
     const expense = (await ctx.db.get(args.expenseId)) as ExpenseDoc | null;
     if (!expense) throw new Error("Expense not found");
@@ -106,6 +180,7 @@ export const reject = mutation({
   },
   handler: async (ctx, args) => {
     const { userId, orgId } = await requireAuthenticatedOrg(ctx);
+    await assertOrgWriteAccess(ctx, orgId, userId);
 
     const expense = (await ctx.db.get(args.expenseId)) as ExpenseDoc | null;
     if (!expense) throw new Error("Expense not found");

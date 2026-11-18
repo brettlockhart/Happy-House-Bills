@@ -1,19 +1,30 @@
 <script setup lang="ts">
 import { useAuth } from "~/composables/useAuth";
+import { useMembers } from "~/composables/useTeams";
+import { useReceiptAI } from "~/composables/useReceiptAI";
 import AddExpenseModal from "~/components/AddExpenseModal.vue";
 import EntryList from "~/components/EntryList.vue";
 import SettleUpModal from "~/components/SettleUpModal.vue";
 import AnalyticsDashboard from "~/components/AnalyticsDashboard.vue";
+import AIReviewModal from "~/components/AIReviewModal.vue";
 import NotificationBell from "~/components/NotificationBell.vue";
 import type { Id } from "~/convex/_generated/dataModel";
 
 const { userId, orgId } = useAuth();
 const { createExpense } = useExpenses();
 const { createSettlement } = useSettlements();
+const { data: members } = useMembers();
+const { pendingUpgrades, isUpgrading, syncWhenOnline, upgradeReceipt, dismissReceipt } = useReceiptAI();
 
 const isAddModalOpen = ref(false);
 const isSettleModalOpen = ref(false);
 const isNotificationsOpen = ref(false);
+const isAIReviewModalOpen = ref(false);
+
+const partnerUserId = computed(() => {
+  const other = (members.value || []).find((m) => m.userId !== userId.value);
+  return other?.userId ?? "";
+});
 
 async function handleExpenseSubmit(expense: {
   amount: number;
@@ -22,7 +33,8 @@ async function handleExpenseSubmit(expense: {
   categoryId?: Id<"categories">;
   notes?: string;
   paidBy: string;
-  receiptImageId?: string;
+  receiptImageId?: Id<"_storage">;
+  receiptImageIds?: Id<"_storage">[];
   receiptPHash?: string;
   receiptFingerprint?: string;
 }) {
@@ -46,6 +58,18 @@ async function handleSettleSubmit(settlement: {
     date: new Date().toISOString(),
   });
   isSettleModalOpen.value = false;
+}
+
+async function handleAIReviewApply(id: string) {
+  isAIReviewModalOpen.value = false;
+  await upgradeReceipt(id as Id<"expenses">);
+  await syncWhenOnline();
+}
+
+async function handleAIReviewDismiss(id: string) {
+  isAIReviewModalOpen.value = false;
+  await dismissReceipt(id as Id<"expenses">);
+  await syncWhenOnline();
 }
 
 function handleNotificationNavigate(path: string) {
@@ -99,6 +123,21 @@ function handleNotificationNavigate(path: string) {
       :partner-user-id="partnerUserId"
       @close="isSettleModalOpen = false"
       @submit="handleSettleSubmit"
+    />
+
+    <AIReviewModal
+      :is-open="isAIReviewModalOpen"
+      :reviews="pendingUpgrades"
+      :busy-ids="isUpgrading ? [pendingUpgrades[0]?._id || ''] : []"
+      @close="isAIReviewModalOpen = false"
+      @apply="async (id: string) => {
+        isAIReviewModalOpen = false;
+        await handleAIReviewApply(id);
+      }"
+      @dismiss="async (id: string) => {
+        isAIReviewModalOpen = false;
+        await handleAIReviewDismiss(id);
+      }"
     />
   </div>
 </template>

@@ -58,7 +58,7 @@ export async function runDuplicateCheck(
     );
 
     if (input.receiptPHash) {
-      const candidates = filtered.filter((q) => q.eq("deletedAt", undefined)).collect() as Array<Doc<"expenses">>;
+      const candidates = (await filtered.filter((q) => q.eq("deletedAt", undefined)).collect()) as Array<Doc<"expenses">>;
       for (const exp of candidates) {
         if (exp.receiptPHash && hammingDistance(input.receiptPHash, exp.receiptPHash) <= DHASH_HAMMING_THRESHOLD && !seenIds.has(exp._id)) {
           seenIds.add(exp._id);
@@ -74,7 +74,7 @@ export async function runDuplicateCheck(
     }
 
     if (input.receiptFingerprint) {
-      const candidates = filtered.filter((q) => q.eq("deletedAt", undefined)).collect() as Array<Doc<"expenses">>;
+      const candidates = (await filtered.filter((q) => q.eq("deletedAt", undefined)).collect()) as Array<Doc<"expenses">>;
       for (const exp of candidates) {
         if (exp.receiptFingerprint && exp.receiptFingerprint === input.receiptFingerprint && !seenIds.has(exp._id)) {
           seenIds.add(exp._id);
@@ -90,7 +90,7 @@ export async function runDuplicateCheck(
     }
 
     if (input.amount !== undefined && input.date) {
-      const candidates = filtered.filter((q) => q.eq("deletedAt", undefined)).collect() as Array<Doc<"expenses">>;
+      const candidates = (await filtered.filter((q) => q.eq("deletedAt", undefined)).collect()) as Array<Doc<"expenses">>;
       for (const exp of candidates) {
         if (exp.amount === input.amount && exp.date === input.date && !seenIds.has(exp._id)) {
           seenIds.add(exp._id);

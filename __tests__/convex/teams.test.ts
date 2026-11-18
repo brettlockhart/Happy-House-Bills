@@ -22,6 +22,14 @@ vi.mock("../../convex/_generated/server", () => ({
     ...config,
     handler: config.handler.bind(config),
   }),
+  internalQuery: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+    ...config,
+    handler: config.handler.bind(config),
+  }),
+  internalMutation: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+    ...config,
+    handler: config.handler.bind(config),
+  }),
   internal: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
     ...config,
     handler: config.handler.bind(config),
@@ -95,6 +103,7 @@ function makeCtx() {
         orgId: "org_test",
         userId: "user_test",
         role: "admin",
+        status: "active",
       }),
       collect: vi.fn().mockResolvedValue([
         { _id: "membership_1", orgId: "org_test", userId: "user_test", role: "admin" },
@@ -189,6 +198,7 @@ describe("teams:updateMemberRole", () => {
               orgId: "org_test",
               userId: "user_test",
               role: "admin",
+              status: "active",
             }),
           };
         }
@@ -198,6 +208,7 @@ describe("teams:updateMemberRole", () => {
             orgId: "org_test",
             userId: "user_member",
             role: "member",
+            status: "active",
           }),
         };
       }),
@@ -248,6 +259,7 @@ describe("teams:removeMember", () => {
               orgId: "org_test",
               userId: "user_test",
               role: "admin",
+              status: "active",
             }),
           };
         }
@@ -256,6 +268,7 @@ describe("teams:removeMember", () => {
             _id: "membership_1",
             orgId: "org_test",
             userId: "user_member",
+            status: "active",
           }),
         };
       }),

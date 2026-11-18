@@ -1,7 +1,7 @@
 import { computed } from "vue";
 import { useConvexClient, useConvexQuery } from "convex-vue";
-import { api } from "~/convex/_generated/api";
-import type { Doc, Id } from "~/convex/_generated/dataModel";
+import { api } from "~~/convex/_generated/api";
+import type { Doc, Id } from "~~/convex/_generated/dataModel";
 
 type Report = Doc<"reports">;
 type ReportId = Id<"reports">;

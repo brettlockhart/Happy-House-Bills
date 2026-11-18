@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useNotifications } from "~/composables/useNotifications";
 import { watch, onMounted, ref, computed } from "vue";
-import type { Doc } from "~/convex/_generated/dataModel";
+import type { Doc } from "~~/convex/_generated/dataModel";
 
 const { notifications } = useNotifications();
 

@@ -1,4 +1,4 @@
-import { ROLES, ROLE_PERMISSIONS, checkPermission } from "~/convex/functions/shared_constants";
+import { ROLES, ROLE_PERMISSIONS, checkPermission } from "~~/convex/functions/shared_constants";
 
 export { ROLES, ROLE_PERMISSIONS, checkPermission };
 

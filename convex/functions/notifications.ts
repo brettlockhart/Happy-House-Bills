@@ -1,6 +1,7 @@
 import { mutation, query, internalMutation, internalAction, internalQuery } from "../_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedOrg } from "../auth";
+import { assertOrgWriteAccess } from "./permissions";
 import { internal } from "../_generated/api";
 
 const MAX_LIMIT = 100;
@@ -71,6 +72,7 @@ export const markRead = mutation({
   },
   handler: async (ctx, args) => {
     const { orgId, userId } = await requireAuthenticatedOrg(ctx);
+    await assertOrgWriteAccess(ctx, orgId, userId);
 
     const notification = await ctx.db.get(args.notificationId);
     if (!notification) {
@@ -87,6 +89,7 @@ export const markRead = mutation({
 export const markAllRead = mutation({
   handler: async (ctx) => {
     const { orgId, userId } = await requireAuthenticatedOrg(ctx);
+    await assertOrgWriteAccess(ctx, orgId, userId);
 
     let processed = 0;
     const batchSize = 500;

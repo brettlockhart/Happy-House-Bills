@@ -1,4 +1,7 @@
+"use node";
+
 import { action } from "../_generated/server";
+import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import { requireAuthenticatedOrg } from "../auth";
 
@@ -115,7 +118,7 @@ function parsePngDimensions(buffer: Uint8Array): { width: number; height: number
   return { width, height };
 }
 
-function stripExifJpeg(buffer: Uint8Array): Uint8Array {
+export function stripExifJpeg(buffer: Uint8Array): Uint8Array {
   const result: number[] = [0xff, 0xd8];
   let i = 2;
   while (i < buffer.length - 1) {
@@ -167,6 +170,7 @@ export const uploadReceipt = action({
   },
   handler: async (ctx, args) => {
     const { userId, orgId } = await requireAuthenticatedOrg(ctx);
+    await ctx.runQuery(internal.functions.receiptUpgrades.assertReceiptWrite, { orgId, userId });
 
     if (!ALLOWED_TYPES.includes(args.contentType as AllowedType)) {
       throw new Error("Invalid file type. Allowed: JPEG, PNG, HEIC");
@@ -206,9 +210,21 @@ export const uploadReceipt = action({
     const extension = getExtension(args.contentType);
     const filename = `receipt-${orgId}-${crypto.randomUUID()}.${extension}`;
 
-    const storageId = await ctx.storage.store(new File([new Uint8Array(cleaned) as BlobPart], filename, { type: args.contentType }), {
-      customMetadata: { orgId, userId: userId ?? "", uploadAt: Date.now().toString(), width: dimensions ? dimensions.width.toString() : "0", height: dimensions ? dimensions.height.toString() : "0" },
-    });
+    const storageId = await ctx.storage.store(
+      new File([new Uint8Array(cleaned) as BlobPart], filename, { type: args.contentType }),
+    );
+
+    try {
+      await ctx.runMutation(internal.functions.receiptUpgrades.recordReceiptUpload, {
+        storageId,
+        orgId,
+        uploadedBy: userId,
+      });
+    } catch (error) {
+      // Never leave an unowned/orphaned blob if the ownership record cannot be written.
+      await ctx.storage.delete(storageId);
+      throw error;
+    }
 
     return {
       storageId,

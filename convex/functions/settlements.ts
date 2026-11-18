@@ -1,6 +1,7 @@
 import { internalMutation, mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedOrg } from "../auth";
+import { assertOrgWriteAccess } from "./permissions";
 import { sendEmail, renderSettlementNotificationEmail } from "./email";
 import { internal } from "../_generated/api";
 import { clerkRequest } from "./clerk";
@@ -25,6 +26,7 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const { userId, orgId } = await requireAuthenticatedOrg(ctx);
+    await assertOrgWriteAccess(ctx, orgId, userId);
     const now = Date.now();
 
     if (args.fromUser !== userId) {

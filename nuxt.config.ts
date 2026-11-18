@@ -8,6 +8,7 @@ export default defineNuxtConfig({
   ],
   css: [
     "~/assets/css/tokens.css",
+    "~/assets/css/base.css",
   ],
   vite: {
     resolve: {

@@ -60,6 +60,7 @@ vi.mock("convex/values", () => ({
     optional: () => ({ _isValidator: true }),
     id: () => ({ _isValidator: true }),
     array: () => ({ _isValidator: true }),
+    boolean: () => ({ _isValidator: true }),
   },
 }));
 
@@ -183,7 +184,17 @@ function createMockCtx(
       getUserIdentity: () => Promise.resolve(user),
     },
     db: {
-      query: () => createQueryChain(options?.expenses || []),
+      query: (table: string) => {
+        if (table === "memberships") {
+          return createQueryChain([{
+            orgId: user?.org_id || "org_1",
+            userId: user?.subject || "user_1",
+            role: "member",
+            status: "active",
+          }]);
+        }
+        return createQueryChain(options?.expenses || []);
+      },
       get: () => Promise.resolve(options?.expenseToGet || null),
       patch: (_id: string, _data: Record<string, unknown>) => Promise.resolve(),
       insert: (_table: string, _data: Record<string, unknown>) => Promise.resolve("mock_id"),

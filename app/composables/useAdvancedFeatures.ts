@@ -1,7 +1,7 @@
 import { computed, ref } from "vue";
 import { useConvexQuery, useConvexMutation } from "convex-vue";
-import { api } from "~/convex/_generated/api";
-import type { Doc } from "~/convex/_generated/dataModel";
+import { api } from "~~/convex/_generated/api";
+import type { Doc } from "~~/convex/_generated/dataModel";
 
 type Category = Doc<"categories">;
 type Budget = Doc<"budgets">;

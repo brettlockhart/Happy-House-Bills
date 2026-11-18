@@ -8,6 +8,7 @@ import { mount } from "@vue/test-utils";
 import AddExpenseModal from "../../app/components/AddExpenseModal.vue";
 
 const mockProcessReceipt = vi.hoisted(() => vi.fn());
+const mockUploadPending = vi.hoisted(() => vi.fn().mockResolvedValue({ storageIds: [] }));
 const mockResetOcr = vi.hoisted(() => vi.fn());
 const mockOcrState = ref({ status: "idle", progress: 0, result: undefined, error: undefined });
 
@@ -15,11 +16,12 @@ vi.mock("~/composables/useGoogleOCR", () => ({
   useGoogleOCR: () => ({
     state: mockOcrState,
     processReceipt: mockProcessReceipt,
+    uploadPending: mockUploadPending,
     reset: mockResetOcr,
   }),
 }));
 
-vi.mock("~/convex/_generated/api", () => ({
+vi.mock("~~/convex/_generated/api", () => ({
   api: {
     expenses: {
       create: { _name: "create" },
@@ -29,7 +31,7 @@ vi.mock("~/convex/_generated/api", () => ({
   Expense: {} as never,
 }));
 
-vi.mock("~/convex/_generated/dataModel", () => ({
+vi.mock("~~/convex/_generated/dataModel", () => ({
   Doc: {} as never,
   Id: {} as never,
 }));
@@ -172,14 +174,15 @@ describe("AddExpenseModal.vue", () => {
       }
     });
 
-    it("disables submit button while processing or uploading", async () => {
+    it("keeps submit button enabled even while OCR is processing", async () => {
+      // OCR is an aid, not a gate: users must always be able to submit manually.
       for (const status of ["processing", "uploading"] as const) {
         mockOcrState.value = { status, progress: 50, result: undefined, error: undefined };
         const wrapper = mount(AddExpenseModal, {
           props: { isOpen: true, currentUserId: "user_1" },
         });
         await wrapper.vm.$nextTick();
-        expect(wrapper.find('button[type="submit"]').element.disabled).toBe(true);
+        expect(wrapper.find('button[type="submit"]').element.disabled).toBe(false);
         wrapper.unmount();
       }
 
@@ -189,6 +192,41 @@ describe("AddExpenseModal.vue", () => {
       });
       await wrapper.vm.$nextTick();
       expect(wrapper.find('button[type="submit"]').element.disabled).toBe(false);
+    });
+
+    it("disables submit and shows Saving while the parent saves", async () => {
+      const wrapper = mount(AddExpenseModal, {
+        props: { isOpen: true, currentUserId: "user_1", isSaving: true },
+      });
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find('button[type="submit"]').element.disabled).toBe(true);
+      expect(wrapper.find('button[type="submit"]').text()).toBe("Saving…");
+    });
+
+    it("does not overwrite user-edited fields when OCR completes", async () => {
+      let resolveOcr: ((value: unknown) => void) | undefined;
+      mockProcessReceipt.mockReturnValue(new Promise((resolve) => { resolveOcr = resolve; }));
+      const wrapper = mount(AddExpenseModal, {
+        props: { isOpen: true, currentUserId: "user_1" },
+      });
+      await wrapper.vm.$nextTick();
+
+      wrapper.findComponent({ name: "ReceiptUploader" }).vm.$emit("change", [new File(["receipt"], "receipt.jpg", { type: "image/jpeg" })]);
+      await wrapper.vm.$nextTick();
+      const amountInput = wrapper.find('input[type="number"]');
+      (amountInput.element as HTMLInputElement).value = "99";
+      amountInput.element.dispatchEvent(new Event("input", { bubbles: true }));
+      const storeInput = wrapper.find("#exp-store");
+      (storeInput.element as HTMLInputElement).value = "Manual Store";
+      storeInput.element.dispatchEvent(new Event("input", { bubbles: true }));
+
+      resolveOcr!({ result: { total: "45.99", store: "AI Store", date: "2024-01-01", source: "openrouter", lineItems: [] } });
+      await wrapper.vm.$nextTick();
+      await Promise.resolve();
+
+      expect((wrapper.find('input[type="number"]').element as HTMLInputElement).value).toBe("99");
+      expect((wrapper.find("#exp-store").element as HTMLInputElement).value).toBe("Manual Store");
+      expect((wrapper.find('input[type="date"]').element as HTMLInputElement).value).toBe("2024-01-01");
     });
   });
 });

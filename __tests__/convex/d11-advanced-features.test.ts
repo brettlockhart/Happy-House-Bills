@@ -142,6 +142,14 @@ function createMockCtx(
     },
     db: {
       query: (table: string) => {
+        if (table === "memberships") {
+          return createQueryChain([{
+            orgId: user?.org_id || "org_1",
+            userId: user?.subject || "user_1",
+            role: "admin",
+            status: "active",
+          }]);
+        }
         const tableData: Record<string, unknown[]> = {
           categories: options?.categories ?? [],
           budgets: options?.budgets ?? [],

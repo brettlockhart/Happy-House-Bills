@@ -1,6 +1,7 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedUser, requireAuthenticatedOrg } from "../auth";
+import { assertOrgWriteAccess } from "./permissions";
 import { clerkRequest, isClerkConfigured } from "./clerk";
 import { checkAndIncrementRateLimit } from "./email";
 import { checkPermission, INVITE_TOKEN_TTL_MS } from "./shared_constants";
@@ -23,6 +24,7 @@ export const updateMemberRole = mutation({
   },
   handler: async (ctx, args) => {
     const { orgId, userId: callerId } = await requireAuthenticatedOrg(ctx);
+    await assertOrgWriteAccess(ctx, orgId, callerId);
 
     if (callerId === args.userId) {
       throw new Error("Cannot change your own role");
@@ -63,6 +65,7 @@ export const removeMember = mutation({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     const { orgId, userId: callerId } = await requireAuthenticatedOrg(ctx);
+    await assertOrgWriteAccess(ctx, orgId, callerId);
 
     if (callerId === args.userId) {
       throw new Error("Cannot remove yourself");
@@ -130,13 +133,15 @@ export const createInvite = mutation({
   handler: async (ctx, args) => {
     const { userId, orgId: callerOrgId } = await requireAuthenticatedOrg(ctx);
 
+    if (!args.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(args.email)) {
+      throw new Error("Invalid email address");
+    }
+
     if (args.orgId !== callerOrgId) {
       throw new Error("Org ID mismatch");
     }
 
-    if (!args.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(args.email)) {
-      throw new Error("Invalid email address");
-    }
+    await assertOrgWriteAccess(ctx, callerOrgId, userId);
 
     const callerMembership = await ctx.db
       .query("memberships")

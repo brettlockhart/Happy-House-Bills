@@ -1,6 +1,6 @@
 import { useConvexClient, useConvexQuery } from "convex-vue";
-import { api } from "~/convex/_generated/api";
-import type { Doc } from "~/convex/_generated/dataModel";
+import { api } from "~~/convex/_generated/api";
+import type { Doc } from "~~/convex/_generated/dataModel";
 import { computed } from "vue";
 
 type Invite = Doc<"invites">;

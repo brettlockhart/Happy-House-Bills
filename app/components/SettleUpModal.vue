@@ -36,18 +36,18 @@ function handleSubmit() {
 <template>
   <div v-if="isOpen" class="hhb-modal-overlay" @click.self="() => emit('close')">
     <div class="hhb-modal" role="dialog" aria-modal="true" aria-labelledby="settle-title">
-      <h2 id="settle-title">Settle Up</h2>
-      <form @submit.prevent="handleSubmit">
-        <label>
-          Amount
-          <input v-model.number="form.amount" type="number" step="0.01" min="0.01" required>
-        </label>
+      <h2 id="settle-title" class="hhb-modal-title">Settle Up</h2>
+      <form class="hhb-stack" @submit.prevent="handleSubmit">
+        <div class="hhb-field">
+          <label class="hhb-label" for="settle-amount">Amount</label>
+          <input id="settle-amount" v-model.number="form.amount" class="hhb-input" type="number" step="0.01" min="0.01" required>
+        </div>
         <p class="settle-to">
           You are settling with {{ props.partnerName || "your partner" }}
         </p>
         <div class="hhb-modal-actions">
-          <button type="button" @click="() => emit('close')">Cancel</button>
-          <button type="submit">Confirm Settlement</button>
+          <button type="button" class="hhb-btn hhb-btn--secondary" @click="() => emit('close')">Cancel</button>
+          <button type="submit" class="hhb-btn hhb-btn--primary">Confirm Settlement</button>
         </div>
       </form>
     </div>
@@ -55,25 +55,8 @@ function handleSubmit() {
 </template>
 
 <style scoped>
-.hhb-modal-label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--hhb-space-1);
-  font-size: var(--hhb-text-sm);
-}
-
-.hhb-modal-input {
-  padding: var(--hhb-space-2);
-  border: 1px solid var(--hhb-color-border);
-  border-radius: var(--hhb-radius-sm);
-  background: var(--hhb-color-bg);
-  color: var(--hhb-color-text);
-  font-size: var(--hhb-text-base);
-}
-
 .settle-to {
   color: var(--hhb-color-text-secondary);
   font-size: var(--hhb-text-sm);
-  margin-top: var(--hhb-space-2);
 }
 </style>

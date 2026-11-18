@@ -11,7 +11,7 @@ vi.mock("~/composables/useNotifications", () => ({
   }),
 }));
 
-vi.mock("~/convex/_generated/dataModel", () => ({
+vi.mock("~~/convex/_generated/dataModel", () => ({
   Doc: {} as never,
 }));
 

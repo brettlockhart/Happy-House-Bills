@@ -215,6 +215,14 @@ function createMockCtx(
     },
     db: {
       query: (table: string) => {
+        if (table === "memberships") {
+          return createQueryChain([{
+            orgId: user?.org_id || "org_1",
+            userId: user?.subject || "user_1",
+            role: "member",
+            status: "active",
+          }]);
+        }
         if (table === "emailRateLimits") {
           return createQueryChain(options?.rateLimits || []);
         }

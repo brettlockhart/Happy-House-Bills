@@ -11,8 +11,22 @@ export default defineSchema({
     paidBy: v.string(),
     notes: v.optional(v.string()),
     receiptImageId: v.optional(v.id("_storage")),
+    receiptImageIds: v.optional(v.array(v.id("_storage"))),
     receiptPHash: v.optional(v.string()),
     receiptFingerprint: v.optional(v.string()),
+    store: v.optional(v.string()),
+    ocrSource: v.optional(v.string()),
+    ocrConfidence: v.optional(v.number()),
+    ocrRawText: v.optional(v.string()),
+    ocrNeedsReview: v.optional(v.boolean()),
+    clientRequestId: v.optional(v.string()),
+    lineItems: v.optional(v.array(v.object({
+      description: v.string(),
+      quantity: v.optional(v.number()),
+      unitPrice: v.optional(v.number()),
+      totalPrice: v.optional(v.number()),
+      categoryHint: v.optional(v.string()),
+    }))),
     status: v.union(
       v.literal("pending"),
       v.literal("approved"),
@@ -30,6 +44,8 @@ export default defineSchema({
   .index("by_org_status_date", ["orgId", "status", "date"])
   .index("by_org_deletedAt_status", ["orgId", "deletedAt", "status"])
   .index("by_receiptImageId", ["receiptImageId"])
+  .index("by_org_ocrSource", ["orgId", "ocrSource"])
+  .index("by_org_clientRequest", ["orgId", "clientRequestId"])
   .index("by_org_categoryId", ["orgId", "categoryId"])
   .index("by_org_category", ["orgId", "category"]),
 
@@ -122,6 +138,20 @@ export default defineSchema({
     .index("by_org_date", ["orgId", "date"])
     .index("by_org_date_user", ["orgId", "date", "userId"])
     .index("by_user", ["userId"]),
+
+  receiptUploads: defineTable({
+    storageId: v.id("_storage"),
+    orgId: v.string(),
+    uploadedBy: v.string(),
+    expenseId: v.optional(v.id("expenses")),
+    // Set before storage deletion so a concurrent expense cannot claim the blob.
+    deletingAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_storageId", ["storageId"])
+    .index("by_org", ["orgId"])
+    .index("by_expenseId", ["expenseId"])
+    .index("by_createdAt", ["createdAt"]),
 
   categories: defineTable({
     orgId: v.string(),

@@ -17,7 +17,7 @@ vi.mock("convex-vue", () => ({
   })),
 }));
 
-vi.mock("~/convex/_generated/api", () => ({
+vi.mock("~~/convex/_generated/api", () => ({
   api: {
     functions: {
       reports: {
@@ -85,7 +85,7 @@ describe("useReports", () => {
 
   it("generate calls createReport with mapped args", async () => {
     mockMutation.mockResolvedValue({ id: "mock_id", downloadUrl: "https://example.com/r.csv" });
-    const { api } = await import("~/convex/_generated/api");
+    const { api } = await import("~~/convex/_generated/api");
     const { useReports } = await import("../../app/composables/useReports");
     const result = useReports();
     await result.generate({ name: "Monthly", type: "monthly_summary", config: { dateRange: "month" }, format: "csv" });
@@ -101,7 +101,7 @@ describe("useReports", () => {
 
   it("delete calls deleteReport with reportId", async () => {
     mockMutation.mockResolvedValue({ success: true });
-    const { api } = await import("~/convex/_generated/api");
+    const { api } = await import("~~/convex/_generated/api");
     const { useReports } = await import("../../app/composables/useReports");
     const result = useReports();
     await result.delete({ reportId: "report1" });
@@ -110,7 +110,7 @@ describe("useReports", () => {
 
   it("schedule calls scheduleReport with scheduleCron", async () => {
     mockMutation.mockResolvedValue({ id: "mock_id" });
-    const { api } = await import("~/convex/_generated/api");
+    const { api } = await import("~~/convex/_generated/api");
     const { useReports } = await import("../../app/composables/useReports");
     const result = useReports();
     await result.schedule({ name: "Scheduled", type: "category_breakdown", config: {}, format: "json", scheduleCron: "0 6 * * *" });
@@ -125,7 +125,7 @@ describe("useReports", () => {
 
   it("unschedule calls unscheduleReport with reportId", async () => {
     mockMutation.mockResolvedValue({ success: true });
-    const { api } = await import("~/convex/_generated/api");
+    const { api } = await import("~~/convex/_generated/api");
     const { useReports } = await import("../../app/composables/useReports");
     const result = useReports();
     await result.unschedule({ reportId: "report1" });
@@ -134,7 +134,7 @@ describe("useReports", () => {
 
   it("getDownloadUrl returns mutation result", async () => {
     mockMutation.mockResolvedValue({ downloadUrl: "https://example.com/signed?expires=123" });
-    const { api } = await import("~/convex/_generated/api");
+    const { api } = await import("~~/convex/_generated/api");
     const { useReports } = await import("../../app/composables/useReports");
     const result = useReports();
     const res = await result.getDownloadUrl({ reportId: "report1" });

@@ -3,7 +3,7 @@ import Tesseract from "tesseract.js";
 import { preprocessImage } from "~/utils/imageUtils";
 import { parseOcrText, applyOcrToForm } from "~/utils/ocrParser";
 import { useConvexClient } from "convex-vue";
-import { api } from "~/convex/_generated/api";
+import { api } from "~~/convex/_generated/api";
 
 export interface OcrState {
   status: "idle" | "preprocessing" | "uploading" | "processing" | "done" | "error";

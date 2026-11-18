@@ -1,6 +1,6 @@
 import { useConvexQuery, useConvexMutation } from "convex-vue";
-import { api } from "~/convex/_generated/api";
-import type { Id } from "~/convex/_generated/dataModel";
+import { api } from "~~/convex/_generated/api";
+import type { Id } from "~~/convex/_generated/dataModel";
 
 export function useNotifications() {
   const notifications = useConvexQuery(api.functions.notifications.list, () => ({ limit: 50 }));

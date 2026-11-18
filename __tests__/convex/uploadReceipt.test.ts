@@ -87,7 +87,10 @@ function makeCtx() {
     auth: { getUserIdentity: async () => null },
     storage: {
       store: vi.fn().mockResolvedValue("storage_id"),
+      delete: vi.fn().mockResolvedValue(undefined),
     },
+    runQuery: vi.fn().mockResolvedValue(true),
+    runMutation: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -295,7 +298,7 @@ describe("uploadReceipt (SEC-001, SEC-004, SEC-005)", () => {
   });
 
   // SEC-007: Storage metadata with orgId, userId, upload timestamp for TTL enforcement
-  it("ST-011: stores metadata (orgId, userId, uploadAt) via customMetadata (SEC-007)", async () => {
+  it("ST-011: returns upload metadata (orgId, userId, uploadAt, dimensions) (SEC-007)", async () => {
     requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
 
     const jpeg = makeJpegBuffer(800, 600);
@@ -303,19 +306,21 @@ describe("uploadReceipt (SEC-001, SEC-004, SEC-005)", () => {
 
     const ctx = makeCtx();
     const { uploadReceipt } = await import("../../convex/functions/uploadReceipt");
-    await uploadReceipt.handler(ctx as never, {
+    const result = await uploadReceipt.handler(ctx as never, {
       image: base64,
       contentType: "image/jpeg",
     });
 
+    // Metadata is preserved on the result. Native Convex storage does not support
+    // a customMetadata option (only { sha256 }), so it must not be passed.
+    expect(result.orgId).toBe("org_test");
+    expect(result.uploadBy).toBe("user_test");
+    expect(result.uploadAt).toBeDefined();
+    expect(result.width).toBe(800);
+    expect(result.height).toBe(600);
+
     const callArgs = ctx.storage.store.mock.calls[0];
-    const opts = callArgs[1];
-    expect(opts).toHaveProperty("customMetadata");
-    expect(opts.customMetadata.orgId).toBe("org_test");
-    expect(opts.customMetadata.userId).toBe("user_test");
-    expect(opts.customMetadata.uploadAt).toBeDefined();
-    expect(opts.customMetadata.width).toBe("800");
-    expect(opts.customMetadata.height).toBe("600");
+    expect(callArgs[1]).toBeUndefined();
   });
 
   it("rejects invalid content type (SEC-004)", async () => {

@@ -1,5 +1,5 @@
 import { useConvexClient, useConvexQuery } from "convex-vue";
-import { api } from "~/convex/_generated/api";
+import { api } from "~~/convex/_generated/api";
 import { computed } from "vue";
 
 export function useTeams() {

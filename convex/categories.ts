@@ -2,6 +2,7 @@ import { internalMutation, mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedOrg } from "./auth";
+import { assertOrgWriteAccess, assertOrgAdminAccess } from "./functions/permissions";
 
 const DEFAULT_CATEGORIES = [
   { name: "Groceries", icon: "shopping-cart", color: "#22c55e", sortOrder: 0, subCategories: ["Supermarket", "Convenience", "Online Grocery"] },
@@ -58,6 +59,7 @@ export const create = mutation({
     }
 
     const { userId, orgId } = await requireAuthenticatedOrg(ctx);
+    await assertOrgWriteAccess(ctx, orgId, userId);
     const now = Date.now();
 
     if (args.parentId) {
@@ -119,6 +121,7 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const { userId, orgId } = await requireAuthenticatedOrg(ctx);
+    await assertOrgWriteAccess(ctx, orgId, userId);
 
     const existing = await ctx.db.get(args.id);
     if (!existing) {
@@ -206,7 +209,8 @@ export const update = mutation({
 export const deleteCategory = mutation({
   args: { id: v.id("categories") },
   handler: async (ctx, args) => {
-    const { orgId } = await requireAuthenticatedOrg(ctx);
+    const { userId, orgId } = await requireAuthenticatedOrg(ctx);
+    await assertOrgAdminAccess(ctx, orgId, userId);
 
     const existing = await ctx.db.get(args.id);
     if (!existing) {

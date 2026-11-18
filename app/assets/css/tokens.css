@@ -1,15 +1,38 @@
 :root {
+  /* Brand */
   --hhb-color-primary: #10b981;
   --hhb-color-primary-dark: #059669;
+  --hhb-color-primary-light: #34d399;
+  --hhb-color-primary-subtle: #d1fae5;
+  --hhb-color-primary-contrast: #ffffff;
+
+  /* Neutral surfaces */
   --hhb-color-bg: #ffffff;
   --hhb-color-bg-alt: #f8fafc;
+  --hhb-color-bg-elevated: #ffffff;
+  --hhb-color-bg-sunken: #f1f5f9;
   --hhb-color-border: #e2e8f0;
+  --hhb-color-border-strong: #cbd5e1;
+
+  /* Text */
   --hhb-color-text: #0f172a;
   --hhb-color-text-secondary: #64748b;
-  --hhb-color-error: #ef4444;
-  --hhb-color-warning: #f59e0b;
-  --hhb-color-success: #10b981;
+  --hhb-color-text-muted: #94a3b8;
+  --hhb-color-text-inverse: #f8fafc;
 
+  /* Semantic */
+  --hhb-color-error: #ef4444;
+  --hhb-color-error-subtle: #fee2e2;
+  --hhb-color-warning: #f59e0b;
+  --hhb-color-warning-subtle: #fef3c7;
+  --hhb-color-success: #10b981;
+  --hhb-color-success-subtle: #d1fae5;
+  --hhb-color-info: #3b82f6;
+  --hhb-color-info-subtle: #dbeafe;
+
+  /* Typography */
+  --hhb-font-sans: "Inter", ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --hhb-text-xs: 0.75rem;
   --hhb-text-sm: 0.875rem;
   --hhb-text-base: 1rem;
@@ -17,7 +40,15 @@
   --hhb-text-xl: 1.25rem;
   --hhb-text-2xl: 1.5rem;
   --hhb-text-3xl: 1.875rem;
+  --hhb-text-4xl: 2.25rem;
+  --hhb-font-normal: 400;
+  --hhb-font-medium: 500;
+  --hhb-font-semibold: 600;
+  --hhb-font-bold: 700;
+  --hhb-leading-tight: 1.2;
+  --hhb-leading-normal: 1.5;
 
+  /* Spacing */
   --hhb-space-1: 0.25rem;
   --hhb-space-2: 0.5rem;
   --hhb-space-3: 0.75rem;
@@ -25,30 +56,75 @@
   --hhb-space-5: 1.5rem;
   --hhb-space-6: 2rem;
   --hhb-space-8: 3rem;
+  --hhb-space-10: 4rem;
   --hhb-space-12: 3rem;
 
-  --hhb-radius-sm: 0.25rem;
+  /* Radius */
+  --hhb-radius-sm: 0.375rem;
   --hhb-radius: 0.5rem;
   --hhb-radius-lg: 0.75rem;
   --hhb-radius-xl: 1rem;
+  --hhb-radius-2xl: 1.25rem;
+  --hhb-radius-full: 9999px;
 
-  --hhb-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --hhb-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --hhb-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  /* Shadows */
+  --hhb-shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --hhb-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.08),
+    0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --hhb-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08),
+    0 2px 4px -1px rgba(15, 23, 42, 0.04);
+  --hhb-shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.12),
+    0 4px 10px -4px rgba(15, 23, 42, 0.06);
+  --hhb-shadow-xl: 0 20px 40px -12px rgba(15, 23, 42, 0.18);
+  --hhb-ring: 0 0 0 3px rgba(16, 185, 129, 0.35);
+
+  /* Layout */
+  --hhb-container: 72rem;
+  --hhb-header-height: 4rem;
+
+  /* Motion */
+  --hhb-transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --hhb-transition-slow: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --hhb-color-bg: #0f172a;
-    --hhb-color-bg-alt: #1e293b;
-    --hhb-color-border: #334159;
+    --hhb-color-primary: #34d399;
+    --hhb-color-primary-dark: #10b981;
+    --hhb-color-primary-light: #6ee7b7;
+    --hhb-color-primary-subtle: #064e3b;
+    --hhb-color-primary-contrast: #052e22;
+
+    --hhb-color-bg: #0b1220;
+    --hhb-color-bg-alt: #0f172a;
+    --hhb-color-bg-elevated: #111c33;
+    --hhb-color-bg-sunken: #0f172a;
+    --hhb-color-border: #1e2a44;
+    --hhb-color-border-strong: #2c3a58;
+
     --hhb-color-text: #f1f5f9;
     --hhb-color-text-secondary: #94a3b8;
-    --hhb-color-primary: #34d399;
-    --hhb-color-primary-dark: #059669;
+    --hhb-color-text-muted: #64748b;
+    --hhb-color-text-inverse: #0f172a;
+
+    --hhb-color-error-subtle: #3f1d1d;
+    --hhb-color-warning-subtle: #3a2a0c;
+    --hhb-color-success-subtle: #064e3b;
+    --hhb-color-info-subtle: #172554;
+
+    --hhb-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+    --hhb-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+    --hhb-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    --hhb-shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+    --hhb-shadow-xl: 0 20px 40px -12px rgba(0, 0, 0, 0.7);
+
+    color-scheme: dark;
   }
 }
 
+/* ---------- Global accessibility baseline ---------- */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -74,82 +150,4 @@ input[type="file"] {
   min-height: 44px;
   min-width: 44px;
   padding: var(--hhb-space-3) var(--hhb-space-4);
-}
-
-.hhb-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.hhb-modal {
-  background: var(--hhb-color-bg);
-  border: 1px solid var(--hhb-color-border);
-  border-radius: var(--hhb-radius-lg);
-  padding: var(--hhb-space-4);
-  max-width: 400px;
-  width: 90%;
-}
-
-.hhb-modal-actions {
-  display: flex;
-  gap: var(--hhb-space-2);
-  justify-content: flex-end;
-}
-
-.hhb-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: var(--hhb-radius);
-  font-size: var(--hhb-text-base);
-  font-weight: 500;
-  cursor: pointer;
-  padding: var(--hhb-space-2) var(--hhb-space-4);
-  transition: background-color 0.2s;
-}
-
-.hhb-btn--primary {
-  background: var(--hhb-color-primary);
-  color: var(--hhb-color-bg);
-}
-
-.hhb-btn--primary:hover {
-  background: var(--hhb-color-primary-dark);
-}
-
-.hhb-btn--secondary {
-  background: var(--hhb-color-bg-alt);
-  color: var(--hhb-color-text);
-  border: 1px solid var(--hhb-color-border);
-}
-
-.hhb-btn--secondary:hover {
-  background: var(--hhb-color-border);
-}
-
-.hhb-btn--sm {
-  min-width: 44px;
-  min-height: 44px;
-  padding: var(--hhb-space-1);
-  font-size: var(--hhb-text-sm);
-}
-
-.hhb-btn--ghost {
-  background: transparent;
-  color: var(--hhb-color-text-secondary);
-}
-
-.hhb-btn--ghost:hover {
-  background: var(--hhb-color-bg-alt);
-}
-
-.hhb-btn:focus-visible {
-  outline: 2px solid var(--hhb-color-primary);
-  outline-offset: 2px;
 }

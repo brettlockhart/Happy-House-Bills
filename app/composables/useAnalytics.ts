@@ -1,6 +1,6 @@
 import { computed, ref } from "vue";
 import { useConvexQuery } from "convex-vue";
-import { api } from "~/convex/_generated/api";
+import { api } from "~~/convex/_generated/api";
 
 export interface CategorySpending {
   category: string;

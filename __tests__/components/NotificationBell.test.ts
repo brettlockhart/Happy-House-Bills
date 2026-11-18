@@ -23,7 +23,7 @@ vi.mock("~/composables/useNotifications", () => ({
   }),
 }));
 
-vi.mock("~/convex/_generated/dataModel", () => ({
+vi.mock("~~/convex/_generated/dataModel", () => ({
   Doc: {} as never,
 }));
 
@@ -71,7 +71,7 @@ describe("NotificationBell.vue", () => {
     const wrapper = mount(NotificationBell, {
       props: { modelValue: false },
     });
-    expect(wrapper.find(".text-xs.font-bold.rounded-full").exists()).toBe(true);
+    expect(wrapper.find(".hhb-notification-badge").exists()).toBe(true);
   });
 
   it("shows '9+' badge when unread count > 9", () => {
@@ -79,7 +79,7 @@ describe("NotificationBell.vue", () => {
     const wrapper = mount(NotificationBell, {
       props: { modelValue: false },
     });
-    const badge = wrapper.find(".text-xs.font-bold.rounded-full");
+    const badge = wrapper.find(".hhb-notification-badge");
     expect(badge.exists()).toBe(true);
     expect(badge.text()).toBe("9+");
   });

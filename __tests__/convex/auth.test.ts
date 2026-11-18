@@ -108,10 +108,11 @@ describe("auth:requireAuthenticatedOrg (SEC-001)", () => {
     ).rejects.toThrow("Unauthenticated or no organisation");
   });
 
-  it("uses explicit dev bypass when AUTH_BYPASS=1 (non-production opt-in)", async () => {
+  it("uses explicit dev bypass only on a local backend when AUTH_BYPASS=1", async () => {
     process.env.AUTH_BYPASS = "1";
     process.env.AUTH_BYPASS_USER_ID = "dev-user";
     process.env.AUTH_BYPASS_ORG_ID = "dev-org";
+    process.env.CONVEX_CLOUD_URL = "http://127.0.0.1:3210";
     const { requireAuthenticatedOrg, requireAuthenticatedUser } = await import("../../convex/auth");
     await expect(
       requireAuthenticatedOrg({ auth: { getUserIdentity: async () => null } }),
@@ -119,5 +120,14 @@ describe("auth:requireAuthenticatedOrg (SEC-001)", () => {
     await expect(
       requireAuthenticatedUser({ auth: { getUserIdentity: async () => null } }),
     ).resolves.toEqual({ userId: "dev-user" });
+  });
+
+  it("rejects the auth bypass on every cloud deployment", async () => {
+    process.env.AUTH_BYPASS = "1";
+    process.env.CONVEX_CLOUD_URL = "https://example.convex.cloud";
+    const { requireAuthenticatedOrg } = await import("../../convex/auth");
+    await expect(
+      requireAuthenticatedOrg({ auth: { getUserIdentity: async () => null } }),
+    ).rejects.toThrow("only allowed on a local development backend");
   });
 });

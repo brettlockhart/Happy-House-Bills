@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useReports } from "~/composables/useReports";
-import type { Doc } from "~/convex/_generated/dataModel";
+import type { Doc } from "~~/convex/_generated/dataModel";
 
 type Report = Doc<"reports">;
 

@@ -39,6 +39,10 @@ vi.mock("../../convex/_generated/server", () => ({
     ...config,
     handler: config.handler.bind(config),
   }),
+  internalQuery: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
+    ...config,
+    handler: config.handler.bind(config),
+  }),
   action: (config: { handler: (ctx: unknown, args: unknown) => Promise<unknown> }) => ({
     ...config,
     handler: config.handler.bind(config),
@@ -51,25 +55,43 @@ vi.mock("../../convex/functions/shared_constants", () => ({
 }));
 
 function makeCtx(overrides: Record<string, unknown> = {}) {
+  const membershipQuery = {
+    withIndex: vi.fn().mockReturnValue({
+      first: vi.fn().mockResolvedValue({
+        _id: "membership_1",
+        orgId: "org_test",
+        userId: "user_test",
+        role: "admin",
+        status: "active",
+      }),
+      collect: vi.fn().mockResolvedValue([
+        { _id: "membership_1", orgId: "org_test", userId: "user_test", role: "admin", status: "active" },
+      ]),
+    }),
+  };
+
   const db = {
     insert: vi.fn().mockResolvedValue("integration_id"),
     delete: vi.fn(),
     patch: vi.fn(),
-    query: vi.fn().mockReturnValue({
-      withIndex: vi.fn().mockReturnValue({
-        first: vi.fn().mockResolvedValue(null),
-        collect: vi.fn().mockResolvedValue([]),
-        order: vi.fn().mockReturnValue({
-          take: vi.fn().mockResolvedValue([]),
+    query: vi.fn((table: string) => {
+      if (table === "memberships") return membershipQuery;
+      return {
+        withIndex: vi.fn().mockReturnValue({
+          first: vi.fn().mockResolvedValue(null),
+          collect: vi.fn().mockResolvedValue([]),
+          order: vi.fn().mockReturnValue({
+            take: vi.fn().mockResolvedValue([]),
+          }),
         }),
-      }),
-      filter: vi.fn().mockReturnValue({
-        first: vi.fn().mockResolvedValue(null),
-        collect: vi.fn().mockResolvedValue([]),
-        order: vi.fn().mockReturnValue({
-          take: vi.fn().mockResolvedValue([]),
+        filter: vi.fn().mockReturnValue({
+          first: vi.fn().mockResolvedValue(null),
+          collect: vi.fn().mockResolvedValue([]),
+          order: vi.fn().mockReturnValue({
+            take: vi.fn().mockResolvedValue([]),
+          }),
         }),
-      }),
+      };
     }),
     get: vi.fn().mockResolvedValue(null),
     ...overrides.db,
@@ -142,10 +164,22 @@ describe("integrations", () => {
     it("rejects duplicate provider", async () => {
       requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
       const ctx = makeCtx();
-      ctx.db.query.mockReturnValue({
-        withIndex: vi.fn().mockReturnValue({
-          first: vi.fn().mockResolvedValue({ _id: "existing" }),
-        }),
+      ctx.db.query.mockImplementation((table: string) => {
+        if (table === "memberships") {
+          return {
+            withIndex: vi.fn().mockReturnValue({
+              first: vi.fn().mockResolvedValue({
+                _id: "membership_1", orgId: "org_test", userId: "user_test",
+                role: "admin", status: "active",
+              }),
+            }),
+          };
+        }
+        return {
+          withIndex: vi.fn().mockReturnValue({
+            first: vi.fn().mockResolvedValue({ _id: "existing" }),
+          }),
+        };
       });
       const { createIntegration } = await import("../../convex/functions/integrations");
       await expect(

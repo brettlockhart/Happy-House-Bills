@@ -33,7 +33,7 @@ const mockReject = vi.fn().mockResolvedValue({});
 const mockExpenses = ref<MockExpense[]>([]);
 const mockSettlements = ref<MockSettlement[]>([]);
 
-vi.mock("~/convex/_generated/api", () => ({
+vi.mock("~~/convex/_generated/api", () => ({
   api: {
     expenses: {
       list: { _name: "list" },
@@ -48,7 +48,7 @@ vi.mock("~/convex/_generated/api", () => ({
   Settlement: {} as never,
 }));
 
-vi.mock("~/convex/_generated/dataModel", () => ({
+vi.mock("~~/convex/_generated/dataModel", () => ({
   Doc: {} as never,
   Id: {} as never,
 }));

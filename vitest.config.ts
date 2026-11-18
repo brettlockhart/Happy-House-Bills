@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
+      "~~/convex": resolve(process.cwd(), "convex"),
       "~/convex": resolve(process.cwd(), "convex"),
       "~/app": resolve(process.cwd(), "app"),
       "~/composables": resolve(process.cwd(), "app/composables"),
