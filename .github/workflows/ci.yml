@@ -120,6 +120,10 @@ jobs:
           GOOGLE_CLOUD_LOCATION: ${{ secrets.GOOGLE_CLOUD_LOCATION }}
           GOOGLE_DOCUMENT_AI_PROCESSOR_ID: ${{ secrets.GOOGLE_DOCUMENT_AI_PROCESSOR_ID }}
           GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: ${{ secrets.OPENROUTER_BASE_URL }}
+          OPENROUTER_OCR_MODEL: ${{ secrets.OPENROUTER_OCR_MODEL }}
+          OPENROUTER_ZDR: ${{ secrets.OPENROUTER_ZDR }}
 
   verify-deploy:
     name: Verify Deployment

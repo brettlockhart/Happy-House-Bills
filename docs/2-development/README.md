@@ -67,7 +67,7 @@ Active reviews are tracked in [`supporting-docs/reviews/README.md`](supporting-d
 | D14 — Advanced Integrations | 07-November-2026 | implementation-reviewer | Pass |
 | D15 — Advanced Analytics & Insights | 07-November-2026 | implementation-reviewer | Pass |
 | D16 — Performance & Reliability | 07-November-2026 | implementation-reviewer | Pass |
-| D17 — Google Document AI OCR | 07-November-2026 | implementation-reviewer | Pass |
+| D17 — OpenRouter LLM OCR | 07-November-2026 | implementation-reviewer | Pass |
 | D18 — Push Notifications | 08-November-2026 | implementation-reviewer | Pass |
 | D19 — Line Item Extraction | 08-November-2026 | implementation-reviewer | Pass |
 | D20 — Expense Categories Enhancement | 07-November-2026 | implementation-reviewer | Pass |

@@ -14,7 +14,7 @@ A web app for a couple to track shared household spending, split costs, and sett
 | Auth / Multi-tenancy | Clerk (Organizations for multi-tenancy) |
 | File Storage | Cloudflare R2 (via `@convex-dev/r2` component) |
 | Transactional Email | Resend |
-| OCR | Tesseract.js (client-side, v1) or Google Document AI (v1.1) |
+| OCR | Tesseract.js (client-side, v1) or OpenRouter LLM vision model (v1.1) |
 
 **Key modules:**
 - `@clerk/nuxt` — Clerk integration

@@ -28,7 +28,7 @@ tier, premium OCR) is deferred to post-launch.
 | Auth / Multi-tenancy | Clerk (Organizations for multi-tenancy) |
 | File Storage | Cloudflare R2 (via `@convex-dev/r2` component) |
 | Transactional Email | Resend |
-| OCR | Tesseract.js (client-side, v1); Google Document AI (v1.1, future) |
+| OCR | Tesseract.js (client-side, v1); OpenRouter LLM (vision model, v1.1) |
 
 ## Key Modules
 

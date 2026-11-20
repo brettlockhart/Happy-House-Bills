@@ -16,7 +16,7 @@ as the canonical reference for domain terms.
 | Receipt | An image of a paper receipt uploaded by the user | Stored in R2; used for OCR and duplicate detection |
 | dHash | Perceptual hash of a receipt image | 64-bit hex string for near-duplicate detection |
 | Fingerprint | `${store}|${date}|${total}` string for receipt matching | Computed on receipt creation |
-| OCR | Optical character recognition | Tesseract.js client-side (v1); Google Document AI (v1.1, future) |
+| OCR | Optical character recognition | OpenRouter LLM vision model (v1); Tesseract.js client-side fallback (v0) |
 | Entered by | The Clerk user ID of the person who created the expense | |
 | Paid by | The Clerk user ID of the person who paid for the expense | |
 | Approved by | The Clerk user ID of the partner who approved the expense | |

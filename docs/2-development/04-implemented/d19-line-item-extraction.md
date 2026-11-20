@@ -16,22 +16,22 @@ lifecycle: 04-implemented
 
 ## 1. Purpose
 
-Extend the Google Document AI OCR pipeline (D17) to extract individual line items from receipts, enabling detailed expense categorisation and split-by-item functionality.
+Extend the OpenRouter LLM OCR pipeline (D17) to extract individual line items from receipts, enabling detailed expense categorisation and split-by-item functionality.
 
 ## 2. Scope
 
 ### In scope
 
-- Document AI processor upgrade from `FORM_PARSER` to custom trained model or `INVOICE_PROCESSOR` for line-item extraction
+- OpenRouter vision LLM (D17) extended with structured line-item extraction via JSON schema
 - Extract line items: description, quantity, unit price, total price, category hints
-- New Convex action `functions/ocr.ts` extended to return line items array
+- New Convex action `functions/ocrOpenRouter.ts` extended to return line items array
 - Frontend integration: display extracted line items in AddExpenseModal with option to add as separate expenses or split single expense
 - Category suggestion based on line-item description (map to groceries/utilities/other)
 - Confidence scoring per line item with threshold warnings
 
 ### Out of scope
 
-- Custom Document AI model training infrastructure (uses pre-built processors)
+- Custom model training (uses OpenRouter vision models)
 - Multi-receipt consolidation (multiple receipts in one image)
 - Handwritten receipt support
 - Receipt validation against merchant databases
@@ -40,11 +40,11 @@ Extend the Google Document AI OCR pipeline (D17) to extract individual line item
 
 | ID | Decision | Rationale | Source |
 |----|----------|-----------|--------|
-| D1 | Use `INVOICE_PROCESSOR` pre-built model | Supports line items out of box; no training required | Google Cloud docs |
+| D1 | Use OpenRouter vision model (`google/gemini-2.5-flash` default) with JSON schema | Supports line items out of box via structured output; no training required | OpenRouter model comparison |
 | D2 | Extend existing OCR output interface | Backward compatible; `lineItems` optional array added | D17 interface |
 | D3 | Line items as optional in response | Not all receipts have clear line items; graceful degradation | UX principle |
 | D4 | Category inference from description keywords | Simple heuristic; user can override | Phase 2 plan |
-| D5 | Confidence threshold per line item | Filter low-quality extractions; same 60% as header fields | D17 D3 |
+| D5 | Confidence threshold per line item | Filter low-quality extractions; 75% threshold matches D17 | D17 D8 |
 
 ## 4. Open Questions
 
@@ -63,7 +63,7 @@ Extend the Google Document AI OCR pipeline (D17) to extract individual line item
 
 ## 6. Implementation Dependencies
 
-- **Depends on:** D17 (Google Document AI OCR), Google Cloud `INVOICE_PROCESSOR` processor
+- **Depends on:** OpenRouter OCR action (`functions/ocrOpenRouter.ts`), `AddExpenseModal` displays line items; `useReceiptAI` composable returns extended result
 - **Blocks:** None (additive to D17)
 - **Consumer integration:** `AddExpenseModal` displays line items; `useGoogleOCR` returns extended result
 
@@ -76,13 +76,13 @@ Extend the Google Document AI OCR pipeline (D17) to extract individual line item
 // Output: D17 output + lineItems: Array<{ description: string, quantity: number, unitPrice: number, totalPrice: number, categoryHint: string, confidence: number }>
 ```
 
-- Switch processor to `INVOICE_PROCESSOR` (or custom if trained)
-- Extract `line_items` entity from Document AI response
+- Switch to OpenRouter vision model with JSON schema (or custom if trained)
+- Extract `line_items` entity from OpenRouter response
 - Map to structured line items with confidence per item
-- Apply same 60% confidence threshold; flag `lowConfidence` per item
-- Rate limiting: same 50/day/org/user (shared with header extraction)
+- Apply same 75% confidence threshold; flag `lowConfidence` per item
+- Rate limiting: same quota per org/user (shared with header extraction)
 
-### Composable: `app/composables/useGoogleOCR.ts` (extended)
+### Composable: `app/composables/useReceiptAI.ts` (extended)
 
 ```typescript
 interface LineItem {
@@ -96,7 +96,7 @@ interface LineItem {
 }
 
 interface OcrResult {
-  // ... existing D17 fields
+  // ... existing OpenRouter fields
   lineItems: LineItem[]
 }
 ```
@@ -113,20 +113,20 @@ interface OcrResult {
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `GOOGLE_DOCUMENT_AI_PROCESSOR_ID` | Invoice processor ID (replaces Form Parser) | Yes |
+| `OPENROUTER_OCR_MODEL` | Vision model used for line-item extraction | No (default `google/gemini-2.5-flash`) |
 
 ## 9. Testing
 
-- Unit test: Document AI response parsing for line items
+- Unit test: OpenRouter response parsing for line items
 - Integration: upload multi-item receipt → verify line items extracted
 - Category hint accuracy test: known descriptions → expected categories
-- Confidence threshold: items <60% flagged, ≥60% auto-categorised
+- Confidence threshold: items <75% flagged, ≥75% auto-categorised
 - UX test: split expense flow creates correct number of expense records
 
 ## 10. Rollout Plan
 
-1. Create `INVOICE_PROCESSOR` in Google Cloud, update env var
-2. Extend `ocr.ts` action and `useGoogleOCR` composable
+1. Deploy OpenRouter env vars to dev (`OPENROUTER_API_KEY`, `OPENROUTER_OCR_MODEL`)
+2. Extend `ocrOpenRouter.ts` action and `useReceiptAI` composable
 3. Update `AddExpenseModal.vue` with line items UI
 4. Deploy to dev, test with real multi-item receipts
 5. Deploy to production
@@ -143,9 +143,8 @@ interface OcrResult {
 **Summary:** Slice D19 line-item extraction implemented, reviewed, and promoted to `04-implemented`.
 
 **Implementation:**
-- `convex/functions/ocr.ts`: extended `DocumentAIResponse` page type with `lineItems`, added `LineItem` interface, `extractLineItems()`, `inferCategoryFromDescription()` (groceries/utilities/other), confidence threshold 0.6 per line item, `lineItems: LineItem[]` in `OcrResult`.
-- `app/composables/useGoogleOCR.ts`: exported `LineItem`/`OcrResult` interfaces, `lineItems` pass-through into `OcrState.result`, Tesseract fallback returns `lineItems: []`.
-- Tests: 3 OCR tests + 1 composable test added; 5 additional edge-case tests after review fixes.
+- OpenRouter OCR path (`functions/ocrOpenRouter.ts`) returns structured `lineItems` array with description, quantity, unit_price, total_price, category_hint, confidence, lowConfidence.
+- Line items parsed from JSON-schema-constrained OpenRouter responses; inferred categories from description keywords.
 
 **Verification:**
 - Lint: clean
@@ -156,6 +155,6 @@ interface OcrResult {
 - Code review: Pass (fixes applied — threshold scale, category priority, test coverage)
 
 **Open Questions (registered in spec-gaps.md):**
-- LI-Q1: INVOICE_PROCESSOR vs custom trained model
+- LI-Q1: OpenRouter vision model selection vs custom trained model
 - LI-Q2: Split expense UX (multiple expenses vs single with items) — pending UI integration in AddExpenseModal
 - LI-Q3: Line item persistence for audit — pending

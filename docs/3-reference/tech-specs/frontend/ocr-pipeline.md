@@ -15,23 +15,23 @@ tags: [frontend, ocr, tesseract, receipts, image-processing]
 
 ## 1. Purpose
 
-Define the client-side OCR pipeline for Happy House Bills. When a user photographs a receipt, Tesseract.js processes the image in the browser to extract the store name, date, and total amount. The extracted fields are then pre-filled into the manual expense entry form, giving the user the opportunity to correct values before submission.
+Define the client-side OCR pipeline for Happy House Bills. When a user photographs a receipt, **OpenRouter LLM (vision model via `google/gemini-2.5-flash`)** processes the image in the browser to extract store name, date, and total amount. The extracted fields are then pre-filled into the manual expense entry form, giving the user the opportunity to correct values before submission.
 
 ## 2. Scope
 
 ### In scope
 
-- Tesseract.js worker initialisation and language data loading (English only in v1)
-- Image preprocessing: grayscale conversion, contrast enhancement, noise reduction before OCR
-- Receipt field extraction: store name (top of receipt), date (regex-matched), total (bottom of receipt)
+- OpenRouter vision LLM OCR pipeline via `convex/functions/ocrOpenRouter.ts` action
+- Image preprocessing: EXIF stripping for JPEG, magic-byte validation, MIME type matching, size/dimension limits
+- Receipt field extraction: store name, date (YYYY-MM-DD), total (decimal), confidence (0-100), raw text, line items
 - Low-confidence fallback handling — when OCR confidence is below threshold, prompt user to fill manually
-- Form pre-fill UX: populated fields are editable, OCR source is indicated
-- Performance: OCR runs off the main thread via Web Worker; progress events update the UI
-- Error handling: worker failure, unsupported image format, timeout
+- Form pre-fill UX: populated fields are editable, OCR source is indicated (`ocrSource: "openrouter"`)
+- Performance: OCR runs server-side via Convex action; progress events update the UI
+- Error handling: OpenRouter rate limiting, timeout, invalid response, fallback to Tesseract.js
 
 ### Out of scope
 
-- Server-side OCR (Google Document AI, future — see `project_brief.md`)
+- Server-side OCR (OpenRouter LLM, future — see `project_brief.md`)
 - Receipt image storage in R2 (covered by `tech-specs/backend/file-storage.md`)
 - Duplicate detection from OCR results (covered by `tech-specs/backend/duplicate-detection.md`)
 - Camera capture UX (covered by `tech-specs/frontend/mobile-compat.md`)
@@ -40,13 +40,13 @@ Define the client-side OCR pipeline for Happy House Bills. When a user photograp
 
 | ID | Decision | Rationale | Source |
 |----|----------|-----------|--------|
-| D1 | Tesseract.js v5 via npm package with pinned version; language data fetched from jsdelivr CDN with SRI | No server-side compute needed; respects user privacy; works offline-capable in v1 | `project_brief.md` D31, `domains/11-security/security.md` (## 13. Secrets Management — SRI enforcement) |
-| D2 | English language model only in Happy House Bills v1 | All target users are English-speaking couples; reduces initial load to ~8 MB | `project_brief.md` (## Acceptance Criteria) |
-| D3 | OCR confidence threshold of 60% for auto-fill | Balances aggressive pre-fill (better UX) with user review (correctness) | Adapted from UIBuilder OCR pattern |
-| D4 | Store name extracted via positional heuristic (top 30% of image) | Receipts consistently have the store name at the top; more reliable than key-value parsing | `user-flows.md` (## 2. Receipt Upload & OCR) |
-| D5 | Total extracted via regex: `total.*\d+\.\d{2}` | Receipt "total" lines consistently show a decimal amount; this regex is currency-agnostic | `user-flows.md` (## 2. Receipt Upload & OCR) |
-| D6 | Date extracted via regex: `\d{1,2}[/-]\d{1,2}[/-]\d{2,4}` | Matches all common US receipt date formats; user confirms before submission | `user-flows.md` (## 2. Receipt Upload & OCR) |
-| D7 | Worker loaded lazily — only when user opens the camera/upload flow | Avoids 8 MB download on page load; initial app load stays under 200 KB | `project_brief.md` (## Acceptance Criteria) |
+| D1 | OpenRouter vision LLM via `google/gemini-2.5-flash` default, configurable via `OPENROUTER_OCR_MODEL` | Server-side API key protection; vision model handles receipts accurately; model swappable without code change | `project_brief.md` D31, `docs/2-development/04-implemented/d17-openrouter-ocr.md` |
+| D2 | English-only receipts in Happy House Bills v1 | All target users are English-speaking couples | `project_brief.md` (## Acceptance Criteria) |
+| D3 | OCR confidence threshold of 75% for auto-fill | Balances aggressive pre-fill (better UX) with user review (correctness) | `docs/2-development/04-implemented/d17-openrouter-ocr.md` D8 |
+| D4 | Store name extracted from OpenRouter JSON-schema response (`store` field) | Structured output is more reliable than positional heuristics | `docs/2-development/04-implemented/d17-openrouter-ocr.md` |
+| D5 | Total extracted from OpenRouter JSON-schema response (`total` field) | Structured output is more reliable than regex parsing | `docs/2-development/04-implemented/d17-openrouter-ocr.md` |
+| D6 | Date extracted from OpenRouter JSON-schema response (`date` field, validated `YYYY-MM-DD`) | Structured output is more reliable than regex parsing | `docs/2-development/04-implemented/d17-openrouter-ocr.md` |
+| D7 | OpenRouter action called lazily — only when user opens the camera/upload flow | Avoids API cost on page load; initial app load stays under 200 KB | `project_brief.md` (## Acceptance Criteria) |
 
 ## 4. Open Questions
 
@@ -57,18 +57,16 @@ Define the client-side OCR pipeline for Happy House Bills. When a user photograp
 ## 5. Cross-References
 
 - `tech-specs/frontend/ui-spec.md` — OCR feedback display (loading, confidence indicators)
-- `tech-specs/backend/file-storage.md` — uploadReceipt action that receives the base64 image
-- `tech-specs/backend/duplicate-detection.md` — fingerprint generated from OCR-extracted fields
+- `tech-specs/backend/api-contract.md` — `expenses:uploadReceipt` action, `ocrSource` field
+- `tech-specs/backend/duplicate-detection.md` — OpenRouter fingerprint (dHash + OCR result fingerprint)
 - `domains/05-receipts/receipt-upload.md` — domain-level receipt upload flow
-- `tech-specs/backend/api-contract.md` — `expenses:uploadReceipt` action
-| `domains/11-security/security.md` — ## 13. Secrets Management (SRI enforcement, CSP for Tesseract.js worker) |
 - `spec-gaps.md` — gap tracking
 
 ## 6. Implementation Dependencies
 
-- **Depends on:** `data-model.md` (amount, date, category, notes fields), `file-storage.md` (uploadReceipt action)
-- **Blocks:** `domains/05-receipts/receipt-upload.md`, `domains/02-expenses/expense-management.md`
-- **Consumer integration:** Frontend `useOCR` composable wraps Tesseract.js; `AddExpenseModal` receives pre-filled values
+- **Depends on:** `data-model.md` (amount, date, category, notes fields), `api-contract.md` (`expenses:uploadReceipt` with `ocrSource`), `ocrOpenRouter.ts` Convex action, `receiptUpgrades.ts` quota tracking
+- **Blocks:** `domains/05-receipts/receipt-upload.md`, `domains/02-expenses/expense-management.md`, `d19-line-item-extraction.md`
+- **Consumer integration:** `expenses:create` accepts `ocrSource: "openrouter"`; `AddExpenseModal` receives pre-filled values from OpenRouter response; `useReceiptAI` composable for offline-to-online upgrade
 
 ## 7. OCR Worker Initialisation
 
