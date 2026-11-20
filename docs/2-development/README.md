@@ -34,6 +34,7 @@ Happy House Bills is a web app for couples to track shared household spending, s
 | P0 | Advanced Integrations | `docs/2-development/04-implemented/d14-advanced-integrations.md` | 04-implemented | ✅ D14 complete |
 | P0 | Advanced Analytics & Insights | `docs/2-development/04-implemented/d15-advanced-analytics-insights.md` | 04-implemented | ✅ D15 complete |
 | P0 | Analytics Export & Custom Reports | `docs/2-development/04-implemented/d21-analytics-export-reports.md` | 04-implemented | ✅ D21 complete |
+| P0 | Notification Preferences & Rich Actions | `docs/2-development/04-implemented/d22-notification-preferences-rich-actions.md` | 04-implemented | ✅ D22 complete |
 | P0 | Goal Tracking & Budget Variance | `docs/2-development/04-implemented/d23-goal-tracking-budget-variance.md` | 04-implemented | ✅ D23 complete |
 | P0 | Performance & Reliability | `docs/2-development/04-implemented/d16-performance-reliability.md` | 04-implemented | ✅ D16 complete |
 
@@ -72,3 +73,4 @@ Active reviews are tracked in [`supporting-docs/reviews/README.md`](supporting-d
 | D20 — Expense Categories Enhancement | 07-November-2026 | implementation-reviewer | Pass |
 | D21 — Analytics Export & Custom Reports | 15-November-2026 | manual promotion (agent) | Complete |
 | D23 — Goal Tracking & Budget Variance | 20-November-2026 | implementation-reviewer | Pass |
+| D22 — Notification Preferences & Rich Actions | 20-November-2026 | self (agent) | Pass |

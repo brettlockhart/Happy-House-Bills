@@ -279,6 +279,22 @@ export default defineSchema({
     .index("by_org_user_created", ["orgId", "userId", "createdAt"])
     .index("by_createdAt", ["createdAt"]),
 
+  notificationPreferences: defineTable({
+    orgId: v.string(),
+    userId: v.string(),
+    expensePending: v.boolean(),
+    expenseApproved: v.boolean(),
+    expenseRejected: v.boolean(),
+    settlementCreated: v.boolean(),
+    inviteSent: v.boolean(),
+    quietHoursStart: v.optional(v.string()),
+    quietHoursEnd: v.optional(v.string()),
+    batchWindowMs: v.number(),
+    emailFallback: v.boolean(),
+    updatedAt: v.number(),
+  })
+    .index("by_org_user", ["orgId", "userId"]),
+
   // Goal tracking and budget variance
   // Supports savings goals, monthly budgets, category budgets, and debt payoff
   goals: defineTable({

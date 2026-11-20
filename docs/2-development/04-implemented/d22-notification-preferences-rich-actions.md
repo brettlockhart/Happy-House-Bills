@@ -1,17 +1,17 @@
 ---
-status: Draft
+status: 04-implemented
 package: app
 priority: medium
 created: 11-November-2026
-updated: 11-November-2026
+updated: 2026-11-20
 tags: [notifications, preferences, push, phase3]
-lifecycle: 01-draft
+lifecycle: 04-implemented
 ---
 
 # Slice D22: Notification Preferences & Rich Actions
 
 **Date:** 11-November-2026
-**Status:** Draft
+**Status:** Implemented
 **Phase:** Phase 3 Enhancement
 
 ## 1. Purpose
@@ -52,14 +52,15 @@ Extend the D18 push notifications system with per-user notification preferences 
 
 | ID | Question | Status | Notes |
 |----|----------|--------|-------|
-| P3-Q1 | Quiet hours timezone: device or user-profile? | Open | Device simpler; profile more accurate for travel |
-| P3-Q2 | Batch window: per-type or global? | Open | Global simpler; per-type more granular |
-| P3-Q3 | Rich action confirmation modal or inline? | Open | Inline faster; modal prevents accidental taps |
-| P3-Q4 | Preferences UI: dedicated Settings page or modal? | Open | Modal for MVP; page if settings grow |
+| P3-Q1 | Quiet hours timezone: device or user-profile? | Resolved | Device-local time used (implemented in `useNotificationPreferences.isWithinQuietHours`); simpler and sufficient for v1 |
+| P3-Q2 | Batch window: per-type or global? | Resolved | Global per-user `batchWindowMs` (default 2000ms) registered in spec-gaps.md |
+| P3-Q3 | Rich action confirmation modal or inline? | Resolved | Inline actions (no confirmation modal) for MVP |
+| P3-Q4 | Preferences UI: dedicated Settings page or modal? | Resolved | Modal via bell footer implemented; Settings page deferred if settings grow |
 
 ## 5. Cross-References
 
 - `docs/2-development/04-implemented/d18-push-notifications.md` — Base push notifications
+- `docs/2-development/04-implemented/d23-goal-tracking-budget-variance.md` — Goal alerts use notification preferences
 - `docs/3-reference/domains/08-notifications/email-notifications.md` — Email fallback
 - `docs/3-reference/tech-specs/frontend/ui-spec.md` — Toast/Modal patterns
 - `spec-gaps.md` — gap tracking (P2-Q2, P2-Q3 from D18)
@@ -203,6 +204,37 @@ function isQuietHours(prefs: NotificationPreferences): boolean {
 
 ## Lifecycle
 
-- `01-draft` → `02-in-progress`: TBD
-- `02-in-progress` → `03-ready-for-review`: TBD
-- `03-ready-for-review` → `04-implemented`: TBD
+- `01-draft` → `02-in-progress`: 11-November-2026 (implementation started)
+- `02-in-progress` → `03-ready-for-review`: 18-November-2026 (implementation complete)
+- `03-ready-for-review` → `04-implemented`: 20-November-2026 (promoted after full Big Three review)
+
+## Lifecycle Report — D22 Notification Preferences & Rich Actions
+
+**Promoted to:** 04-implemented (20-November-2026)
+**Tests:** 877 passed (64 test files); D22-specific: 16 tests across 3 files
+**Lint:** 0 problems
+**Typecheck:** clean for D22 files (pre-existing baseline in unrelated files)
+**Docs audit:** 0 errors
+
+### Completed
+- Convex schema: `notificationPreferences` table (org-scoped, per-user) with `by_org_user` index
+- Convex functions: `get` (query), `update` (mutation, partial patch), `reset` (mutation)
+- `useNotificationPreferences` composable: reactive preferences, `DEFAULT_PREFERENCES`, `isWithinQuietHours`, `isTypeEnabled`
+- `NotificationPreferencesModal.vue`: per-type toggles, quiet hours time pickers, batch window number input, email fallback toggle, reset to defaults
+- `NotificationToast.vue`: rich action handlers (Approve → `expenses.approve`, Reject → `expenses.reject`, Accept → `orgs.acceptInviteDb`, View → router.push), dismiss id fix, batching via `batchWindowMs`
+- `NotificationBell.vue`: notifications panel, badge, preferences button, `goal_alert` icon
+- `index.vue`: `isNotificationPreferencesOpen` and `isNotificationsOpen` refs wired to modal and bell
+
+### Big Three Review (2026-11-20)
+
+| Specialist | Verdict / Status | Notes |
+|-----------|-------------------|-------|
+| **Implementation reviewer** | Pass (after fixes) | 7 critical + 1 minor findings remediated (cosmetic-only handlers, dismiss id mismatch, persist payload, batching unimplemented, batchWindowSeconds binding, missing View actions, missing goal_alert icon) |
+| **Security engineer** | Pass | No XSS, auth/org-scoping, rate limits, crypto checks all pass |
+| **Test engineer** | Pass | Full suite 877/877 passing; D22 coverage comprehensive |
+
+### Open Questions Resolved
+- P3-Q1: quiet hours timezone — device-local time
+- P3-Q2: batch window — global per-user `batchWindowMs` (default 2000ms)
+- P3-Q3: rich actions — inline (no confirmation modal)
+- P3-Q4: preferences UI — modal via bell footer

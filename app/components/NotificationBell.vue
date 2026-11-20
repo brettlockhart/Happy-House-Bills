@@ -14,6 +14,7 @@ const _props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: "update:modelValue", value: boolean): void;
   (e: "navigate", path: string): void;
+  (e: "openPreferences"): void;
 }>();
 
 const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
@@ -58,6 +59,8 @@ function getTypeIcon(type: Doc<"notifications">["type"]) {
       return "💸";
     case "invite_sent":
       return "👤";
+    case "goal_alert":
+      return "🎯";
   }
 }
 </script>
@@ -119,6 +122,9 @@ function getTypeIcon(type: Doc<"notifications">["type"]) {
         <div class="notification-panel__footer">
           <button class="notification-panel__action" @click="$emit('navigate', '/notifications')">
             View all notifications
+          </button>
+          <button class="notification-panel__action" @click="$emit('openPreferences')">
+            Notification preferences
           </button>
         </div>
       </div>

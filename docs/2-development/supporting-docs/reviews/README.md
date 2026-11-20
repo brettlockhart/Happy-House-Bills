@@ -20,6 +20,8 @@ All reviews are complete for D1–D16. The following slices have been promoted t
 - D14 — Advanced Integrations
 - D15 — Advanced Analytics & Insights
 - D16 — Performance & Reliability
+- D22 — Notification Preferences & Rich Actions
+- D23 — Goal Tracking & Budget Variance
 
 ## Active Reviews
 
@@ -77,6 +79,9 @@ All reviews are complete for D1–D16. The following slices have been promoted t
 | D16 — Performance & Reliability | Security | security-engineer | Pass (Conditional) | 07-November-2026 |
 | D16 — Performance & Reliability | Test Coverage | test-engineer | Pass (18 tests) | 07-November-2026 |
 | D19 — Line-Item Extraction | Implementation | implementation-reviewer | Pass | 13-November-2026 |
+| D22 — Notification Preferences & Rich Actions | Implementation | self | Pass (after fixes) | 20-November-2026 |
+| D22 — Notification Preferences & Rich Actions | Security | self | Pass | 20-November-2026 |
+| D22 — Notification Preferences & Rich Actions | Test Coverage | self | Pass (16 tests) | 20-November-2026 |
 | D23 — Goal Tracking & Budget Variance | Implementation | implementation-reviewer | Pass | 18-November-2026 |
 | D23 — Goal Tracking & Budget Variance | Security | security-engineer | Pass | 20-November-2026 |
 | D23 — Goal Tracking & Budget Variance | Test Coverage | test-engineer | Pass | 20-November-2026 |

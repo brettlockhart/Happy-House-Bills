@@ -131,7 +131,7 @@ receipt detection warns on duplicates. Deploy from clean repo to production in u
 
 **Dependencies:** Phase 1 complete.
 
-**Completed slices:** D11 — Advanced Features (`04-implemented/d11-advanced-features.md`), D12 — Mobile-First UI/UX Shell (`04-implemented/d12-mobile-responsive-ui-shell.md`), D13 — Team Workspaces & Collaboration (`04-implemented/d13-team-workspaces-collaboration.md`), D14 — Advanced Integrations (`04-implemented/d14-advanced-integrations.md`), D15 — Advanced Analytics & Insights (`04-implemented/d15-advanced-analytics-insights.md`), D16 — Performance & Reliability (`04-implemented/d16-performance-reliability.md`), D17 — Google Document AI OCR (`04-implemented/d17-google-document-ai-ocr.md`), D18 — Push Notifications (`04-implemented/d18-push-notifications.md`), D19 — Line-Item Extraction (`04-implemented/d19-line-item-extraction.md`), D20 — Expense Categories Enhancement (`04-implemented/d20-expense-categories-enhancement.md`), D21 — Analytics Export & Custom Reports (`04-implemented/d21-analytics-export-reports.md`), D23 — Goal Tracking & Budget Variance (`04-implemented/d23-goal-tracking-budget-variance.md`)
+**Completed slices:** D11 — Advanced Features (`04-implemented/d11-advanced-features.md`), D12 — Mobile-First UI/UX Shell (`04-implemented/d12-mobile-responsive-ui-shell.md`), D13 — Team Workspaces & Collaboration (`04-implemented/d13-team-workspaces-collaboration.md`), D14 — Advanced Integrations (`04-implemented/d14-advanced-integrations.md`), D15 — Advanced Analytics & Insights (`04-implemented/d15-advanced-analytics-insights.md`), D16 — Performance & Reliability (`04-implemented/d16-performance-reliability.md`), D17 — Google Document AI OCR (`04-implemented/d17-google-document-ai-ocr.md`), D18 — Push Notifications (`04-implemented/d18-push-notifications.md`), D19 — Line-Item Extraction (`04-implemented/d19-line-item-extraction.md`), D20 — Expense Categories Enhancement (`04-implemented/d20-expense-categories-enhancement.md`), D21 — Analytics Export & Custom Reports (`04-implemented/d21-analytics-export-reports.md`), D22 — Notification Preferences & Rich Actions (`04-implemented/d22-notification-preferences-rich-actions.md`), D23 — Goal Tracking & Budget Variance (`04-implemented/d23-goal-tracking-budget-variance.md`)
 
 | Slice | Review → Implemented | Status |
 |-------|----------------------|--------|
@@ -146,6 +146,7 @@ receipt detection warns on duplicates. Deploy from clean repo to production in u
 | D19 — Line-Item Extraction | 08-November-2026 | Implemented |
 | D20 — Expense Categories Enhancement | 07-November-2026 | Implemented |
 | D21 — Analytics Export & Custom Reports | 15-November-2026 | Implemented |
+| D22 — Notification Preferences & Rich Actions | 20-November-2026 | Implemented |
 | D23 — Goal Tracking & Budget Variance | 20-November-2026 | Implemented |
 
 > Note: Detailed draft→in-progress→review dates for D11–D16 were not consistently tracked in this table; promotion dates are recorded in `docs/2-development/README.md` and slice lifecycle reports.

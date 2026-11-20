@@ -8,6 +8,7 @@ import SettleUpModal from "~/components/SettleUpModal.vue";
 import AnalyticsDashboard from "~/components/AnalyticsDashboard.vue";
 import AIReviewModal from "~/components/AIReviewModal.vue";
 import NotificationBell from "~/components/NotificationBell.vue";
+import NotificationPreferencesModal from "~/components/NotificationPreferencesModal.vue";
 import type { Id } from "~/convex/_generated/dataModel";
 
 const { userId, orgId } = useAuth();
@@ -18,8 +19,9 @@ const { pendingUpgrades, isUpgrading, syncWhenOnline, upgradeReceipt, dismissRec
 
 const isAddModalOpen = ref(false);
 const isSettleModalOpen = ref(false);
-const isNotificationsOpen = ref(false);
+const isNotificationPreferencesOpen = ref(false);
 const isAIReviewModalOpen = ref(false);
+const isNotificationsOpen = ref(false);
 
 const partnerUserId = computed(() => {
   const other = (members.value || []).find((m) => m.userId !== userId.value);
@@ -75,6 +77,10 @@ async function handleAIReviewDismiss(id: string) {
 function handleNotificationNavigate(path: string) {
   navigateTo(path);
 }
+
+function handleNotificationPreferencesOpen() {
+  isNotificationPreferencesOpen.value = true;
+}
 </script>
 
 <template>
@@ -82,7 +88,7 @@ function handleNotificationNavigate(path: string) {
     <header class="hhb-header">
       <div class="flex items-center justify-between">
         <h1>Happy House Bills</h1>
-        <NotificationBell v-model="isNotificationsOpen" @navigate="handleNotificationNavigate" />
+        <NotificationBell v-model="isNotificationsOpen" @navigate="handleNotificationNavigate" @open-preferences="handleNotificationPreferencesOpen" />
       </div>
       <div class="hhb-actions">
         <button
@@ -138,6 +144,11 @@ function handleNotificationNavigate(path: string) {
         isAIReviewModalOpen = false;
         await handleAIReviewDismiss(id);
       }"
+    />
+
+    <NotificationPreferencesModal
+      :is-open="isNotificationPreferencesOpen"
+      @close="isNotificationPreferencesOpen = false"
     />
   </div>
 </template>
