@@ -6,9 +6,10 @@ import { computed } from "vue";
 import { mount } from "@vue/test-utils";
 import AnalyticsDashboard from "../../app/components/AnalyticsDashboard.vue";
 
-const { mockBudgets, mockInsights } = vi.hoisted(() => ({
+const { mockBudgets, mockInsights, mockGoals } = vi.hoisted(() => ({
   mockBudgets: { value: [] as unknown[] },
   mockInsights: { value: [] as unknown[] },
+  mockGoals: { value: [] as unknown[] },
 }));
 
 vi.mock("~/composables/useAnalytics", () => ({
@@ -37,6 +38,26 @@ vi.mock("~/composables/useAdvancedFeatures", () => ({
   useBudgets: () => ({
     data: computed(() => mockBudgets.value),
     isLoading: computed(() => false),
+  }),
+}));
+
+vi.mock("~/composables/useGoals", () => ({
+  useGoals: () => ({
+    goals: computed(() => mockGoals.value),
+    activeGoals: computed(() => mockGoals.value),
+    completedGoals: computed(() => []),
+    pausedGoals: computed(() => []),
+    totalProgress: computed(() => 0),
+    isLoading: computed(() => false),
+    createGoal: vi.fn(),
+    updateGoal: vi.fn(),
+    deleteGoal: vi.fn(),
+    goalStatusLabel: vi.fn(),
+    goalTypeLabel: vi.fn(),
+    formatProgress: vi.fn(),
+    formatVariance: vi.fn(),
+    templateDefaults: vi.fn(),
+    templates: [],
   }),
 }));
 

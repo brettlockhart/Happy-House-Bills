@@ -227,13 +227,17 @@ then domain specs).
 | ~~P4-Q2~~ | Support custom date ranges beyond presets? | Resolved | `docs/2-development/02-in-progress/d21-analytics-export-reports.md` | frontend-engineer | Phase 4 — Custom dateFrom/dateTo fields in report config |
 | ~~P4-Q3~~ | Report sharing: link-only or email attachment? | Resolved | `docs/2-development/02-in-progress/d21-analytics-export-reports.md` | security-engineer | Phase 4 — Link-only via signed R2 URLs (7-day expiry) |
 | ~~P4-Q4~~ | Maximum report size / row limit for CSV? | Resolved | `docs/2-development/02-in-progress/d21-analytics-export-reports.md` | backend-engineer | Phase 4 — 10k row safety cap in backend |
+| P3-Q1 | Goal period: calendar month, rolling 30-day window, or custom? | Open | `docs/2-development/04-implemented/d23-goal-tracking-budget-variance.md` | backend-engineer | Phase 3 — Calendar month aligns with budgets; rolling for multi-household |
+| P3-Q2 | Savings goals: track via settlement "savings" category or a separate goal table entry? | Open | `docs/2-development/04-implemented/d23-goal-tracking-budget-variance.md` | backend-engineer | Phase 3 — Separate table cleaner; category simpler for v1 |
+| P3-Q3 | Variance projection: linear only or include seasonality? | Open | `docs/2-development/04-implemented/d23-goal-tracking-budget-variance.md` | backend-engineer | Phase 3 — Linear only in v1; seasonality deferred to Phase 4 |
+| P3-Q4 | Goal completion: auto-archive at 100% or manual archive? | Open | `docs/2-development/04-implemented/d23-goal-tracking-budget-variance.md` | backend-engineer | Phase 3 — Auto-archive at 100% with option to restore |
 
 ## 7. Appendix: Gap Count Summary
 
 | Metric | Count |
 |--------|-------|
 | Missing referenced documents | 0 |
-| Open questions | 6 |
+| Open questions | 10 |
 | Domains | 11 |
 | Total next actions | 0 |
 

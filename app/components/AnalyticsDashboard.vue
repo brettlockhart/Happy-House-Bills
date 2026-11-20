@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useAnalytics } from "~/composables/useAnalytics";
+import { useGoals } from "~/composables/useGoals";
+import type { Id } from "~~/convex/_generated/dataModel";
 import { useBudgets } from "~/composables/useAdvancedFeatures";
 import ReportBuilderModal from "~/components/ReportBuilderModal.vue";
+import GoalCard from "~/components/GoalCard.vue";
 
 const {
   period,
@@ -21,11 +24,23 @@ const {
 } = useAnalytics();
 
 const { data: budgets } = useBudgets();
+const {
+  activeGoals,
+  completedGoals,
+  pausedGoals,
+  totalProgress,
+  isLoading: goalsIsLoading,
+  deleteGoal,
+} = useGoals();
 
 const showReportModal = ref(false);
 
 const handleReportCreated = (_reportId: string) => {
   showReportModal.value = false;
+};
+
+const handleGoalDelete = (goalId: Id<"goals">) => {
+  deleteGoal({ goalId });
 };
 
 const periods: Array<{ value: "week" | "month" | "quarter" | "year"; label: string }> = [
@@ -209,8 +224,8 @@ const budgetBarClass = (pct: number): string => {
           <h3 class="analytics-section__title">Insights</h3>
           <div class="insights-list">
             <div
-              v-for="(insight, i) in insightsList"
-              :key="i"
+              v-for="insight in insightsList"
+              :key="`${insight.type}:${insight.message}`"
               class="hhb-insight"
               :class="severityClass(insight.severity)"
             >
@@ -227,6 +242,42 @@ const budgetBarClass = (pct: number): string => {
             Export Insights
           </button>
         </div>
+
+        <!-- Goals section -->
+        <section class="analytics-section">
+          <h3 class="analytics-section__title">Goals</h3>
+          <div v-if="goalsIsLoading" class="hhb-empty">
+            <p class="hhb-text-secondary">Loading goals…</p>
+          </div>
+          <div v-else-if="activeGoals.length === 0 && completedGoals.length === 0 && pausedGoals.length === 0" class="hhb-empty">
+            <p class="hhb-text-secondary">No goals yet. Create your first goal to track progress.</p>
+          </div>
+          <div v-else class="goal-section">
+            <div class="goal-section__summary">
+              <span class="goal-section__count">{{ activeGoals.length }} active</span>
+              <span class="goal-section__progress">{{ Math.round(totalProgress) }}% overall</span>
+            </div>
+            <div class="goal-section__list">
+<GoalCard
+              v-for="goal in activeGoals"
+              :key="goal._id"
+              :goal="goal"
+              :on-delete="() => handleGoalDelete(goal._id)"
+/>
+            </div>
+            <div v-if="completedGoals.length > 0" class="goal-section__completed">
+              <h4 class="goal-section__title">Completed</h4>
+              <div class="goal-section__list">
+<GoalCard
+              v-for="goal in completedGoals"
+              :key="goal._id"
+              :goal="goal"
+              :on-delete="() => handleGoalDelete(goal._id)"
+/>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
 

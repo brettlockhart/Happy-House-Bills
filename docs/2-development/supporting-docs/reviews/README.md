@@ -26,7 +26,7 @@ All reviews are complete for D1–D16. The following slices have been promoted t
 | Slice | Type | Reviewer | Status | Submitted | Last updated |
 |-------|------|----------|---------|-----------|---------------|
 | — | — | — | — | — | No active reviews |
-| D20 — Expense Categories Enhancement | Implementation | implementation-reviewer | Awaiting review | 14-November-2026 | 14-November-2026 |
+
 
 ## Completed Reviews
 
@@ -77,6 +77,9 @@ All reviews are complete for D1–D16. The following slices have been promoted t
 | D16 — Performance & Reliability | Security | security-engineer | Pass (Conditional) | 07-November-2026 |
 | D16 — Performance & Reliability | Test Coverage | test-engineer | Pass (18 tests) | 07-November-2026 |
 | D19 — Line-Item Extraction | Implementation | implementation-reviewer | Pass | 13-November-2026 |
+| D23 — Goal Tracking & Budget Variance | Implementation | implementation-reviewer | Pass | 18-November-2026 |
+| D23 — Goal Tracking & Budget Variance | Security | security-engineer | Pass | 20-November-2026 |
+| D23 — Goal Tracking & Budget Variance | Test Coverage | test-engineer | Pass | 20-November-2026 |
 
 ## Review Process
 

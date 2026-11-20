@@ -267,6 +267,7 @@ export default defineSchema({
       v.literal("expense_rejected"),
       v.literal("settlement_created"),
       v.literal("invite_sent"),
+      v.literal("goal_alert"),
     ),
     title: v.string(),
     body: v.string(),
@@ -277,6 +278,41 @@ export default defineSchema({
     .index("by_org_user_read", ["orgId", "userId", "read"])
     .index("by_org_user_created", ["orgId", "userId", "createdAt"])
     .index("by_createdAt", ["createdAt"]),
+
+  // Goal tracking and budget variance
+  // Supports savings goals, monthly budgets, category budgets, and debt payoff
+  goals: defineTable({
+    orgId: v.string(),
+    userId: v.string(),
+    name: v.string(),
+    type: v.union(
+      v.literal("savings_target"),
+      v.literal("monthly_spending_limit"),
+      v.literal("category_budget"),
+      v.literal("debt_payoff"),
+    ),
+    targetAmount: v.number(),
+    categoryId: v.optional(v.id("categories")),
+    currentAmount: v.number(),
+    progressPercent: v.number(),
+    varianceAmount: v.number(),
+    variancePercent: v.number(),
+    projectedCompletion: v.optional(v.number()),
+    status: v.union(
+      v.literal("active"),
+      v.literal("achieved"),
+      v.literal("at_risk"),
+      v.literal("over_budget"),
+      v.literal("paused"),
+    ),
+    alertAtPercent: v.number(),
+    alertSent: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_org", ["orgId"])
+    .index("by_org_status", ["orgId", "status"])
+    .index("by_org_user", ["orgId", "userId"]),
 
   reports: defineTable({
     orgId: v.string(),

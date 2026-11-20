@@ -17,6 +17,7 @@ export const createInternal = internalMutation({
       v.literal("expense_rejected"),
       v.literal("settlement_created"),
       v.literal("invite_sent"),
+      v.literal("goal_alert"),
     ),
     title: v.string(),
     body: v.string(),

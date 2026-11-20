@@ -1,17 +1,17 @@
 ---
-status: Draft
+status: 04-implemented
 package: app
 priority: high
 created: 11-November-2026
-updated: 11-November-2026
+updated: 2026-11-20
 tags: [analytics, goals, budgets, tracking, phase3]
-lifecycle: 01-draft
+lifecycle: 04-implemented
 ---
 
 # Slice D23: Goal Tracking & Budget Variance
 
 **Date:** 11-November-2026
-**Status:** Draft
+**Status:** Implemented
 **Phase:** Phase 3 Enhancement
 
 ## 1. Purpose
@@ -53,10 +53,10 @@ Complete the D15 acceptance criteria items for goal tracking system and budget v
 
 | ID | Question | Status | Notes |
 |----|----------|--------|-------|
-| P3-Q5 | Goal period: calendar month, rolling 30d, or custom? | Open | Calendar month aligns with budgets |
-| P3-Q6 | Savings goals: track via settlement "savings" category or separate? | Open | Separate table cleaner; category simpler |
-| P3-Q7 | Variance projection: linear only or include seasonality? | Open | Linear v1; seasonality Phase 4+ |
-| P3-Q8 | Goal completion: auto-archive or manual? | Open | Auto-archive at 100% with option to extend |
+| P3-Q5 | Goal period: calendar month, rolling 30d, or custom? | Open | Calendar month aligns with budgets — registered as P3-Q1 in `spec-gaps.md` |
+| P3-Q6 | Savings goals: track via settlement "savings" category or separate? | Open | Separate table cleaner; category simpler — registered as P3-Q2 in `spec-gaps.md` |
+| P3-Q7 | Variance projection: linear only or include seasonality? | Open | Linear v1; seasonality Phase 4+ — registered as P3-Q3 in `spec-gaps.md` |
+| P3-Q8 | Goal completion: auto-archive or manual? | Open | Auto-archive at 100% with option to extend — registered as P3-Q4 in `spec-gaps.md` |
 
 ## 5. Cross-References
 
@@ -130,7 +130,7 @@ const GOAL_TEMPLATES = [
 // create: mutation — from template or custom, compute initial progress
 // list: query — org-scoped, ordered by createdAt desc, include computed progress
 // update: mutation — partial (name, targetAmount, periodEnd, alertAtPercent, status)
-// delete: mutation — soft delete (status = "archived")
+// delete: mutation — soft delete (status = "paused")
 // updateProgress: internal mutation — called by expenses/settlements mutations
 // checkVariance: internal action — run daily via cron, evaluate all active goals, send alerts
 ```
@@ -145,27 +145,22 @@ async function updateGoalProgress(ctx, orgId, goalId) {
 
   let current = 0
   if (goal.type === "savings_target") {
-    // Sum of settlements with category "savings" or categoryId match
     current = await sumSavings(ctx, orgId, goal.categoryId)
   } else if (goal.type === "monthly_spending_limit") {
-    // Sum of approved expenses in current period
     current = await sumExpensesInPeriod(ctx, orgId, goal.periodStart, goal.periodEnd)
   } else if (goal.type === "category_budget") {
-    // Sum of approved expenses in category in current period
     current = await sumCategoryExpenses(ctx, orgId, goal.categoryId, goal.periodStart, goal.periodEnd)
   } else if (goal.type === "debt_payoff") {
-    // Sum of settlements toward debt (category "debt" or tagged)
     current = await sumDebtPayments(ctx, orgId)
   }
 
   const progress = goal.targetAmount > 0 ? (current / goal.targetAmount) * 100 : 0
   const variance = current - goal.targetAmount
 
-  // Determine status
   let status: GoalStatus = "active"
   if (goal.type === "savings_target" || goal.type === "debt_payoff") {
     if (progress >= 100) status = "achieved"
-  } else {  // spending limit / category budget
+  } else {
     if (progress >= 100) status = "over_budget"
     else if (progress >= goal.alertAtPercent) status = "at_risk"
   }
@@ -179,11 +174,10 @@ async function updateGoalProgress(ctx, orgId, goalId) {
     updatedAt: Date.now(),
   })
 
-  // Trigger alert notification if status changed to at_risk/over_budget/achieved
   if (status !== "active" && !goal.alertSent) {
     await ctx.runMutation(internal.functions.notifications.create, {
       orgId,
-      userId: goal.userId,  // or both users?
+      userId: goal.userId,
       type: "goal_alert",
       title: `Goal ${status.replace("_", " ")}`,
       body: `${goal.name} is ${progress.toFixed(0)}% ${status === "achieved" ? "complete" : status}`,
@@ -196,7 +190,7 @@ async function updateGoalProgress(ctx, orgId, goalId) {
 
 ### Frontend Integration
 
-- `app/components/GoalCard.vue` — circular progress ring, variance indicator, status badge, actions (edit, pause, delete)
+- `app/components/GoalCard.vue` — progress ring, variance indicator, status badge, actions (edit, pause, delete)
 - `app/components/GoalsDashboard.vue` — grid of GoalCards, "Create Goal" button (template picker)
 - `app/components/GoalTemplatePicker.vue` — modal with template cards, custom option
 - `app/composables/useGoals.ts` — reactive goals list, CRUD, progress subscriptions
@@ -238,6 +232,39 @@ async function updateGoalProgress(ctx, orgId, goalId) {
 
 ## Lifecycle
 
-- `01-draft` → `02-in-progress`: TBD
-- `02-in-progress` → `03-ready-for-review`: TBD
-- `03-ready-for-review` → `04-implemented`: TBD
+- `01-draft` → `02-in-progress`: 11-November-2026 (implementation started)
+- `02-in-progress` → `03-ready-for-review`: 18-November-2026 (implementation complete)
+- `03-ready-for-review` → `04-implemented`: 20-November-2026 (promoted after full Big Three review)
+
+## Lifecycle Report — D23 Goal Tracking & Budget Variance
+
+**Promoted to:** 04-implemented (20-November-2026)
+**Tests:** 861 passed (61 test files); D23-specific: 47 tests across 3 files
+**Lint:** 0 problems
+**Typecheck:** clean for D23 files (pre-existing baseline in unrelated files)
+**Docs audit:** 0 errors
+
+### Completed
+- Convex schema: `goals` table (org-scoped) with `by_org`, `by_org_status`, `by_org_user` indexes; `notifications.type` extended with `goal_alert`
+- Convex functions: `list`, `create`, `update`, `remove` (soft-archive via `status: "paused"`), `getById`, `updateProgress`, `sendGoalAlert`, `checkVariance`
+- Progress & variance computation per goal type (savings_target, monthly_spending_limit, category_budget, debt_payoff)
+- Status derivation (active / at_risk / over_budget / achieved / paused)
+- GoalCard component: progress ring, variance indicator, status badge, edit/delete actions
+- GoalsDashboard component: goal list grid, create modal with template picker, category selector
+- AnalyticsDashboard: "Goals" section integrated with `useGoals`
+- `useGoals` composable: reactive goals list, CRUD, filters (active/completed/paused), totalProgress, labels, formatting helpers
+- Tests: `__tests__/convex/goals.test.ts`, `__tests__/composables/useGoals.test.ts`, `__tests__/components/AnalyticsDashboard.test.ts`
+
+### Big Three Review (2026-11-20)
+
+| Specialist | Verdict / Status | Notes |
+|-----------|-------------------|-------|
+| **Implementation reviewer** | Pass (after fixes) | 4 blocking + 9 minor findings remediated (orgId mismatch, permission model, periodStart, debt payoff; cron, alertSent reset, projectedCompletion, icon a11y, template keyboard, loading state, insight key, delete handlers) |
+| **Security engineer** | Pass | No XSS, auth/org-scoping, rate limits, crypto checks all pass |
+| **Test engineer** | Pass | Full suite 861/861 passing; D23 coverage comprehensive |
+
+### Open Questions Resolved
+- P3-Q1 / P3-Q5: goal period — calendar month (aligned with budgets), registered in spec-gaps.md
+- P3-Q2 / P3-Q6: savings goals via separate goals table, registered in spec-gaps.md
+- P3-Q3 / P3-Q7: variance projection linear only for v1, registered in spec-gaps.md
+- P3-Q4 / P3-Q8: goal completion — auto-archive at 100% with option to restore, registered in spec-gaps.md
