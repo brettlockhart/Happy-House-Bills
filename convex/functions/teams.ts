@@ -175,14 +175,6 @@ export const createInvite = mutation({
         if (members.some((m: { user_id: string }) => m.user_id === user.id)) {
           throw new Error("This email is already associated with this household");
         }
-
-        const userOrgs = await clerkRequest(`/users/${user.id}/organizations`);
-        const orgs = (userOrgs as { data?: Array<{ id: string }> }).data || [];
-        if (orgs.length > 0) {
-          throw new Error(
-            "This email is already associated with another household.",
-          );
-        }
       }
     }
 
@@ -220,6 +212,10 @@ export const acceptTeamInvite = mutation({
 
     if (invite.expiresAt < Date.now()) {
       throw new Error("Invite has expired");
+    }
+
+    if (invite.inviteeUserId) {
+      throw new Error("Invite already consumed");
     }
 
     const alreadyMember = await ctx.db

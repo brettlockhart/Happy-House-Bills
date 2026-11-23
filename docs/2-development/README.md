@@ -2,7 +2,7 @@
 
 **Project:** Happy House Bills
 **Status:** Active — Phase 1 MVP complete; Phases 3–5 expansion complete
-**Last updated:** 20-November-2026
+**Last updated:** 22-November-2026
 
 ## Overview
 
@@ -36,6 +36,9 @@ Happy House Bills is a web app for couples to track shared household spending, s
 | P0 | Analytics Export & Custom Reports | `docs/2-development/04-implemented/d21-analytics-export-reports.md` | 04-implemented | ✅ D21 complete |
 | P0 | Notification Preferences & Rich Actions | `docs/2-development/04-implemented/d22-notification-preferences-rich-actions.md` | 04-implemented | ✅ D22 complete |
 | P0 | Goal Tracking & Budget Variance | `docs/2-development/04-implemented/d23-goal-tracking-budget-variance.md` | 04-implemented | ✅ D23 complete |
+| P0 | Commercial Model & Responsibility Ratios | `docs/2-development/04-implemented/d24-commercial-model.md` | 04-implemented | ✅ D24 complete |
+| P0 | Stripe Production Integration (D25) | `docs/2-development/04-implemented/d25-stripe-production-integration.md` | 04-implemented | ✅ D25 complete |
+| P0 | Advanced Feature Gating (D26) | `docs/2-development/04-implemented/d26-advanced-feature-gating.md` | 04-implemented | ✅ D26 complete |
 | P0 | Performance & Reliability | `docs/2-development/04-implemented/d16-performance-reliability.md` | 04-implemented | ✅ D16 complete |
 
 ## Review Queue
@@ -74,3 +77,6 @@ Active reviews are tracked in [`supporting-docs/reviews/README.md`](supporting-d
 | D21 — Analytics Export & Custom Reports | 15-November-2026 | manual promotion (agent) | Complete |
 | D23 — Goal Tracking & Budget Variance | 20-November-2026 | implementation-reviewer | Pass |
 | D22 — Notification Preferences & Rich Actions | 20-November-2026 | self (agent) | Pass |
+| D24 — Commercial Model & Responsibility Ratios | 22-November-2026 | implementation-reviewer | Pass |
+| D25 — Stripe Production Integration (D25) | 23-November-2026 | implementation-reviewer | Pass |
+| D26 — Advanced Feature Gating | 23-November-2026 | implementation-reviewer | Pass |

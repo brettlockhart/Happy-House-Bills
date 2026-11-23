@@ -9,7 +9,10 @@ interface DevBypassUser {
 
 export function useClerkAuthWrapper() {
   const config = useRuntimeConfig();
-  if (config.public.authBypass) {
+  // Dev-only bypass: never enabled in production builds. Guarded by NODE_ENV at
+  // build time so the flag is absent from the production bundle entirely.
+  const bypassEnabled = import.meta.dev && process.env.NUXT_PUBLIC_AUTH_BYPASS === "1";
+  if (bypassEnabled) {
     const userId = ref(String(config.public.authBypassUserId || "dev-user"));
     const orgId = ref(String(config.public.authBypassOrgId || "dev-org"));
     const user = ref<DevBypassUser>({ id: userId.value, fullName: "Dev Bypass User" });

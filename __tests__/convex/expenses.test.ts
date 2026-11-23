@@ -344,6 +344,53 @@ describe("expenses:balance", () => {
     expect(result.balance).toBe(100);
     expect(result.owesWhom).toBe("user_2");
   });
+
+  it("calculates balance with share field: user paid 100, share 50 -> partner owes 50", async () => {
+    const { balance } = await import("../../convex/functions/expenses");
+    const expenses = [{
+      _id: "exp1",
+      orgId: "org_1",
+      amount: 100,
+      status: "approved",
+      paidBy: "user_1",
+      share: 50,
+    }];
+    const ctx = createMockCtx(validIdentity(), { expenses });
+    const result = await balance.handler(ctx as never, {}) as { balance: number; owesWhom: string };
+    // partnerShare = 100 - 50 = 50; user paid -> balance = -100 * 50/100 = -50
+    expect(result.balance).toBe(-50);
+  });
+
+  it("calculates balance with share field: other paid 100, share 60 -> user owes 40", async () => {
+    const { balance } = await import("../../convex/functions/expenses");
+    const expenses = [{
+      _id: "exp1",
+      orgId: "org_1",
+      amount: 100,
+      status: "approved",
+      paidBy: "user_2",
+      share: 60,
+    }];
+    const ctx = createMockCtx(validIdentity(), { expenses });
+    const result = await balance.handler(ctx as never, {}) as { balance: number; owesWhom: string };
+    // partnerShare = 40; other paid -> balance = +100 * 40/100 = +40
+    expect(result.balance).toBe(40);
+  });
+
+  it("calculates balance without share field (legacy): defaults to share=0, partner owes full", async () => {
+    const { balance } = await import("../../convex/functions/expenses");
+    const expenses = [{
+      _id: "exp1",
+      orgId: "org_1",
+      amount: 100,
+      status: "approved",
+      paidBy: "user_1",
+    }];
+    const ctx = createMockCtx(validIdentity(), { expenses });
+    const result = await balance.handler(ctx as never, {}) as { balance: number; owesWhom: string };
+    // share undefined -> defaults to 0; partnerShare = 100; user paid -> balance = -100 * 1 = -100
+    expect(result.balance).toBe(-100);
+  });
 });
 
 describe("expenses:approve", () => {
@@ -451,6 +498,61 @@ describe("expenses:create", () => {
     expect(result).toHaveProperty("id");
     expect(result).toHaveProperty("isDuplicate");
     expect((result as { isDuplicate: boolean }).isDuplicate).toBe(false);
+  });
+
+  it("stores share when provided", async () => {
+    const { create } = await import("../../convex/functions/expenses");
+    const ctx = createMockCtx(validIdentity());
+    await create.handler(ctx as never, {
+      amount: 100,
+      date: "2024-01-01",
+      category: "groceries",
+      paidBy: "user_1",
+      share: 60,
+    });
+    expect(ctx._insertCalls?.[0]).toMatchObject({ share: 60 });
+  });
+
+  it("rejects share below 0", async () => {
+    const { create } = await import("../../convex/functions/expenses");
+    const ctx = createMockCtx(validIdentity());
+    await expect(
+      create.handler(ctx as never, {
+        amount: 100,
+        date: "2024-01-01",
+        category: "groceries",
+        paidBy: "user_1",
+        share: -1,
+      })
+    ).rejects.toThrow("Share must be an integer between 0 and 100");
+  });
+
+  it("rejects share above 100", async () => {
+    const { create } = await import("../../convex/functions/expenses");
+    const ctx = createMockCtx(validIdentity());
+    await expect(
+      create.handler(ctx as never, {
+        amount: 100,
+        date: "2024-01-01",
+        category: "groceries",
+        paidBy: "user_1",
+        share: 101,
+      })
+    ).rejects.toThrow("Share must be an integer between 0 and 100");
+  });
+
+  it("rejects non-integer share", async () => {
+    const { create } = await import("../../convex/functions/expenses");
+    const ctx = createMockCtx(validIdentity());
+    await expect(
+      create.handler(ctx as never, {
+        amount: 100,
+        date: "2024-01-01",
+        category: "groceries",
+        paidBy: "user_1",
+        share: 60.5,
+      })
+    ).rejects.toThrow("Share must be an integer between 0 and 100");
   });
 
   it("detects duplicate by receiptPHash", async () => {

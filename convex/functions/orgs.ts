@@ -1,4 +1,5 @@
 import { action, internalMutation, internalQuery, mutation, query } from "../_generated/server";
+import type { Id } from "../_generated/dataModel";
 import { v } from "convex/values";
 import { requireAuthenticatedUser, requireAuthenticatedOrg } from "../auth";
 import { renderInviteEmail } from "./email";
@@ -15,10 +16,6 @@ interface ClerkUser {
 
 interface ListMembershipsResponse {
   data: Array<{ id: string; user_id: string }>;
-}
-
-interface ListUserOrgsResponse {
-  data: Array<{ id: string }>;
 }
 
 interface ClerkMembership {
@@ -54,6 +51,7 @@ await ctx.db.insert("memberships", {
       userId,
       role: ROLES.ADMIN,
       status: "active",
+      subscriptionRole: "admin",
       invitedBy: userId,
       createdAt: now,
       updatedAt: now,
@@ -93,6 +91,7 @@ export const createOrg = mutation({
       userId,
       role: ROLES.ADMIN,
       status: "active",
+      subscriptionRole: "admin",
       invitedBy: userId,
       createdAt: now,
       updatedAt: now,
@@ -167,6 +166,7 @@ export const acceptInviteDb = internalMutation({
       userId: args.userId,
       role: args.role,
       status: "active",
+      subscriptionRole: "free",
       invitedBy: args.invitedBy,
       joinedAt: now,
       createdAt: now,
@@ -225,14 +225,6 @@ export const invite = action({
         if (members.some((m: { user_id: string }) => m.user_id === user.id)) {
           throw new Error("This email is already associated with this household");
         }
-
-        const userOrgs = await clerkRequest(`/users/${user.id}/organizations`);
-        const orgs = (userOrgs as ListUserOrgsResponse).data || [];
-        if (orgs.length > 0) {
-          throw new Error(
-            "This email is already associated with another household.",
-          );
-        }
       }
     }
 
@@ -283,7 +275,7 @@ export const acceptInvite = action({
     const invite = (await ctx.runQuery(
       internal.functions.orgs.getInviteByToken,
       { token: args.token },
-    )) as { _id: Id<"invites">; orgId: string; orgName: string; role: string; createdBy: string; expiresAt: number } | null;
+    )) as { _id: Id<"invites">; orgId: string; orgName: string; role: string; createdBy: string; expiresAt: number; inviteeUserId?: string | null } | null;
 
     if (!invite) {
       throw new Error("Invalid invite token");
@@ -293,13 +285,8 @@ export const acceptInvite = action({
       throw new Error("Invite has expired");
     }
 
-    const membershipsRes = await clerkRequest(
-      `/organizations/${invite.orgId}/memberships`,
-    );
-    const members = (membershipsRes as ListMembershipsResponse).data || [];
-
-    if (members.length >= 2) {
-      throw new Error("Household is already full (maximum 2 members)");
+    if (invite.inviteeUserId) {
+      throw new Error("Invite already consumed");
     }
 
     const membership = (await clerkRequest(
@@ -318,6 +305,12 @@ export const acceptInvite = action({
       userId,
       role: (invite.role as "admin" | "member" | "viewer") ?? "member",
       invitedBy: invite.createdBy,
+    });
+
+    await ctx.runMutation(internal.functions.orgs.setSubscriptionRole, {
+      orgId: invite.orgId,
+      userId,
+      role: "free",
     });
 
     return {
@@ -344,5 +337,218 @@ export const listPendingInvites = query({
       )
       .order("desc")
       .collect();
+  },
+});
+
+// D26: Usage limits per org/month (free-member caps)
+export const getUsageLimits = internalQuery({
+  args: { orgId: v.string() },
+  handler: async (ctx, args) => {
+    const month = new Date().toISOString().slice(0, 7); // YYYY-MM
+    const limits = await ctx.db
+      .query("usageLimits")
+      .withIndex("by_org_month", (q) => q.eq("orgId", args.orgId).eq("month", month))
+      .first();
+
+    if (!limits) {
+      return {
+        month,
+        expenseCount: 0,
+        ocrCount: 0,
+        expenseCap: Number(process.env.FREE_EXPENSE_LIMIT_MONTHLY) || 20,
+        ocrCap: Number(process.env.FREE_OCR_LIMIT_MONTHLY) || 10,
+        isExpenseAtLimit: false,
+        isOcrAtLimit: false,
+        isExpenseAt80Percent: false,
+        isOcrAt80Percent: false,
+      };
+    }
+
+    return {
+      month,
+      expenseCount: limits.expenseCount,
+      ocrCount: limits.ocrCount,
+      expenseCap: limits.expenseCap,
+      ocrCap: limits.ocrCap,
+      isExpenseAtLimit: limits.expenseCount >= limits.expenseCap,
+      isOcrAtLimit: limits.ocrCount >= limits.ocrCap,
+      isExpenseAt80Percent: limits.expenseCount >= Math.ceil(limits.expenseCap * 0.8),
+      isOcrAt80Percent: limits.ocrCount >= Math.ceil(limits.ocrCap * 0.8),
+    };
+  },
+});
+
+export const incrementExpenseCount = internalMutation({
+  args: { orgId: v.string() },
+  handler: async (ctx, args) => {
+    const month = new Date().toISOString().slice(0, 7);
+    const now = Date.now();
+
+    const existing = await ctx.db
+      .query("usageLimits")
+      .withIndex("by_org_month", (q) => q.eq("orgId", args.orgId).eq("month", month))
+      .first();
+
+    const cap = Number(process.env.FREE_EXPENSE_LIMIT_MONTHLY) || 20;
+    let count: number;
+    if (existing) {
+      count = (existing.expenseCount ?? 0) + 1;
+      await ctx.db.patch(existing._id, { expenseCount: count, updatedAt: now });
+    } else {
+      count = 1;
+      await ctx.db.insert("usageLimits", {
+        orgId: args.orgId,
+        month,
+        expenseCount: 1,
+        ocrCount: 0,
+        expenseCap: cap,
+        ocrCap: Number(process.env.FREE_OCR_LIMIT_MONTHLY) || 10,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    return { count, isAtLimit: count >= cap, isOverLimit: count > cap };
+  },
+});
+
+export const incrementOcrCount = internalMutation({
+  args: { orgId: v.string() },
+  handler: async (ctx, args) => {
+    const month = new Date().toISOString().slice(0, 7);
+    const now = Date.now();
+
+    const existing = await ctx.db
+      .query("usageLimits")
+      .withIndex("by_org_month", (q) => q.eq("orgId", args.orgId).eq("month", month))
+      .first();
+
+    const cap = Number(process.env.FREE_OCR_LIMIT_MONTHLY) || 10;
+    let count: number;
+    if (existing) {
+      count = (existing.ocrCount ?? 0) + 1;
+      await ctx.db.patch(existing._id, { ocrCount: count, updatedAt: now });
+    } else {
+      count = 1;
+      await ctx.db.insert("usageLimits", {
+        orgId: args.orgId,
+        month,
+        expenseCount: 0,
+        ocrCount: 1,
+        expenseCap: Number(process.env.FREE_EXPENSE_LIMIT_MONTHLY) || 20,
+        ocrCap: cap,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    return { count, isAtLimit: count >= cap, isOverLimit: count > cap };
+  },
+});
+
+// D26: Reset limits at month boundary handled by caller/checker; public wrapper
+export const resetUsageLimits = internalMutation({
+  args: { orgId: v.string(), month: v.string() },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("usageLimits")
+      .withIndex("by_org_month", (q) => q.eq("orgId", args.orgId).eq("month", args.month))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, { expenseCount: 0, ocrCount: 0, updatedAt: Date.now() });
+    }
+    return { success: true };
+  },
+});
+
+export const setSubscriptionRole = internalMutation({
+  args: { orgId: v.string(), userId: v.string(), role: v.union(v.literal("free"), v.literal("paying"), v.literal("admin")) },
+  handler: async (ctx, args) => {
+    const membership = await ctx.db
+      .query("memberships")
+      .withIndex("by_org_user", (q) => q.eq("orgId", args.orgId).eq("userId", args.userId))
+      .first();
+
+    if (!membership) throw new Error("Membership not found");
+
+    await ctx.db.patch(membership._id, { subscriptionRole: args.role, updatedAt: Date.now() });
+    return { success: true };
+  },
+});
+
+export const getSubscriptionRole = internalQuery({
+  args: { orgId: v.string(), userId: v.string() },
+  handler: async (ctx, args) => {
+    const membership = await ctx.db
+      .query("memberships")
+      .withIndex("by_org_user", (q) => q.eq("orgId", args.orgId).eq("userId", args.userId))
+      .first();
+
+    return { subscriptionRole: membership?.subscriptionRole ?? "free" };
+  },
+});
+
+// D26: Role gate for Convex functions - check caller's subscription role
+export const assertFeatureGate = internalQuery({
+  args: { orgId: v.string(), userId: v.string(), requiredRole: v.union(v.literal("free"), v.literal("paying"), v.literal("admin")) },
+  handler: async (ctx, args) => {
+    const membership = await ctx.db
+      .query("memberships")
+      .withIndex("by_org_user", (q) => q.eq("orgId", args.orgId).eq("userId", args.userId))
+      .first();
+
+    const role = membership?.subscriptionRole ?? "free";
+    const rank = { free: 0, paying: 1, admin: 2 }[args.requiredRole];
+    const callerRank = { free: 0, paying: 1, admin: 2 }[role];
+
+    if (callerRank < rank) {
+      throw new Error(`Feature requires '${args.requiredRole}' role; current role: '${role}'`);
+    }
+
+    return { allowed: true, callerRole: role };
+  },
+});
+
+// D26: Public wrappers for the client-side feature-gate composable (auth-scoped, org-resolved from caller).
+export const getMySubscriptionRole = query({
+  args: {},
+  handler: async (ctx): Promise<{ subscriptionRole: string }> => {
+    const { userId, orgId } = await requireAuthenticatedOrg(ctx);
+    return ctx.runQuery(internal.functions.orgs.getSubscriptionRole, { orgId, userId });
+  },
+});
+
+export const getMyUsageLimits = query({
+  args: {},
+  handler: async (ctx): Promise<{
+    month: string;
+    expenseCount: number;
+    ocrCount: number;
+    expenseCap: number;
+    ocrCap: number;
+    isExpenseAtLimit: boolean;
+    isOcrAtLimit: boolean;
+    isExpenseAt80Percent?: boolean;
+    isOcrAt80Percent?: boolean;
+  }> => {
+    const { orgId } = await requireAuthenticatedOrg(ctx);
+    return ctx.runQuery(internal.functions.orgs.getUsageLimits, { orgId });
+  },
+});
+
+export const incrementMyExpenseCount = mutation({
+  args: {},
+  handler: async (ctx): Promise<{ count: number; isAtLimit: boolean; isOverLimit: boolean }> => {
+    const { orgId } = await requireAuthenticatedOrg(ctx);
+    return ctx.runMutation(internal.functions.orgs.incrementExpenseCount, { orgId });
+  },
+});
+
+export const incrementMyOcrCount = mutation({
+  args: {},
+  handler: async (ctx): Promise<{ count: number; isAtLimit: boolean; isOverLimit: boolean }> => {
+    const { orgId } = await requireAuthenticatedOrg(ctx);
+    return ctx.runMutation(internal.functions.orgs.incrementOcrCount, { orgId });
   },
 });

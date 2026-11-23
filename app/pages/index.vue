@@ -9,6 +9,7 @@ import AnalyticsDashboard from "~/components/AnalyticsDashboard.vue";
 import AIReviewModal from "~/components/AIReviewModal.vue";
 import NotificationBell from "~/components/NotificationBell.vue";
 import NotificationPreferencesModal from "~/components/NotificationPreferencesModal.vue";
+import GroupSwitcher from "~/components/GroupSwitcher.vue";
 import type { Id } from "~/convex/_generated/dataModel";
 
 const { userId, orgId } = useAuth();
@@ -104,6 +105,7 @@ function handleNotificationPreferencesOpen() {
         >
           Settle Up
         </button>
+        <GroupSwitcher />
       </div>
     </header>
 

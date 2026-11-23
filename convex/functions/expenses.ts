@@ -19,6 +19,7 @@ export const create = mutation({
     categoryId: v.optional(v.id("categories")),
     paidBy: v.string(),
     notes: v.optional(v.string()),
+    share: v.optional(v.number()),
     receiptImageId: v.optional(v.id("_storage")),
     receiptImageIds: v.optional(v.array(v.id("_storage"))),
     receiptPHash: v.optional(v.string()),
@@ -55,6 +56,11 @@ export const create = mutation({
     }
     if ((args.notes?.length ?? 0) > 2000 || (args.store?.length ?? 0) > 200) {
       throw new Error("Notes or store name is too long");
+    }
+    if (args.share !== undefined) {
+      if (!Number.isInteger(args.share) || args.share < 0 || args.share > 100) {
+        throw new Error("Share must be an integer between 0 and 100");
+      }
     }
     if (args.ocrRawText && args.ocrRawText.length > 20000) {
       throw new Error("OCR text exceeds the 20,000 character limit");
@@ -117,6 +123,7 @@ export const create = mutation({
       categoryId: args.categoryId,
       paidBy: args.paidBy,
       notes: args.notes,
+      share: args.share,
       status: "pending" as const,
       enteredBy: userId,
       approvedBy: undefined,
@@ -268,8 +275,14 @@ export const balance = query({
       .collect();
 
     const balance = expenses.reduce((acc, exp: ExpenseDoc) => {
-      if (exp.paidBy === userId) return acc - exp.amount;
-      return acc + exp.amount;
+      // Note: share defaults to 0 (not 100) for backward compatibility with v1.
+      // This means legacy expenses (no share field) treat partnerShare = 100,
+      // i.e. partner owes the full amount. Ratio balancing is 2-party only.
+      const payerShare = exp.share ?? 0;
+      const partnerShare = 100 - payerShare;
+      const amount = exp.amount * (partnerShare / 100);
+      if (exp.paidBy === userId) return acc - amount;
+      return acc + amount;
     }, 0);
 
     const otherUserExpense = expenses.find(

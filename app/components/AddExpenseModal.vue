@@ -87,6 +87,26 @@
           <textarea id="exp-notes" v-model="form.notes" class="hhb-textarea" maxlength="2000" />
         </div>
 
+        <div class="hhb-field">
+          <label class="hhb-label" for="exp-share">Your responsibility</label>
+          <div class="hhb-share-row">
+            <span class="hhb-share-label">{{ form.share }}%</span>
+            <input
+              id="exp-share"
+              v-model.number="form.share"
+              class="hhb-slider"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              :disabled="isSaving"
+            >
+          </div>
+          <p class="hhb-hint">
+            {{ form.share }}% you · {{ 100 - form.share }}% your partner
+          </p>
+        </div>
+
         <p v-if="submitLocalError || submitError" class="form-error" role="alert">
           {{ submitLocalError || submitError }}
         </p>
@@ -126,6 +146,7 @@ const props = withDefaults(defineProps<{
     categoryId?: Id<"categories">;
     notes?: string;
     store?: string;
+    share?: number;
   };
 }>(), {
   isOpen: false,
@@ -149,6 +170,7 @@ const emit = defineEmits<{
     categoryId?: Id<"categories">;
     notes?: string;
     paidBy: string;
+    share?: number;
     receiptImageId?: string;
     receiptImageIds?: string[];
     receiptPHash?: string;
@@ -177,6 +199,7 @@ const form = reactive({
   notes: "",
   paidBy: props.currentUserId,
   store: "",
+  share: 50,
 });
 const selectedCategory = ref<Category | null>(null);
 const categoryPickerOpen = ref(false);
@@ -207,6 +230,7 @@ watch(() => props.expense, (exp) => {
     form.categoryId = exp.categoryId;
     form.notes = exp.notes || "";
     form.store = exp.store || "";
+    if (typeof exp.share === "number") form.share = exp.share;
   }
 }, { immediate: true });
 
@@ -227,6 +251,7 @@ function resetForm() {
   form.notes = "";
   form.paidBy = props.currentUserId;
   form.store = "";
+  form.share = 50;
   selectedCategory.value = null;
   receiptFiles.value = [];
   dirtyFields.clear();
@@ -331,6 +356,7 @@ async function handleSubmit() {
   emit("submit", {
     ...form,
     amount,
+    share: form.share,
     receiptImageId: result?.storageId,
     receiptImageIds: result?.storageIds ? [...result.storageIds] : undefined,
     ocrSource: result?.source,

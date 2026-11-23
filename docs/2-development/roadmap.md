@@ -2,7 +2,7 @@
 
 **Project:** Happy House Bills
 **Status:** Active — Phase 1 complete; Phases 3–5 expansion complete
-**Last updated:** 07-November-2026
+**Last updated:** 22-November-2026
 
 Phases are sequential and build on one another. Each phase ends with a concrete milestone
 before the next begins. All work follows the doc lifecycle (`01-draft` → `02-in-progress` →
@@ -132,7 +132,7 @@ receipt detection warns on duplicates. Deploy from clean repo to production in u
 
 **Dependencies:** Phase 1 complete.
 
-**Completed slices:** D11 — Advanced Features (`04-implemented/d11-advanced-features.md`), D12 — Mobile-First UI/UX Shell (`04-implemented/d12-mobile-responsive-ui-shell.md`), D13 — Team Workspaces & Collaboration (`04-implemented/d13-team-workspaces-collaboration.md`), D14 — Advanced Integrations (`04-implemented/d14-advanced-integrations.md`), D15 — Advanced Analytics & Insights (`04-implemented/d15-advanced-analytics-insights.md`), D16 — Performance & Reliability (`04-implemented/d16-performance-reliability.md`), D17 — OpenRouter LLM OCR (`04-implemented/d17-openrouter-ocr.md`), D18 — Push Notifications (`04-implemented/d18-push-notifications.md`), D19 — Line-Item Extraction (`04-implemented/d19-line-item-extraction.md`), D20 — Expense Categories Enhancement (`04-implemented/d20-expense-categories-enhancement.md`), D21 — Analytics Export & Custom Reports (`04-implemented/d21-analytics-export-reports.md`), D22 — Notification Preferences & Rich Actions (`04-implemented/d22-notification-preferences-rich-actions.md`), D23 — Goal Tracking & Budget Variance (`04-implemented/d23-goal-tracking-budget-variance.md`)
+**Completed slices:** D11 — Advanced Features (`04-implemented/d11-advanced-features.md`), D12 — Mobile-First UI/UX Shell (`04-implemented/d12-mobile-responsive-ui-shell.md`), D13 — Team Workspaces & Collaboration (`04-implemented/d13-team-workspaces-collaboration.md`), D14 — Advanced Integrations (`04-implemented/d14-advanced-integrations.md`), D15 — Advanced Analytics & Insights (`04-implemented/d15-advanced-analytics-insights.md`), D16 — Performance & Reliability (`04-implemented/d16-performance-reliability.md`), D17 — OpenRouter LLM OCR (`04-implemented/d17-openrouter-ocr.md`), D18 — Push Notifications (`04-implemented/d18-push-notifications.md`), D19 — Line-Item Extraction (`04-implemented/d19-line-item-extraction.md`), D20 — Expense Categories Enhancement (`04-implemented/d20-expense-categories-enhancement.md`), D21 — Analytics Export & Custom Reports (`04-implemented/d21-analytics-export-reports.md`), D22 — Notification Preferences & Rich Actions (`04-implemented/d22-notification-preferences-rich-actions.md`), D23 — Goal Tracking & Budget Variance (`04-implemented/d23-goal-tracking-budget-variance.md`), D24 — Commercial Model & Responsibility Ratios (`04-implemented/d24-commercial-model.md`)
 
 | Slice | Review → Implemented | Status |
 |-------|----------------------|--------|
@@ -151,6 +151,52 @@ receipt detection warns on duplicates. Deploy from clean repo to production in u
 | D23 — Goal Tracking & Budget Variance | 20-November-2026 | Implemented |
 
 > Note: Detailed draft→in-progress→review dates for D11–D16 were not consistently tracked in this table; promotion dates are recorded in `docs/2-development/README.md` and slice lifecycle reports.
+
+---
+
+## Phase 4: Commercial Model (Post-Launch)
+
+**Goal:** Enable a commercial subscription model where paying subscribers can create multiple groups, invite free and paying users, track responsibility ratios per expense, and manage Stripe subscriptions (with local dev workaround).
+
+**Dependencies:** Phase 1 complete; Phase 2/3 features optional but recommended (D17, D19, D22).
+
+- [x] **D24: Commercial Model & Responsibility Ratios**
+  - `expenses.share` field (0–100%) for ratio-based balance computation — **implemented (D24-A)**
+  - `subscriptions` table: Stripe status per group; local dev workaround (`local_test`) — **implemented (D24-B)**
+  - Multi-org membership relaxed: paying users can own multiple groups — **implemented (D24-C)**
+  - Group switcher UI; differentiated invite flow (free vs paying) — **implemented (D24-D/E)**
+  - Account deletion / ownership transfer, per-role feature gating — **pending**
+
+- [x] **D25: Stripe Production Integration** — `docs/2-development/01-draft/d25-stripe-production-integration.md`
+  - Live Stripe keys; production webhook endpoints
+  - Trial management; renewal reminders; dunning flow
+  - Stripe Customer Portal integration
+
+- [x] **D26: Advanced Feature Gating** — `docs/2-development/01-draft/d26-advanced-feature-gating.md`
+  - Per-role feature matrix (free vs paying vs admin)
+  - Usage limits for free members (expenses/month, OCR calls, etc.)
+  - Upgrade prompts & in-app purchase flow
+
+- [x] **D27: Team Analytics & Reporting (Commercial)** — `docs/2-development/01-draft/d27-team-analytics-reporting.md`
+  - Group-level analytics (spending by role, share efficiency)
+  - Export reports for accountants / shared with members
+  - Scheduled report delivery
+
+- [x] **D28: Account Deletion & Ownership Transfer** — `docs/2-development/01-draft/d28-account-deletion-ownership-transfer.md`
+  - Paying subscriber-initiated ownership transfer
+  - GDPR-compliant account deletion with 90-day retention
+  - Post-transfer per-role feature gating re-evaluation
+
+- [x] **D29: Multi-user Responsibility Ratios** — `docs/2-development/01-draft/d29-multi-user-responsibility-ratios.md`
+  - Generalize 2-party `expenses.share` to N-user groups
+  - Per-user share tracking (summing to 100%)
+  - Ratio-weighted balance computation
+
+**Milestone:** A paying subscriber can create multiple groups, invite free/paying users, track who pays what %, and manage subscriptions — with full backward compatibility for existing free households.
+
+| Slice | Review → Implemented | Status |
+|-------|----------------------|--------|
+| D24 — Commercial Model & Responsibility Ratios | 22-November-2026 | Implemented |
 
 ---
 

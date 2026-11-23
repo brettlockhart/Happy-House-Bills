@@ -10,6 +10,7 @@ export default defineSchema({
     categoryId: v.optional(v.id("categories")),
     paidBy: v.string(),
     notes: v.optional(v.string()),
+    share: v.optional(v.number()),
     receiptImageId: v.optional(v.id("_storage")),
     receiptImageIds: v.optional(v.array(v.id("_storage"))),
     receiptPHash: v.optional(v.string()),
@@ -83,6 +84,12 @@ export default defineSchema({
     userId: v.string(),
     role: v.union(v.literal("admin"), v.literal("member"), v.literal("viewer")),
     status: v.union(v.literal("active"), v.literal("pending"), v.literal("suspended")),
+    // D26: subscription role for feature gating (free | paying | admin)
+    subscriptionRole: v.union(
+      v.literal("free"),
+      v.literal("paying"),
+      v.literal("admin"),
+    ),
     invitedBy: v.optional(v.string()),
     joinedAt: v.optional(v.number()),
     createdAt: v.number(),
@@ -92,7 +99,8 @@ export default defineSchema({
     .index("by_org", ["orgId"])
     .index("by_user", ["userId"])
     .index("by_org_user", ["orgId", "userId"])
-    .index("by_org_status", ["orgId", "status"]),
+    .index("by_org_status", ["orgId", "status"])
+    .index("by_org_subscriptionRole", ["orgId", "subscriptionRole"]),
 
   auditLogs: defineTable({
     orgId: v.string(),
@@ -128,6 +136,34 @@ export default defineSchema({
     .index("by_org", ["orgId"])
     .index("by_org_email", ["orgId", "email"]),
 
+  subscriptions: defineTable({
+    orgId: v.string(),
+    plan: v.union(v.literal("free"), v.literal("pro")),
+    status: v.union(
+      v.literal("inactive"),
+      v.literal("active"),
+      v.literal("trialing"),
+      v.literal("past_due"),
+      v.literal("canceled"),
+      v.literal("pending"),
+      v.literal("local_test"),
+    ),
+    stripeCustomerId: v.optional(v.string()),
+    stripeSubscriptionId: v.optional(v.string()),
+    stripePriceId: v.optional(v.string()),
+    currentPeriodEnd: v.optional(v.number()),
+    trialStart: v.optional(v.number()),
+    trialEnd: v.optional(v.number()),
+    dunningAttempts: v.optional(v.number()),
+    portalUrl: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_org", ["orgId"])
+    .index("by_status", ["status"])
+    .index("by_stripe_customer", ["stripeCustomerId"])
+    .index("by_stripe_subscription", ["stripeSubscriptionId"]),
+
   emailRateLimits: defineTable({
     orgId: v.string(),
     userId: v.optional(v.string()),
@@ -138,6 +174,19 @@ export default defineSchema({
     .index("by_org_date", ["orgId", "date"])
     .index("by_org_date_user", ["orgId", "date", "userId"])
     .index("by_user", ["userId"]),
+
+  // D26: Free-member usage limits (monthly expense/OCR caps)
+  usageLimits: defineTable({
+    orgId: v.string(),
+    month: v.string(), // YYYY-MM
+    expenseCount: v.number(),
+    ocrCount: v.number(),
+    expenseCap: v.number(),
+    ocrCap: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_org_month", ["orgId", "month"]),
 
   receiptUploads: defineTable({
     storageId: v.id("_storage"),

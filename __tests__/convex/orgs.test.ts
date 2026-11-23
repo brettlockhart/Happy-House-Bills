@@ -254,43 +254,34 @@ describe("orgs:acceptInvite", () => {
     ).rejects.toThrow("Invite has expired");
   });
 
-  it("rejects when household is full (SEC-005)", async () => {
+  it("accepts invite when household has existing members (cap removed)", async () => {
     requireAuthenticatedUser.mockResolvedValue({ userId: "user_test" });
 
     const ctx = makeCtx();
-    ctx.runQuery
-      .mockResolvedValueOnce({
-        _id: "invite_123",
-        token: "valid_token",
-        orgId: "org_test",
-        orgName: "Test",
-        email: "newuser@example.com",
-        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
-        createdAt: 0,
-        updatedAt: 0,
-        createdBy: "user_a",
-      })
-      .mockResolvedValueOnce({
-        data: [
-          { id: "mem_1", user_id: "user_a" },
-          { id: "mem_2", user_id: "user_b" },
-        ],
-      });
+    ctx.runQuery.mockResolvedValueOnce({
+      _id: "invite_123",
+      token: "valid_token",
+      orgId: "org_test",
+      orgName: "Test",
+      email: "newuser@example.com",
+      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      createdAt: 0,
+      updatedAt: 0,
+      createdBy: "user_a",
+      inviteeUserId: undefined,
+    });
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({
-        data: [
-          { id: "mem_1", user_id: "user_a" },
-          { id: "mem_2", user_id: "user_b" },
-        ],
-      }),
+      json: async () => ({ user_id: "user_test", id: "membership_1" }),
     });
 
     const { acceptInvite } = await import("../../convex/functions/orgs");
-    await expect(
-      acceptInvite.handler(ctx, { token: "valid_token" }),
-    ).rejects.toThrow("Household is already full (maximum 2 members)");
+    const result = await acceptInvite.handler(ctx, { token: "valid_token" }) as Record<string, unknown>;
+    expect(result.orgId).toBe("org_test");
+    expect(result.orgName).toBe("Test");
+    expect(result.role).toBe("member");
+    expect(result.membershipId).toBe("membership_1");
   });
 });
 

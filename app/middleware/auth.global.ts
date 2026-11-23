@@ -1,8 +1,8 @@
 import { useAuth } from "~/composables/useAuth";
 
 export default defineNuxtRouteMiddleware((to) => {
-  const config = useRuntimeConfig();
-  if (config.public.authBypass) return;
+  // Dev-only bypass: guarded at build time, never present in production.
+  if (import.meta.dev && process.env.NUXT_PUBLIC_AUTH_BYPASS === "1") return;
 
   const { isSignedIn, isLoaded, hasOrg } = useAuth();
 
@@ -10,16 +10,19 @@ export default defineNuxtRouteMiddleware((to) => {
     return;
   }
 
-  if (!isSignedIn.value && to.path !== "/sign-in" && to.path !== "/sign-up") {
-    return navigateTo("/sign-in");
+  const publicPaths = ["/sign-in", "/sign-up", "/invite"];
+
+  if (!isSignedIn.value && !publicPaths.includes(to.path)) {
+    return navigateTo({
+      path: "/sign-in",
+      query: { redirect: to.fullPath },
+    });
   }
 
   if (
     isSignedIn.value &&
     !hasOrg.value &&
-    to.path !== "/onboard" &&
-    to.path !== "/sign-in" &&
-    to.path !== "/sign-up"
+    !publicPaths.includes(to.path)
   ) {
     return navigateTo("/onboard");
   }

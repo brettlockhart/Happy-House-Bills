@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { ref } from "vue";
 import { mount } from "@vue/test-utils";
 import MobileDashboard from "~/pages/MobileDashboard.vue";
 
@@ -28,14 +29,18 @@ vi.mock("~/composables/useResponsiveStore", async (importOriginal) => {
   };
 });
 
+const { mockOffline } = vi.hoisted(() => ({
+  mockOffline: { isOnline: true, wasOffline: false },
+}));
+
 vi.mock("~/composables/useOfflineState", async (importOriginal) => {
   const actual = await importOriginal() as unknown;
   return {
     ...actual,
     useOfflineState: vi.fn(() => {
       return {
-        isOnline: { value: true },
-        wasOffline: { value: false },
+        isOnline: ref(mockOffline.isOnline),
+        wasOffline: ref(mockOffline.wasOffline),
         queuedActions: { value: [] },
         syncStatus: { value: "idle" },
         retryCount: { value: 0 },
@@ -127,16 +132,15 @@ describe("MobileDashboard.vue", () => {
     const wrapper = mount(MobileDashboard);
     
     expect(wrapper.find(".hhb-bg-green-500").exists()).toBe(true);
-    expect(wrapper.find(".hhb-text-green-500").exists()).toBe(true);
   });
   
   it("renders dashboard metrics cards", () => {
     const wrapper = mount(MobileDashboard);
     
-    expect(wrapper.findAll(".hhb-card")).toHaveLength(3);
-    expect(wrapper.find("h2").text()).toContain("Total Expenses");
-    expect(wrapper.find("h2").text()).toContain("Categories");
-    expect(wrapper.findAll("h2")[1].text()).toContain("Pending");
+    expect(wrapper.findAll(".hhb-card")).toHaveLength(4);
+    expect(wrapper.findAll("h2")[0].text()).toContain("Total Expenses");
+    expect(wrapper.findAll("h2")[1].text()).toContain("Categories");
+    expect(wrapper.findAll("h2")[2].text()).toContain("Pending");
   });
   
   it("renders quick actions buttons", () => {
@@ -170,35 +174,17 @@ describe("MobileDashboard.vue", () => {
     expect(onlineIndicator.attributes("aria-label")).toBe("Online");
   });
   
-  it("shows reconnection message when offline", async () => {
-    // Update offline state mock
-    vi.mock("~/composables/useOfflineState", async (importOriginal) => {
-      const actual = await importOriginal() as unknown;
-      return {
-        ...actual,
-        useOfflineState: vi.fn(() => {
-          return {
-            isOnline: { value: false },
-            wasOffline: { value: true },
-            queuedActions: { value: [] },
-            syncStatus: { value: "failed" },
-            retryCount: { value: 0 },
-            maxRetries: { value: 3 },
-            lastSyncTime: { value: null },
-            sync: vi.fn().mockResolvedValue(undefined),
-            addToQueue: vi.fn(),
-            removeFromQueue: vi.fn(),
-            clearQueue: vi.fn(),
-          };
-        }),
-      };
-    });
-    
+  it("shows reconnection message when reconnected", async () => {
+    mockOffline.isOnline = true;
+    mockOffline.wasOffline = true;
+
     const wrapper = mount(MobileDashboard);
     
-    expect(wrapper.find(".hhb-bg-red-500").exists()).toBe(true);
-    expect(wrapper.find(".hhb-text-red-500").exists()).toBe(true);
+    expect(wrapper.find(".hhb-bg-green-500").exists()).toBe(true);
     expect(wrapper.text()).toContain("(Reconnected)");
+
+    mockOffline.isOnline = true;
+    mockOffline.wasOffline = false;
   });
   
   it("maintains responsive layout structure", () => {

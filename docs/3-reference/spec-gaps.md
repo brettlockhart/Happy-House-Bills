@@ -231,6 +231,7 @@ then domain specs).
 | P3-Q2 | Savings goals: track via settlement "savings" category or a separate goal table entry? | Resolved | `docs/2-development/04-implemented/d23-goal-tracking-budget-variance.md` | backend-engineer | Phase 3 — Separate table cleaner; category simpler for v1 |
 | P3-Q3 | Variance projection: linear only or include seasonality? | Resolved | `docs/2-development/04-implemented/d23-goal-tracking-budget-variance.md` | backend-engineer | Phase 3 — Linear only in v1; seasonality deferred to Phase 4 |
 | P3-Q4 | Goal completion: auto-archive at 100% or manual archive? | Resolved | `docs/2-development/04-implemented/d23-goal-tracking-budget-variance.md` | backend-engineer | Phase 3 — Auto-archive at 100% with option to restore |
+| P4-Q5 | Should group-level subscription sharing extend to all members, or only the admin? | Open | `docs/2-development/04-implemented/d24-commercial-model.md` | backend-engineer | Phase 4 — Admin pays, all members free; or per-member subscriptions; default: admin pays, all members free |
 
 ## 7. Appendix: Gap Count Summary
 

@@ -12,12 +12,13 @@ export default defineConfig({
       "~/composables": resolve(process.cwd(), "app/composables"),
       "~/utils": resolve(process.cwd(), "app/utils"),
       "~/components": resolve(process.cwd(), "app/components"),
+      "~/pages": resolve(process.cwd(), "app/pages"),
     },
   },
   test: {
     environment: "happy-dom",
     setupFiles: ["__tests__/setup.ts"],
-    include: ["__tests__/convex/**/*.ts", "__tests__/composables/**/*.ts", "__tests__/utils/**/*.ts", "__tests__/components/**/*.ts", "__tests__/ci-cd/**/*.ts", "__tests__/performance/**/*.ts"],
+    include: ["__tests__/convex/**/*.ts", "__tests__/composables/**/*.ts", "__tests__/utils/**/*.ts", "__tests__/components/**/*.ts", "__tests__/pages/**/*.ts", "__tests__/ci-cd/**/*.ts", "__tests__/performance/**/*.ts"],
     exclude: ["**/*.spec.ts", "app/**/*.{vue,ts}", "convex/_generated/**"],
     maxWorkers: 1,
     poolOptions: {

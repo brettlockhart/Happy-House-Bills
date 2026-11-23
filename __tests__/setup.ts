@@ -57,7 +57,7 @@ const documentMock = {
     }
     return el;
   },
-  body: { appendChild: () => {}, insertBefore: () => null },
+  body: { appendChild: () => {}, insertBefore: (node: unknown) => node },
   documentElement: {
     classList: { add: () => {}, remove: () => {}, contains: () => false },
   },

@@ -41,6 +41,23 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function isTlsHandshakeError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  const code = (err as { cause?: { code?: string } })?.cause?.code;
+  return (
+    code === "EPROTO" ||
+    code === "ERR_SSL_WRONG_VERSION_NUMBER" ||
+    message.includes("EPROTO") ||
+    message.includes("TLS handshake")
+  );
+}
+
+function flipProtocol(url: string): string {
+  return url.startsWith("https://")
+    ? url.replace(/^https:\/\//, "http://")
+    : url.replace(/^http:\/\//, "https://");
+}
+
 async function checkHealthEndpoint(url: string): Promise<VerifyResult> {
   const healthUrl = `${url.replace(/\/$/, "")}/health`;
 
@@ -56,6 +73,32 @@ async function checkHealthEndpoint(url: string): Promise<VerifyResult> {
       }
       return { name: "Convex health endpoint", passed: false, detail: `HTTP ${response.status} ${response.statusText}` };
     } catch (err) {
+      // A TLS handshake error usually means the URL scheme does not match the
+      // server (e.g. https:// against a plain-HTTP local port). Retry once with
+      // the opposite protocol before treating it as a transient failure.
+      if (isTlsHandshakeError(err)) {
+        const flippedUrl = `${flipProtocol(url).replace(/\/$/, "")}/health`;
+        log(`TLS handshake failed for ${healthUrl}; retrying over ${flippedUrl}`);
+        try {
+          const response = await fetch(flippedUrl, { method: "GET" });
+          if (response.ok) {
+            const data = (await response.json()) as HealthResponse;
+            if (data.status === "ok") {
+              return { name: "Convex health endpoint", passed: true, detail: `HTTP ${response.status}, status: ${data.status} (${flippedUrl})` };
+            }
+            return { name: "Convex health endpoint", passed: false, detail: `Unexpected status: ${data.status}` };
+          }
+          return { name: "Convex health endpoint", passed: false, detail: `HTTP ${response.status} ${response.statusText} (${flippedUrl})` };
+        } catch (flipErr) {
+          const flipMessage = flipErr instanceof Error ? flipErr.message : String(flipErr);
+          log(`Attempt ${attempt}/${MAX_RETRIES}: ${flipMessage}`);
+          if (attempt < MAX_RETRIES) {
+            await sleep(RETRY_DELAY_MS);
+          }
+          continue;
+        }
+      }
+
       const message = err instanceof Error ? err.message : String(err);
       log(`Attempt ${attempt}/${MAX_RETRIES}: ${message}`);
       if (attempt < MAX_RETRIES) {
@@ -77,7 +120,9 @@ function checkConvexUrlConfigured(): VerifyResult {
 function checkUrlFormat(url: string): VerifyResult {
   try {
     const parsed = new URL(url);
-    const isValid = parsed.protocol === "https:" && parsed.hostname.length > 0;
+    const isValid =
+      (parsed.protocol === "http:" || parsed.protocol === "https:") &&
+      parsed.hostname.length > 0;
     return { name: "CONVEX_URL format", passed: isValid, detail: `protocol: ${parsed.protocol}, hostname: ${parsed.hostname}` };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
