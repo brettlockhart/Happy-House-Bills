@@ -39,6 +39,7 @@ Happy House Bills is a web app for couples to track shared household spending, s
 | P0 | Commercial Model & Responsibility Ratios | `docs/2-development/04-implemented/d24-commercial-model.md` | 04-implemented | ✅ D24 complete |
 | P0 | Stripe Production Integration (D25) | `docs/2-development/04-implemented/d25-stripe-production-integration.md` | 04-implemented | ✅ D25 complete |
 | P0 | Advanced Feature Gating (D26) | `docs/2-development/04-implemented/d26-advanced-feature-gating.md` | 04-implemented | ✅ D26 complete |
+| P0 | Team Analytics & Reporting (D27) | `docs/2-development/04-implemented/d27-team-analytics-reporting.md` | 04-implemented | ✅ D27 complete |
 | P0 | Performance & Reliability | `docs/2-development/04-implemented/d16-performance-reliability.md` | 04-implemented | ✅ D16 complete |
 
 ## Review Queue
@@ -80,3 +81,4 @@ Active reviews are tracked in [`supporting-docs/reviews/README.md`](supporting-d
 | D24 — Commercial Model & Responsibility Ratios | 22-November-2026 | implementation-reviewer | Pass |
 | D25 — Stripe Production Integration (D25) | 23-November-2026 | implementation-reviewer | Pass |
 | D26 — Advanced Feature Gating | 23-November-2026 | implementation-reviewer | Pass |
+| D27 — Team Analytics & Reporting | 24-November-2026 | implementation-reviewer | Pass |

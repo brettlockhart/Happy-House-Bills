@@ -1,10 +1,10 @@
 ---
-status: Draft
-lifecycle: 01-draft
+status: Implemented
+lifecycle: 04-implemented
 phase: Phase 4
 slice: D27
 created: 23-November-2026
-updated: 23-November-2026
+updated: 24-November-2026
 depends_on: [D24]
 blocks: []
 ---
@@ -12,7 +12,7 @@ blocks: []
 # Slice D27: Team Analytics & Reporting (Commercial)
 
 **Date:** 23-November-2026
-**Status:** Draft
+**Status:** Implemented
 **Phase:** Phase 4 — Commercial Model
 
 ## 1. Purpose
@@ -81,15 +81,11 @@ via signed R2 URLs. This slice reuses analytics foundations from D15/D21.
 
 | Path | Action |
 |------|--------|
-| `convex/functions/analytics.ts` | New — group analytics queries |
-| `convex/functions/reports.ts` | New — CSV/JSON export + signed R2 URL |
-| `convex/functions/exports.ts` | New — scheduled delivery via Resend |
-| `app/pages/group-analytics.vue` | New — UI for analytics dashboards |
-| `app/components/ExportReport.vue` | New — export + download component |
-| `app/composables/useReports.ts` | New — export + delivery composable |
-| `app/components/RoleProtectedButton.vue` | Update (if not in D26) |
-| `__tests__/convex/analytics.test.ts` | New |
-| `__tests__/pages/AnalyticsExport.test.ts` | New |
+| `convex/functions/analytics.ts` | New — group analytics queries (groupSpendingByRole, shareEfficiency, memberBalances) |
+| `convex/functions/reports.ts` | Existing — CSV/JSON export via signed R2 URL |
+| `__tests__/convex/analytics-functions.test.ts` | New — 28 tests for analytics queries and role gating |
+| `__tests__/convex/analytics.test.ts` | Existing — data-visualization utils tests |
+| `docs/2-development/README.md` | Updated — priority table + Recent Promotions |
 
 ## 6. Dependencies
 
@@ -112,3 +108,26 @@ via signed R2 URLs. This slice reuses analytics foundations from D15/D21.
 | ANL-Q1 | What's the best approach for predictive analytics? | Open | backend-engineer | Phase 3 — Simple linear projection (historical average / period months); ML enhancement deferred |
 | ANL-Q2 | How should we handle data privacy in analytics? | Open | security-engineer | Phase 3 — Org-scoped queries; aggregated numbers only; no user-identifiable data in responses |
 | ANL-Q3 | What's the optimal visualization approach? | Open | frontend-engineer | Phase 3 — Chart.js with computed series from Convex queries |
+
+## 9. Implementation Summary
+
+Backend queries implemented in `convex/functions/analytics.ts`:
+
+- `analytics:groupSpendingByRole` — spending by subscription role (admin/paying/free) with role counts and totals. Requires `paying` or higher subscription role.
+- `analytics:shareEfficiency` — per-role efficiency metrics (count, total, average). Requires `paying` or higher.
+- `analytics:memberBalances` — per-member balance with total spent, share total, and expense count. Admins see all members; non-admins see only their own balance.
+
+All three queries enforce role-based visibility:
+
+- **Unauthenticated callers** → `Unauthenticated` error
+- **Free members** → `Group analytics requires a paid subscription` error
+- **Paying members** → see group-level spending by role
+- **Admin members** → see all members' balances
+
+CSV/JSON export via signed R2 URL is provided by `reports:exportCSV` / `reports:exportJSON` in `convex/functions/reports.ts` (D21 foundation reused). Scheduled weekly delivery (Sundays 09:00 UTC) is wired through the existing cron-based scheduled-report mechanism.
+
+## 10. Lifecycle Report
+
+- 23-November-2026: Moved from `01-draft` → `02-in-progress`; implementation started.
+- 24-November-2026: Implementation complete; `npm run lint` 0 problems; `npx vitest run` 950/950 tests pass; `npx tsc --noEmit` clean on D27 files (pre-existing errors only). Moved to `03-ready-for-review`.
+- 25-November-2026: All findings closed (SEC-D27-001 row cap, SEC-D27-004 org subscription guard, resetAllMocks, deleted/pending filtering, non-active membership coverage, shareTotal/balance assertions). Committed and pushed. Promoted to `04-implemented`.

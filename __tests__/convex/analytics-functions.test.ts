@@ -94,6 +94,7 @@ interface QueryChain {
   withIndex: (name: string, fn?: (q: IndexQueryBuilder) => IndexQueryBuilder) => QueryChain;
   filter: (fn: (q: FilterQueryBuilder) => boolean) => QueryChain;
   order: (direction: string) => QueryChain;
+  take: (n: number) => unknown[];
   collect: () => unknown[];
   first: () => unknown | null;
   unique: () => unknown | null;
@@ -134,6 +135,10 @@ function createQueryChain(results: unknown[] = []): QueryChain {
       return chainable;
     },
     order: (_direction: string) => chainable,
+    take: (n: number) => {
+      filtered = filtered.slice(0, n);
+      return filtered;
+    },
     collect: () => filtered,
     first: () => filtered[0] || null,
     unique: () => filtered[0] || null,
@@ -159,14 +164,28 @@ function createMockCtx(
   user: MockIdentity | null,
   options?: {
     expenses?: unknown[];
+    memberships?: unknown[];
+    subscriptions?: unknown[];
   }
 ): MockCtx {
+  const expenseResults = options?.expenses || [];
+  const membershipResults = options?.memberships || [];
+  const subscriptionResults = options?.subscriptions || [];
+
   const ctx: MockCtx = {
     auth: {
       getUserIdentity: () => Promise.resolve(user),
     },
     db: {
-      query: () => createQueryChain(options?.expenses || []),
+      query: (table: string) => {
+        if (table === "memberships") {
+          return createQueryChain(membershipResults);
+        }
+        if (table === "subscriptions") {
+          return createQueryChain(subscriptionResults);
+        }
+        return createQueryChain(expenseResults);
+      },
       get: () => Promise.resolve(null),
       patch: () => Promise.resolve(),
       insert: () => Promise.resolve("mock_id"),
@@ -515,5 +534,336 @@ describe("insights:insights", () => {
     const patternInsight = result.insights.find((i) => i.type === "spending_pattern");
     expect(patternInsight).not.toBeDefined();
     expect(result.insights[0]?.type).toBe("positive");
+  });
+});
+
+describe("analytics: groupSpendingByRole", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+  it("throws when unauthenticated", async () => {
+    const { groupSpendingByRole } = await import("../../convex/functions/analytics");
+    const ctx = createMockCtx(null);
+    await expect(groupSpendingByRole.handler(ctx as never, {})).rejects.toThrow("Unauthenticated");
+  });
+
+  it("returns role counts and totals for paid members", async () => {
+    const now = Date.now();
+    const expenses = [
+      createExpense({ _id: "exp_1", enteredBy: "user_1", amount: 50, category: "groceries", createdAt: now - 2 * 24 * 60 * 60 * 1000, date: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0] }),
+      createExpense({ _id: "exp_2", enteredBy: "user_1", amount: 30, category: "utilities", createdAt: now - 3 * 24 * 60 * 60 * 1000, date: new Date(now - 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0] }),
+    ];
+    const memberships = [
+      { orgId: "org_1", userId: "user_1", subscriptionRole: "paying", status: "active", deletedAt: undefined },
+      { orgId: "org_1", userId: "user_2", subscriptionRole: "free", status: "active", deletedAt: undefined },
+    ];
+    const ctx = createMockCtx(validIdentity(), { expenses, memberships });
+    const { groupSpendingByRole } = await import("../../convex/functions/analytics");
+    const result = await groupSpendingByRole.handler(ctx as never, {});
+    expect(result.orgId).toBe("org_1");
+    expect(result.byRole.paying).toBe(80);
+    expect(result.byRole.free).toBe(0);
+    expect(result.totalAmount).toBe(80);
+  });
+
+  it("throws when caller is not a paying member", async () => {
+    const now = Date.now();
+    const expenses = [
+      createExpense({ _id: "exp_1", enteredBy: "user_1", amount: 50, category: "groceries", status: "approved", deletedAt: undefined, createdAt: now - 2 * 24 * 60 * 60 * 1000, date: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0] }),
+    ];
+    const memberships = [{ orgId: "org_1", userId: "user_1", subscriptionRole: "free", status: "active", deletedAt: undefined }];
+    const ctx = createMockCtx(validIdentity(), { expenses, memberships });
+    const { groupSpendingByRole } = await import("../../convex/functions/analytics");
+    await expect(groupSpendingByRole.handler(ctx as never, {})).rejects.toThrow(
+      "Group analytics requires a paid subscription"
+    );
+  });
+});
+
+describe("analytics: shareEfficiency", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+  it("throws when unauthenticated", async () => {
+    const { shareEfficiency } = await import("../../convex/functions/analytics");
+    const ctx = createMockCtx(null);
+    await expect(shareEfficiency.handler(ctx as never, {})).rejects.toThrow("Unauthenticated");
+  });
+
+  it("returns efficiency for admin who has all spending", async () => {
+    const now = Date.now();
+    const expenses = [
+      createExpense({ _id: "exp_1", enteredBy: "user_1", amount: 50, category: "groceries", status: "approved", deletedAt: undefined, createdAt: now - 2 * 24 * 60 * 60 * 1000, date: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], share: 50 }),
+      createExpense({ _id: "exp_2", enteredBy: "user_1", amount: 30, category: "utilities", status: "approved", deletedAt: undefined, createdAt: now - 3 * 24 * 60 * 60 * 1000, date: new Date(now - 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], share: 30 }),
+    ];
+    const memberships = [{ orgId: "org_1", userId: "user_1", subscriptionRole: "admin", status: "active", deletedAt: undefined }];
+    const ctx = createMockCtx(validIdentity(), { expenses, memberships });
+    const { shareEfficiency } = await import("../../convex/functions/analytics");
+    const result = await shareEfficiency.handler(ctx as never, {});
+    expect(result.efficiency.admin.count).toBe(2);
+    expect(result.efficiency.admin.total).toBe(80);
+    expect(result.efficiency.admin.avg).toBe(40);
+    expect(result.efficiency.admin.shareTotal).toBe(80);
+    expect(result.efficiency.admin.coverage).toBe(1);
+  });
+
+  it("throws when caller is free but expenses exist", async () => {
+    const now = Date.now();
+    const expenses = [
+      createExpense({ _id: "exp_1", enteredBy: "user_1", amount: 50, category: "groceries", status: "approved", deletedAt: undefined, createdAt: now - 2 * 24 * 60 * 60 * 1000, date: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0] }),
+    ];
+    const memberships = [{ orgId: "org_1", userId: "user_1", subscriptionRole: "free", status: "active", deletedAt: undefined }];
+    const ctx = createMockCtx(validIdentity(), { expenses, memberships });
+    const { shareEfficiency } = await import("../../convex/functions/analytics");
+    await expect(shareEfficiency.handler(ctx as never, {})).rejects.toThrow(
+      "Group analytics requires a paid subscription"
+    );
+  });
+});
+
+describe("analytics: memberBalances", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+  it("throws when unauthenticated", async () => {
+    const { memberBalances } = await import("../../convex/functions/analytics");
+    const ctx = createMockCtx(null);
+    await expect(memberBalances.handler(ctx as never, {})).rejects.toThrow("Unauthenticated");
+  });
+
+  it("returns balances for admin across all members", async () => {
+    const now = Date.now();
+    const expenses = [
+      createExpense({ _id: "exp_1", enteredBy: "user_1", amount: 50, category: "groceries", status: "approved", deletedAt: undefined, createdAt: now - 2 * 24 * 60 * 60 * 1000, date: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], share: 50 }),
+      createExpense({ _id: "exp_2", enteredBy: "user_2", amount: 30, category: "utilities", status: "approved", deletedAt: undefined, createdAt: now - 3 * 24 * 60 * 60 * 1000, date: new Date(now - 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], share: 30 }),
+    ];
+    const memberships = [
+      { orgId: "org_1", userId: "user_1", subscriptionRole: "admin", status: "active", deletedAt: undefined },
+      { orgId: "org_1", userId: "user_2", subscriptionRole: "free", status: "active", deletedAt: undefined },
+    ];
+    const ctx = createMockCtx(validIdentity(), { expenses, memberships });
+    const { memberBalances } = await import("../../convex/functions/analytics");
+    const result = await memberBalances.handler(ctx as never, {});
+    expect(result.orgId).toBe("org_1");
+    expect(result.callerRole).toBe("admin");
+    expect(result.balances).toHaveLength(2);
+    const user1 = result.balances.find((b) => b.userId === "user_1");
+    expect(user1?.totalSpent).toBe(50);
+    expect(user1?.shareTotal).toBe(50);
+    expect(user1?.balance).toBe(0);
+    expect(user1?.expenseCount).toBe(1);
+    const user2 = result.balances.find((b) => b.userId === "user_2");
+    expect(user2?.totalSpent).toBe(30);
+    expect(user2?.shareTotal).toBe(30);
+    expect(user2?.balance).toBe(0);
+  });
+
+  it("returns only own balance for non-admin member", async () => {
+    const now = Date.now();
+    const expenses = [
+      createExpense({ _id: "exp_1", enteredBy: "user_1", amount: 50, category: "groceries", status: "approved", deletedAt: undefined, createdAt: now - 2 * 24 * 60 * 60 * 1000, date: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], share: 50 }),
+      createExpense({ _id: "exp_2", enteredBy: "user_2", amount: 30, category: "utilities", status: "approved", deletedAt: undefined, createdAt: now - 3 * 24 * 60 * 60 * 1000, date: new Date(now - 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], share: 30 }),
+    ];
+    const memberships = [
+      { orgId: "org_1", userId: "user_1", subscriptionRole: "paying", status: "active", deletedAt: undefined },
+      { orgId: "org_1", userId: "user_2", subscriptionRole: "paying", status: "active", deletedAt: undefined },
+    ];
+    const ctx = createMockCtx(validIdentity(), { expenses, memberships });
+    const { memberBalances } = await import("../../convex/functions/analytics");
+    const result = await memberBalances.handler(ctx as never, {});
+    expect(result.callerRole).toBe("paying");
+    expect(result.balances).toHaveLength(1);
+    expect(result.balances[0]?.userId).toBe("user_1");
+    expect(result.balances[0]?.totalSpent).toBe(50);
+    expect(result.balances[0]?.shareTotal).toBe(50);
+    expect(result.balances[0]?.balance).toBe(0);
+  });
+});
+
+describe("analytics: edge-cases", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+  it("groupSpendingByRole: throws when caller is not a member", async () => {
+    const { groupSpendingByRole } = await import("../../convex/functions/analytics");
+    const ctx = createMockCtx(validIdentity());
+    await expect(groupSpendingByRole.handler(ctx as never, {})).rejects.toThrow(
+      "You are not a member of this organization"
+    );
+  });
+
+  it("groupSpendingByRole: empty expenses", async () => {
+    const memberships = [
+      { orgId: "org_1", userId: "user_1", subscriptionRole: "paying", status: "active", deletedAt: undefined },
+      { orgId: "org_1", userId: "user_2", subscriptionRole: "free", status: "active", deletedAt: undefined },
+    ];
+    const ctx = createMockCtx(validIdentity(), { expenses: [], memberships });
+    const { groupSpendingByRole } = await import("../../convex/functions/analytics");
+    const result = await groupSpendingByRole.handler(ctx as never, {});
+    expect(result.orgId).toBe("org_1");
+    expect(result.byRole).toEqual({ admin: 0, paying: 0, free: 0 });
+    expect(result.roleCounts).toEqual({ paying: 1, free: 1 });
+    expect(result.totalExpenses).toBe(0);
+    expect(result.totalAmount).toBe(0);
+  });
+
+  it("shareEfficiency: throws when caller is not a member", async () => {
+    const { shareEfficiency } = await import("../../convex/functions/analytics");
+    const ctx = createMockCtx(validIdentity());
+    await expect(shareEfficiency.handler(ctx as never, {})).rejects.toThrow(
+      "You are not a member of this organization"
+    );
+  });
+
+  it("shareEfficiency: empty expenses", async () => {
+    const memberships = [{ orgId: "org_1", userId: "user_1", subscriptionRole: "admin", status: "active", deletedAt: undefined }];
+    const ctx = createMockCtx(validIdentity(), { expenses: [], memberships });
+    const { shareEfficiency } = await import("../../convex/functions/analytics");
+    const result = await shareEfficiency.handler(ctx as never, {});
+    expect(result.efficiency.admin.count).toBe(0);
+    expect(result.efficiency.admin.total).toBe(0);
+    expect(result.efficiency.admin.avg).toBe(0);
+    expect(result.efficiency.admin.shareTotal).toBe(0);
+    expect(result.efficiency.admin.coverage).toBe(0);
+    expect(result.shareCoverage).toBe(0);
+  });
+
+  it("memberBalances: throws when caller is not a member", async () => {
+    const { memberBalances } = await import("../../convex/functions/analytics");
+    const ctx = createMockCtx(validIdentity());
+    await expect(memberBalances.handler(ctx as never, {})).rejects.toThrow(
+      "You are not a member of this organization"
+    );
+  });
+
+  it("memberBalances: throws when free member tries without upgrade (paid gate)", async () => {
+    const now = Date.now();
+    const expenses = [
+      createExpense({ _id: "exp_1", enteredBy: "user_1", amount: 50, category: "groceries", status: "approved", deletedAt: undefined, createdAt: now - 2 * 24 * 60 * 60 * 1000, date: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0] }),
+    ];
+    const memberships = [
+      { orgId: "org_1", userId: "user_1", subscriptionRole: "free", status: "active", deletedAt: undefined },
+    ];
+    const ctx = createMockCtx(validIdentity(), { expenses, memberships });
+    const { memberBalances } = await import("../../convex/functions/analytics");
+    await expect(memberBalances.handler(ctx as never, {})).rejects.toThrow(
+      "Group analytics requires a paid subscription"
+    );
+  });
+
+  it("memberBalances: empty expenses", async () => {
+    const memberships = [
+      { orgId: "org_1", userId: "user_1", subscriptionRole: "paying", status: "active", deletedAt: undefined },
+    ];
+    const ctx = createMockCtx(validIdentity(), { expenses: [], memberships });
+    const { memberBalances } = await import("../../convex/functions/analytics");
+    const result = await memberBalances.handler(ctx as never, {});
+    expect(result.callerRole).toBe("paying");
+    expect(result.balances).toHaveLength(1);
+    expect(result.balances[0]?.totalSpent).toBe(0);
+    expect(result.balances[0]?.shareTotal).toBe(0);
+    expect(result.balances[0]?.balance).toBe(0);
+    expect(result.balances[0]?.expenseCount).toBe(0);
+  });
+
+  it("groupSpendingByRole: excludes deleted and pending expenses", async () => {
+    const now = Date.now();
+    const expenses = [
+      createExpense({ _id: "exp_1", enteredBy: "user_1", amount: 50, category: "groceries", status: "approved", deletedAt: undefined, createdAt: now - 2 * 24 * 60 * 60 * 1000 }),
+      createExpense({ _id: "exp_2", enteredBy: "user_1", amount: 30, category: "utilities", status: "pending", deletedAt: undefined, createdAt: now - 3 * 24 * 60 * 60 * 1000 }),
+      createExpense({ _id: "exp_3", enteredBy: "user_1", amount: 100, category: "transport", status: "approved", deletedAt: now - 1000, createdAt: now - 4 * 24 * 60 * 60 * 1000 }),
+    ];
+    const memberships = [{ orgId: "org_1", userId: "user_1", subscriptionRole: "paying", status: "active", deletedAt: undefined }];
+    const ctx = createMockCtx(validIdentity(), { expenses, memberships });
+    const { groupSpendingByRole } = await import("../../convex/functions/analytics");
+    const result = await groupSpendingByRole.handler(ctx as never, {});
+    expect(result.byRole.paying).toBe(50);
+    expect(result.totalExpenses).toBe(1);
+    expect(result.totalAmount).toBe(50);
+  });
+
+  it("shareEfficiency: excludes deleted and pending expenses", async () => {
+    const now = Date.now();
+    const expenses = [
+      createExpense({ _id: "exp_1", enteredBy: "user_1", amount: 50, category: "groceries", status: "approved", deletedAt: undefined, createdAt: now - 2 * 24 * 60 * 60 * 1000, share: 50 }),
+      createExpense({ _id: "exp_2", enteredBy: "user_1", amount: 30, category: "utilities", status: "pending", deletedAt: undefined, createdAt: now - 3 * 24 * 60 * 60 * 1000, share: 30 }),
+      createExpense({ _id: "exp_3", enteredBy: "user_1", amount: 100, category: "transport", status: "approved", deletedAt: now - 1000, createdAt: now - 4 * 24 * 60 * 60 * 1000, share: 100 }),
+    ];
+    const memberships = [{ orgId: "org_1", userId: "user_1", subscriptionRole: "admin", status: "active", deletedAt: undefined }];
+    const ctx = createMockCtx(validIdentity(), { expenses, memberships });
+    const { shareEfficiency } = await import("../../convex/functions/analytics");
+    const result = await shareEfficiency.handler(ctx as never, {});
+    expect(result.efficiency.admin.count).toBe(1);
+    expect(result.efficiency.admin.total).toBe(50);
+    expect(result.efficiency.admin.shareTotal).toBe(50);
+    expect(result.efficiency.admin.coverage).toBe(1);
+    expect(result.totalExpenses).toBe(1);
+  });
+
+  it("memberBalances: excludes deleted and pending expenses", async () => {
+    const now = Date.now();
+    const expenses = [
+      createExpense({ _id: "exp_1", enteredBy: "user_1", amount: 50, category: "groceries", status: "approved", deletedAt: undefined, createdAt: now - 2 * 24 * 60 * 60 * 1000, share: 50 }),
+      createExpense({ _id: "exp_2", enteredBy: "user_1", amount: 30, category: "utilities", status: "pending", deletedAt: undefined, createdAt: now - 3 * 24 * 60 * 60 * 1000, share: 30 }),
+      createExpense({ _id: "exp_3", enteredBy: "user_1", amount: 100, category: "transport", status: "approved", deletedAt: now - 1000, createdAt: now - 4 * 24 * 60 * 60 * 1000, share: 100 }),
+    ];
+    const memberships = [{ orgId: "org_1", userId: "user_1", subscriptionRole: "paying", status: "active", deletedAt: undefined }];
+    const ctx = createMockCtx(validIdentity(), { expenses, memberships });
+    const { memberBalances } = await import("../../convex/functions/analytics");
+    const result = await memberBalances.handler(ctx as never, {});
+    expect(result.balances).toHaveLength(1);
+    expect(result.balances[0]?.totalSpent).toBe(50);
+    expect(result.balances[0]?.shareTotal).toBe(50);
+    expect(result.balances[0]?.balance).toBe(0);
+    expect(result.balances[0]?.expenseCount).toBe(1);
+  });
+
+  it("groupSpendingByRole: throws when membership is pending (not active)", async () => {
+    const memberships = [{ orgId: "org_1", userId: "user_1", subscriptionRole: "paying", status: "pending", deletedAt: undefined }];
+    const ctx = createMockCtx(validIdentity(), { memberships });
+    const { groupSpendingByRole } = await import("../../convex/functions/analytics");
+    await expect(groupSpendingByRole.handler(ctx as never, {})).rejects.toThrow(
+      "You are not a member of this organization"
+    );
+  });
+
+  it("shareEfficiency: throws when membership is pending (not active)", async () => {
+    const memberships = [{ orgId: "org_1", userId: "user_1", subscriptionRole: "admin", status: "suspended", deletedAt: undefined }];
+    const ctx = createMockCtx(validIdentity(), { memberships });
+    const { shareEfficiency } = await import("../../convex/functions/analytics");
+    await expect(shareEfficiency.handler(ctx as never, {})).rejects.toThrow(
+      "You are not a member of this organization"
+    );
+  });
+
+  it("memberBalances: throws when org subscription is canceled", async () => {
+    const memberships = [{ orgId: "org_1", userId: "user_1", subscriptionRole: "paying", status: "active", deletedAt: undefined }];
+    const subscriptions = [{ orgId: "org_1", plan: "pro", status: "canceled" }];
+    const ctx = createMockCtx(validIdentity(), { memberships, subscriptions });
+    const { memberBalances } = await import("../../convex/functions/analytics");
+    await expect(memberBalances.handler(ctx as never, {})).rejects.toThrow(
+      "Group analytics requires a paid subscription"
+    );
+  });
+
+  it("memberBalances: throws when org subscription is past_due", async () => {
+    const memberships = [{ orgId: "org_1", userId: "user_1", subscriptionRole: "paying", status: "active", deletedAt: undefined }];
+    const subscriptions = [{ orgId: "org_1", plan: "pro", status: "past_due" }];
+    const ctx = createMockCtx(validIdentity(), { memberships, subscriptions });
+    const { memberBalances } = await import("../../convex/functions/analytics");
+    await expect(memberBalances.handler(ctx as never, {})).rejects.toThrow(
+      "Group analytics requires a paid subscription"
+    );
+  });
+
+  it("memberBalances: allows org subscription trialing/local_test/active", async () => {
+    const memberships = [{ orgId: "org_1", userId: "user_1", subscriptionRole: "paying", status: "active", deletedAt: undefined }];
+    for (const status of ["trialing", "local_test", "active"]) {
+      const subscriptions = [{ orgId: "org_1", plan: "pro", status }];
+      const ctx = createMockCtx(validIdentity(), { memberships, subscriptions });
+      const { memberBalances } = await import("../../convex/functions/analytics");
+      const result = await memberBalances.handler(ctx as never, {});
+      expect(result.callerRole).toBe("paying");
+    }
   });
 });
