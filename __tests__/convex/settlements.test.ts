@@ -504,4 +504,53 @@ describe("notifySettlementCreated", () => {
       notifySettlementCreated.handler(ctx as never, { settlementId: "missing" }),
     ).rejects.toThrow("Settlement not found");
   });
+
+  describe("settlements:create status field", () => {
+    it("defaults to pending status when status omitted", async () => {
+      const { create } = await import("../../convex/functions/settlements");
+      const ctx = createMockCtx(validIdentity());
+
+      await create.handler(ctx as never, {
+        amount: 50,
+        fromUser: "user_1",
+        toUser: "user_2",
+        date: "2024-01-01",
+      });
+
+      const inserted = ctx._insertCalls![0];
+      expect(inserted.status).toBe("pending");
+    });
+
+    it("stores explicit status 'settled'", async () => {
+      const { create } = await import("../../convex/functions/settlements");
+      const ctx = createMockCtx(validIdentity());
+
+      await create.handler(ctx as never, {
+        amount: 50,
+        fromUser: "user_1",
+        toUser: "user_2",
+        date: "2024-01-01",
+        status: "settled",
+      });
+
+      const inserted = ctx._insertCalls![0];
+      expect(inserted.status).toBe("settled");
+    });
+
+    it("stores explicit status 'canceled'", async () => {
+      const { create } = await import("../../convex/functions/settlements");
+      const ctx = createMockCtx(validIdentity());
+
+      await create.handler(ctx as never, {
+        amount: 50,
+        fromUser: "user_1",
+        toUser: "user_2",
+        date: "2024-01-01",
+        status: "canceled",
+      });
+
+      const inserted = ctx._insertCalls![0];
+      expect(inserted.status).toBe("canceled");
+    });
+  });
 });

@@ -597,6 +597,10 @@ export const transferOwnership = mutation({
       .withIndex("by_org_user", (q) => q.eq("orgId", args.orgId).eq("userId", targetUserId))
       .first();
 
+    if (!targetMembership || targetMembership.status !== "active") {
+      throw new Error(`Target user '${targetUserId}' is not an active member of organisation '${args.orgId}'`);
+    }
+
     const now = Date.now();
     if (args.transferType === "full") {
       if (targetMembership) {

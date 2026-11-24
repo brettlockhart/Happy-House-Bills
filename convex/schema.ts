@@ -61,6 +61,7 @@ export default defineSchema({
     fromUser: v.string(),
     toUser: v.string(),
     date: v.string(),
+    status: v.optional(v.union(v.literal("pending"), v.literal("settled"), v.literal("canceled"))),
     createdAt: v.number(),
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),

@@ -83,6 +83,18 @@ describe("auth:requireAuthenticatedOrg (SEC-001)", () => {
     const { requireAuthenticatedOrg } = await import("../../convex/auth");
     const result = await requireAuthenticatedOrg({
       auth: { getUserIdentity: async () => makeIdentity("user_test", "org_test") },
+      db: {
+        query: () => ({
+          withIndex: () => ({
+            first: () => ({
+              orgId: "org_test",
+              userId: "user_test",
+              status: "active",
+              deletedAt: undefined,
+            }),
+          }),
+        }),
+      },
     });
     expect(result).toEqual({ userId: "user_test", orgId: "org_test" });
   });

@@ -5,7 +5,7 @@ import { requireAuthenticatedOrg } from "../auth";
 import { assertOrgWriteAccess } from "./permissions";
 import { runDuplicateCheck } from "./duplicateDetection";
 import { assertReceiptUploadsOwned } from "./receiptUpgrades";
-import { sendEmail, renderExpenseNotificationEmail } from "./email";
+import { sendEmail, renderExpenseNotificationEmail, renderExpenseApprovedEmail, renderExpenseRejectedEmail } from "./email";
 import { clerkRequest } from "./clerk";
 import type { Doc, Id } from "../_generated/dataModel";
 import { internal } from "../_generated/api";
@@ -298,6 +298,26 @@ export const approve = mutation({
       updatedAt: Date.now(),
     });
 
+    // Schedule email notification to the expense creator
+    const creatorEmailRes = (await clerkRequest(`/users/${expense.enteredBy}`)) as { data: { email_addresses: Array<{ email_address: string }> } } | null;
+    const creatorEmail = creatorEmailRes?.data?.email_addresses?.[0]?.email_address;
+    if (creatorEmail) {
+      const approverRes = (await clerkRequest(`/users/${userId}`)) as { data: { first_name: string; last_name: string } } | null;
+      const approverName = `${approverRes?.data?.first_name ?? ""} ${approverRes?.data?.last_name ?? ""}`.trim() || "Another member";
+      const emailHtml = renderExpenseApprovedEmail(
+        approverName,
+        args.expenseId,
+        expense.amount,
+        expense.category ?? "expense",
+      );
+      await ctx.scheduler.runAfter(0, internal.functions.email.send, {
+        to: [creatorEmail],
+        subject: "Expense approved",
+        html: emailHtml,
+        orgId,
+      });
+    }
+
     return { id: args.expenseId };
   },
 });
@@ -325,6 +345,27 @@ export const reject = mutation({
       rejectReason: args.rejectReason,
       updatedAt: Date.now(),
     });
+
+    // Schedule email notification to the expense creator
+    const creatorEmailRes = (await clerkRequest(`/users/${expense.enteredBy}`)) as { data: { email_addresses: Array<{ email_address: string }> } } | null;
+    const creatorEmail = creatorEmailRes?.data?.email_addresses?.[0]?.email_address;
+    if (creatorEmail) {
+      const rejectorRes = (await clerkRequest(`/users/${userId}`)) as { data: { first_name: string; last_name: string } } | null;
+      const rejectorName = `${rejectorRes?.data?.first_name ?? ""} ${rejectorRes?.data?.last_name ?? ""}`.trim() || "Another member";
+      const emailHtml = renderExpenseRejectedEmail(
+        rejectorName,
+        args.expenseId,
+        expense.amount,
+        expense.category ?? "expense",
+        args.rejectReason,
+      );
+      await ctx.scheduler.runAfter(0, internal.functions.email.send, {
+        to: [creatorEmail],
+        subject: "Expense rejected",
+        html: emailHtml,
+        orgId,
+      });
+    }
 
     return { id: args.expenseId };
   },

@@ -325,3 +325,295 @@ describe("orgs:listPendingInvites", () => {
     ]);
   });
 });
+
+describe("orgs:transferOwnership", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.stubEnv("CLERK_SECRET_KEY", "test_secret_key");
+  });
+
+  it("throws when unauthenticated", async () => {
+    requireAuthenticatedOrg.mockRejectedValue(new Error("Unauthenticated or no organisation"));
+
+    const { transferOwnership } = await import("../../convex/functions/orgs");
+    await expect(
+      transferOwnership.handler(
+        { auth: { getUserIdentity: async () => null } },
+        { orgId: "org_test", targetUserId: "target_user", transferType: "full" },
+      ),
+    ).rejects.toThrow("Unauthenticated or no organisation");
+  });
+
+  it("throws when orgId mismatch", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_attacker" });
+
+    const { transferOwnership } = await import("../../convex/functions/orgs");
+    await expect(
+      transferOwnership.handler(
+        { auth: { getUserIdentity: async () => null } },
+        { orgId: "org_victim", targetUserId: "target_user", transferType: "full" },
+      ),
+    ).rejects.toThrow("Org ID mismatch");
+  });
+
+  it("throws when caller membership not active", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+
+    const ctx = makeCtx();
+    ctx.db.query.mockReturnValue({
+      withIndex: vi.fn().mockReturnValue({
+        first: vi.fn().mockResolvedValue(null),
+      }),
+    });
+
+    const { transferOwnership } = await import("../../convex/functions/orgs");
+    await expect(
+      transferOwnership.handler(ctx, { orgId: "org_test", targetUserId: "target_user", transferType: "full" }),
+    ).rejects.toThrow("Your membership is not active");
+  });
+
+  it("throws when caller is not admin", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+
+    const ctx = makeCtx();
+    ctx.db.query.mockReturnValue({
+      withIndex: vi.fn().mockReturnValue({
+        first: vi.fn()
+          .mockResolvedValueOnce({ _id: "m1", orgId: "org_test", userId: "user_test", role: "member", status: "active", deletedAt: undefined, subscriptionRole: "paying" })
+          .mockResolvedValueOnce(null),
+      }),
+    });
+
+    const { transferOwnership } = await import("../../convex/functions/orgs");
+    await expect(
+      transferOwnership.handler(ctx, { orgId: "org_test", targetUserId: "target_user", transferType: "full" }),
+    ).rejects.toThrow("Only admins can transfer ownership");
+  });
+
+  it("throws when caller is not paying subscriber", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+
+    const ctx = makeCtx();
+    ctx.db.query.mockReturnValue({
+      withIndex: vi.fn().mockReturnValue({
+        first: vi.fn()
+          .mockResolvedValueOnce({ _id: "m1", orgId: "org_test", userId: "user_test", role: "admin", status: "active", deletedAt: undefined, subscriptionRole: "free" })
+          .mockResolvedValueOnce(null),
+      }),
+    });
+
+    const { transferOwnership } = await import("../../convex/functions/orgs");
+    await expect(
+      transferOwnership.handler(ctx, { orgId: "org_test", targetUserId: "target_user", transferType: "full" }),
+    ).rejects.toThrow("Only paying subscribers can transfer ownership");
+  });
+
+  it("throws when target user is not active member", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+
+    const ctx = makeCtx();
+    ctx.db.query.mockReturnValue({
+      withIndex: vi.fn().mockReturnValue({
+        first: vi.fn()
+          .mockResolvedValueOnce({ _id: "m1", orgId: "org_test", userId: "user_test", role: "admin", status: "active", deletedAt: undefined, subscriptionRole: "paying" })
+          .mockResolvedValueOnce(null),
+      }),
+    });
+
+    const { transferOwnership } = await import("../../convex/functions/orgs");
+    await expect(
+      transferOwnership.handler(ctx, { orgId: "org_test", targetUserId: "target_user", transferType: "full" }),
+    ).rejects.toThrow("Target user 'target_user' is not an active member of organisation 'org_test'");
+  });
+
+  it("succeeds with full transfer when target membership exists", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+
+    const ctx = makeCtx();
+    ctx.db.query.mockReturnValue({
+      withIndex: vi.fn().mockReturnValue({
+        first: vi.fn()
+          .mockResolvedValueOnce({ _id: "m1", orgId: "org_test", userId: "user_test", role: "admin", status: "active", deletedAt: undefined, subscriptionRole: "paying" })
+          .mockResolvedValueOnce({ _id: "m2", orgId: "org_test", userId: "target_user", role: "member", status: "active", deletedAt: undefined, subscriptionRole: "free" }),
+      }),
+    });
+    ctx.db.patch.mockResolvedValue(undefined);
+    ctx.db.insert.mockResolvedValue("audit_log_id");
+
+    const { transferOwnership } = await import("../../convex/functions/orgs");
+    const result = await transferOwnership.handler(ctx, { orgId: "org_test", targetUserId: "target_user", transferType: "full" });
+
+    expect(result).toEqual({ success: true, transferType: "full", targetUserId: "target_user" });
+    expect(ctx.db.patch).toHaveBeenCalledTimes(2);
+    expect(ctx.db.insert).toHaveBeenCalledWith("auditLogs", expect.objectContaining({ action: "transferOwnership" }));
+  });
+
+  it("succeeds with member-only transfer", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+
+    const ctx = makeCtx();
+    ctx.db.query.mockReturnValue({
+      withIndex: vi.fn().mockReturnValue({
+        first: vi.fn()
+          .mockResolvedValueOnce({ _id: "m1", orgId: "org_test", userId: "user_test", role: "admin", status: "active", deletedAt: undefined, subscriptionRole: "paying" })
+          .mockResolvedValueOnce({ _id: "m2", orgId: "org_test", userId: "target_user", role: "member", status: "active", deletedAt: undefined, subscriptionRole: "free" }),
+      }),
+    });
+    ctx.db.patch.mockResolvedValue(undefined);
+    ctx.db.insert.mockResolvedValue("audit_log_id");
+
+    const { transferOwnership } = await import("../../convex/functions/orgs");
+    const result = await transferOwnership.handler(ctx, { orgId: "org_test", targetUserId: "target_user", transferType: "member-only" });
+
+    expect(result).toEqual({ success: true, transferType: "member-only", targetUserId: "target_user" });
+  });
+
+  it("throws when target userId is empty", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+
+    const ctx = makeCtx();
+    ctx.db.query.mockReturnValue({
+      withIndex: vi.fn().mockReturnValue({
+        first: vi.fn().mockResolvedValue({ _id: "m1", orgId: "org_test", userId: "user_test", role: "admin", status: "active", deletedAt: undefined, subscriptionRole: "paying" }),
+      }),
+    });
+
+    const { transferOwnership } = await import("../../convex/functions/orgs");
+    await expect(
+      transferOwnership.handler(ctx, { orgId: "org_test", targetUserId: "  ", transferType: "full" }),
+    ).rejects.toThrow("Target user is required");
+  });
+
+  it("throws when transferring to yourself", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+
+    const ctx = makeCtx();
+    ctx.db.query.mockReturnValue({
+      withIndex: vi.fn().mockReturnValue({
+        first: vi.fn().mockResolvedValue({ _id: "m1", orgId: "org_test", userId: "user_test", role: "admin", status: "active", deletedAt: undefined, subscriptionRole: "paying" }),
+      }),
+    });
+
+    const { transferOwnership } = await import("../../convex/functions/orgs");
+    await expect(
+      transferOwnership.handler(ctx, { orgId: "org_test", targetUserId: "user_test", transferType: "full" }),
+    ).rejects.toThrow("Cannot transfer ownership to yourself");
+  });
+});
+
+describe("orgs:deleteAccount", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.stubEnv("CLERK_SECRET_KEY", "test_secret_key");
+  });
+
+  it("throws when unauthenticated", async () => {
+    requireAuthenticatedOrg.mockRejectedValue(new Error("Unauthenticated or no organisation"));
+
+    const { deleteAccount } = await import("../../convex/functions/orgs");
+    await expect(
+      deleteAccount.handler({ auth: { getUserIdentity: async () => null } }, { orgId: "org_test" }),
+    ).rejects.toThrow("Unauthenticated or no organisation");
+  });
+
+  it("throws when orgId mismatch", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_attacker" });
+
+    const { deleteAccount } = await import("../../convex/functions/orgs");
+    await expect(
+      deleteAccount.handler({ auth: { getUserIdentity: async () => null } }, { orgId: "org_victim" }),
+    ).rejects.toThrow("Org ID mismatch");
+  });
+
+  it("throws when caller membership not active", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+
+    const ctx = makeCtx();
+    ctx.db.query.mockReturnValue({
+      withIndex: vi.fn().mockReturnValue({
+        first: vi.fn().mockResolvedValue(null),
+      }),
+    });
+
+    const { deleteAccount } = await import("../../convex/functions/orgs");
+    await expect(
+      deleteAccount.handler(ctx, { orgId: "org_test" }),
+    ).rejects.toThrow("Your membership is not active");
+  });
+
+  it("succeeds and returns export payload with expenses and settlements", async () => {
+    requireAuthenticatedOrg.mockResolvedValue({ userId: "user_test", orgId: "org_test" });
+
+    const mockExpense = { _id: "exp_1", orgId: "org_test", enteredBy: "user_test", amount: 100, date: "2024-01-01", category: "groceries", paidBy: "user_test", share: 100, status: "approved", notes: "test" };
+    const mockSettlementFrom = { _id: "set_1", orgId: "org_test", fromUser: "user_test", toUser: "user_2", amount: 50, date: "2024-01-01" };
+    const mockSettlementTo = { _id: "set_2", orgId: "org_test", fromUser: "user_3", toUser: "user_test", amount: 30, date: "2024-01-02" };
+
+    const ctx = makeCtx();
+    let queryCallCount = 0;
+    ctx.db.query.mockImplementation((table) => {
+      queryCallCount++;
+      if (table === "memberships") {
+        return {
+          withIndex: vi.fn().mockReturnValue({
+            first: vi.fn().mockResolvedValue({ _id: "m1", orgId: "org_test", userId: "user_test", status: "active", deletedAt: undefined }),
+          }),
+        };
+      }
+      if (table === "expenses") {
+        return {
+          withIndex: vi.fn().mockReturnValue({
+            filter: vi.fn().mockReturnValue({
+              collect: vi.fn().mockResolvedValue([mockExpense]),
+            }),
+          }),
+        };
+      }
+      if (table === "settlements") {
+        if (queryCallCount === 3) {
+          return {
+            withIndex: vi.fn().mockReturnValue({
+              filter: vi.fn().mockReturnValue({
+                collect: vi.fn().mockResolvedValue([mockSettlementFrom]),
+              }),
+            }),
+          };
+        }
+        return {
+          withIndex: vi.fn().mockReturnValue({
+            filter: vi.fn().mockReturnValue({
+              collect: vi.fn().mockResolvedValue([mockSettlementTo]),
+            }),
+          }),
+        };
+      }
+      return {
+        withIndex: vi.fn().mockReturnValue({
+          filter: vi.fn().mockReturnValue({ collect: vi.fn().mockResolvedValue([]) }),
+          collect: vi.fn().mockResolvedValue([]),
+        }),
+        filter: vi.fn().mockReturnValue({ collect: vi.fn().mockResolvedValue([]) }),
+        collect: vi.fn().mockResolvedValue([]),
+      };
+    });
+
+    ctx.db.patch.mockResolvedValue(undefined);
+    ctx.db.insert.mockResolvedValue("audit_log_id");
+
+    const { deleteAccount } = await import("../../convex/functions/orgs");
+    const result = await deleteAccount.handler(ctx, { orgId: "org_test" });
+
+    expect(result.success).toBe(true);
+    expect(result.export).toBeDefined();
+    expect(result.export.orgId).toBe("org_test");
+    expect(result.export.userId).toBe("user_test");
+    expect(result.export.retentionDays).toBe(90);
+    expect(result.export.expenses).toHaveLength(1);
+    expect(result.export.expenses[0].id).toBe("exp_1");
+    expect(result.export.expenses[0].amount).toBe(100);
+    expect(result.export.settlements).toHaveLength(2);
+    expect(result.export.settlements[0].id).toBe("set_1");
+    expect(result.export.settlements[1].id).toBe("set_2");
+    expect(ctx.db.patch).toHaveBeenCalledTimes(4); // 1 expense + 2 settlements + 1 membership
+    expect(ctx.db.insert).toHaveBeenCalledWith("auditLogs", expect.objectContaining({ action: "deleteAccount" }));
+  });
+});

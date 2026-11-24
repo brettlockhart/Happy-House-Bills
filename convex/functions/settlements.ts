@@ -23,6 +23,7 @@ export const create = mutation({
     fromUser: v.string(),
     toUser: v.string(),
     date: v.string(),
+    status: v.optional(v.union(v.literal("pending"), v.literal("settled"), v.literal("canceled"))),
   },
   handler: async (ctx, args) => {
     const { userId, orgId } = await requireAuthenticatedOrg(ctx);
@@ -41,12 +42,15 @@ export const create = mutation({
       throw new Error("Cannot record settlement to yourself");
     }
 
+    const settlementStatus = args.status ?? "pending";
+
     const id = await ctx.db.insert("settlements", {
       orgId,
       amount: args.amount,
       fromUser: args.fromUser,
       toUser: args.toUser,
       date: args.date,
+      status: settlementStatus,
       createdAt: now,
       updatedAt: now,
     });

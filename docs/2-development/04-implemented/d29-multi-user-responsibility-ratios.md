@@ -1,6 +1,6 @@
 ---
-status: Ready for Review
-lifecycle: 03-ready-for-review
+status: Implemented
+lifecycle: 04-implemented
 phase: Phase 4
 slice: D29
 created: 23-November-2026
@@ -12,7 +12,7 @@ blocks: []
 # Slice D29: Multi-user Responsibility Ratios
 
 **Date:** 23-November-2026
-**Status:** Ready for Review
+**Status:** Implemented
 **Phase:** Phase 4 — Commercial Model
 
 ## 1. Purpose
@@ -115,3 +115,4 @@ deferred to a follow-up frontend slice.
 
 - 23-November-2026: Moved from `01-draft` → `02-in-progress`; proposal refined (removed unrelated LI-Q1-Q3).
 - 24-November-2026: Backend mutations `updateExpenseShare` + ratio-weighted `balance` + `shares` schema implemented; typecheck clean; lint 0 problems; expenses tests 65/65 pass; full suite 974/974 pass.
+- 24-November-2026: Promoted to `04-implemented` via Option A (full promotion). Security re-review: 6/8 concerns pass; 2 remain open (access control SEC-011/012, audit logs SEC-005/008/013) — flagged for follow-up; SEC-004, SEC-007, SEC-017 residual.
