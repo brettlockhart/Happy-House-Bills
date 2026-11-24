@@ -37,6 +37,9 @@ vi.mock("../../convex/_generated/api", () => ({
       expenses: {
         notifyExpensePending: "internal.functions.expenses.notifyExpensePending",
       },
+      orgs: {
+        assertFeatureGate: "internal.functions.orgs.assertFeatureGate",
+      },
       notifications: {
         createInternal: "internal.functions.notifications.createInternal",
       },
@@ -166,6 +169,7 @@ interface MockCtx {
   };
   runAction: vi.ReturnType<typeof vi.fn>;
   runMutation: vi.ReturnType<typeof vi.fn>;
+  runQuery: vi.ReturnType<typeof vi.fn>;
   _patchCalls?: Array<{ id: string; data: Record<string, unknown> }>;
   _insertCalls?: Array<Record<string, unknown>>;
   _expenses?: unknown[];
@@ -204,6 +208,7 @@ function createMockCtx(
     },
     runAction: vi.fn(),
     runMutation: vi.fn(),
+    runQuery: vi.fn().mockResolvedValue({ allowed: true, callerRole: "admin" }),
     _patchCalls: [],
     _insertCalls: [],
     _expenses: options?.expenses || [],
@@ -393,6 +398,92 @@ describe("expenses:balance", () => {
   });
 });
 
+describe("updateExpenseShare", () => {
+  it("updates expense shares when sum is 100", async () => {
+    const { updateExpenseShare } = await import("../../convex/functions/expenses");
+    const ctx = createMockCtx(validIdentity(), { expenseToGet: { _id: "exp_1", orgId: "org_1", amount: 100, paidBy: "user_1" } });
+    ctx.runQuery.mockResolvedValueOnce({ allowed: true });
+    await updateExpenseShare.handler(ctx as never, {
+      expenseId: "exp_1",
+      shares: [
+        { userId: "user_1", percent: 60 },
+        { userId: "user_2", percent: 40 },
+      ],
+    });
+    expect(ctx._patchCalls![0].data.shares).toEqual([
+      { userId: "user_1", percent: 60 },
+      { userId: "user_2", percent: 40 },
+    ]);
+  });
+
+  it("rejects updateExpenseShare when shares don't sum to 100", async () => {
+    const { updateExpenseShare } = await import("../../convex/functions/expenses");
+    const ctx = createMockCtx(validIdentity(), { expenseToGet: { _id: "exp_1", orgId: "org_1", amount: 100, paidBy: "user_1" } });
+    ctx.runQuery.mockResolvedValueOnce({ allowed: true });
+    await expect(
+      updateExpenseShare.handler(ctx as never, {
+        expenseId: "exp_1",
+        shares: [
+          { userId: "user_1", percent: 60 },
+          { userId: "user_2", percent: 30 },
+        ],
+      })
+    ).rejects.toThrow("Shares must sum to 100%; current sum: 90");
+  });
+
+  it("rejects updateExpenseShare when caller is not admin", async () => {
+    const { updateExpenseShare } = await import("../../convex/functions/expenses");
+    const ctx = createMockCtx(validIdentity());
+    ctx.runQuery.mockRejectedValueOnce(new Error("Feature requires 'admin' role; current role: 'member'"));
+    await expect(
+      updateExpenseShare.handler(ctx as never, {
+        expenseId: "exp_1",
+        shares: [{ userId: "user_1", percent: 100 }],
+      })
+    ).rejects.toThrow("Feature requires 'admin' role; current role: 'member'");
+  });
+});
+
+describe("expenses:balance (with shares array)", () => {
+  it("computes balance using shares array: user paid 100, own 60 -> owes 40", async () => {
+    const { balance } = await import("../../convex/functions/expenses");
+    const expenses = [{
+      _id: "exp1",
+      orgId: "org_1",
+      amount: 100,
+      status: "approved",
+      paidBy: "user_1",
+      shares: [
+        { userId: "user_1", percent: 60 },
+        { userId: "user_2", percent: 40 },
+      ],
+    }];
+    const ctx = createMockCtx(validIdentity(), { expenses });
+    const result = await balance.handler(ctx as never, {}) as { balance: number; owesWhom: string };
+    // User paid 100, own share 60; owes 40 (others owe 40 to user)
+    expect(result.balance).toBe(-40);
+  });
+
+  it("computes balance using shares array: other paid 100, user owes 60", async () => {
+    const { balance } = await import("../../convex/functions/expenses");
+    const expenses = [{
+      _id: "exp1",
+      orgId: "org_1",
+      amount: 100,
+      status: "approved",
+      paidBy: "user_2",
+      shares: [
+        { userId: "user_1", percent: 60 },
+        { userId: "user_2", percent: 40 },
+      ],
+    }];
+    const ctx = createMockCtx(validIdentity(), { expenses });
+    const result = await balance.handler(ctx as never, {}) as { balance: number; owesWhom: string };
+    // User owes 60 (own share 60, other paid)
+    expect(result.balance).toBe(60);
+  });
+});
+
 describe("expenses:approve", () => {
   it("throws when expense not found", async () => {
     const { approve } = await import("../../convex/functions/expenses");
@@ -511,6 +602,74 @@ describe("expenses:create", () => {
       share: 60,
     });
     expect(ctx._insertCalls?.[0]).toMatchObject({ share: 60 });
+  });
+
+  it("stores shares array when provided", async () => {
+    const { create } = await import("../../convex/functions/expenses");
+    const ctx = createMockCtx(validIdentity());
+    await create.handler(ctx as never, {
+      amount: 100,
+      date: "2024-01-01",
+      category: "groceries",
+      paidBy: "user_1",
+      shares: [
+        { userId: "user_1", percent: 60 },
+        { userId: "user_2", percent: 40 },
+      ],
+    });
+    expect(ctx._insertCalls?.[0]).toMatchObject({ shares: [
+      { userId: "user_1", percent: 60 },
+      { userId: "user_2", percent: 40 },
+    ] });
+  });
+
+  it("rejects shares array not summing to 100", async () => {
+    const { create } = await import("../../convex/functions/expenses");
+    const ctx = createMockCtx(validIdentity());
+    await expect(
+      create.handler(ctx as never, {
+        amount: 100,
+        date: "2024-01-01",
+        category: "groceries",
+        paidBy: "user_1",
+        shares: [
+          { userId: "user_1", percent: 60 },
+          { userId: "user_2", percent: 30 },
+        ],
+      })
+    ).rejects.toThrow("Shares must sum to 100%; current sum: 90");
+  });
+
+  it("rejects shares array above 100 percent", async () => {
+    const { create } = await import("../../convex/functions/expenses");
+    const ctx = createMockCtx(validIdentity());
+    await expect(
+      create.handler(ctx as never, {
+        amount: 100,
+        date: "2024-01-01",
+        category: "groceries",
+        paidBy: "user_1",
+        shares: [
+          { userId: "user_1", percent: 110 },
+        ],
+      })
+    ).rejects.toThrow("Each share percent must be a finite number between 0 and 100");
+  });
+
+  it("rejects empty userId in shares array", async () => {
+    const { create } = await import("../../convex/functions/expenses");
+    const ctx = createMockCtx(validIdentity());
+    await expect(
+      create.handler(ctx as never, {
+        amount: 100,
+        date: "2024-01-01",
+        category: "groceries",
+        paidBy: "user_1",
+        shares: [
+          { userId: "", percent: 100 },
+        ],
+      })
+    ).rejects.toThrow("Each share entry must have a non-empty userId");
   });
 
   it("rejects share below 0", async () => {

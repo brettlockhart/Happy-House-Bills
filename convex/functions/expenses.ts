@@ -20,6 +20,10 @@ export const create = mutation({
     paidBy: v.string(),
     notes: v.optional(v.string()),
     share: v.optional(v.number()),
+    shares: v.optional(v.array(v.object({
+      userId: v.string(),
+      percent: v.number(),
+    }))),
     receiptImageId: v.optional(v.id("_storage")),
     receiptImageIds: v.optional(v.array(v.id("_storage"))),
     receiptPHash: v.optional(v.string()),
@@ -56,6 +60,24 @@ export const create = mutation({
     }
     if ((args.notes?.length ?? 0) > 2000 || (args.store?.length ?? 0) > 200) {
       throw new Error("Notes or store name is too long");
+    }
+    if (args.shares) {
+      if (args.shares.length === 0) {
+        throw new Error("Shares array must contain at least one entry");
+      }
+      let sum = 0;
+      for (const entry of args.shares) {
+        if (!entry.userId || entry.userId.length === 0) {
+          throw new Error("Each share entry must have a non-empty userId");
+        }
+        if (!Number.isFinite(entry.percent) || entry.percent < 0 || entry.percent > 100) {
+          throw new Error("Each share percent must be a finite number between 0 and 100");
+        }
+        sum += entry.percent;
+      }
+      if (Math.abs(sum - 100) > 0.01) {
+        throw new Error("Shares must sum to 100%; current sum: " + Math.round(sum));
+      }
     }
     if (args.share !== undefined) {
       if (!Number.isInteger(args.share) || args.share < 0 || args.share > 100) {
@@ -124,6 +146,7 @@ export const create = mutation({
       paidBy: args.paidBy,
       notes: args.notes,
       share: args.share,
+      shares: args.shares,
       status: "pending" as const,
       enteredBy: userId,
       approvedBy: undefined,
@@ -153,6 +176,59 @@ export const create = mutation({
       isDuplicate: duplicateResult.isDuplicate,
       duplicateMatches: duplicateResult.matches,
     };
+  },
+});
+
+// D29: Update expense shares (paying admin only). Shares must sum to 100%.
+export const updateExpenseShare = mutation({
+  args: {
+    expenseId: v.id("expenses"),
+    shares: v.array(v.object({
+      userId: v.string(),
+      percent: v.number(),
+    })),
+  },
+  handler: async (ctx, args) => {
+    const { userId, orgId } = await requireAuthenticatedOrg(ctx);
+
+    // Paying admin required for share editing
+    const gate = await ctx.runQuery(internal.functions.orgs.assertFeatureGate, {
+      orgId,
+      userId,
+      requiredRole: "admin",
+    });
+    if (!gate.allowed) {
+      throw new Error("Feature requires 'admin' role; access denied");
+    }
+
+    // Validate shares sum to 100%
+    if (args.shares.length === 0) {
+      throw new Error("Shares array must contain at least one entry");
+    }
+    let sum = 0;
+    for (const entry of args.shares) {
+      if (!entry.userId || entry.userId.length === 0) {
+        throw new Error("Each share entry must have a non-empty userId");
+      }
+      if (!Number.isFinite(entry.percent) || entry.percent < 0 || entry.percent > 100) {
+        throw new Error("Each share percent must be a finite number between 0 and 100");
+      }
+      sum += entry.percent;
+    }
+    if (Math.abs(sum - 100) > 0.01) {
+      throw new Error("Shares must sum to 100%; current sum: " + Math.round(sum));
+    }
+
+    const expense = (await ctx.db.get(args.expenseId)) as ExpenseDoc | null;
+    if (!expense) throw new Error("Expense not found");
+    if (expense.orgId !== orgId) throw new Error("Access denied");
+
+    await ctx.db.patch(args.expenseId, {
+      shares: args.shares,
+      updatedAt: Date.now(),
+    });
+
+    return { id: args.expenseId };
   },
 });
 
@@ -274,16 +350,34 @@ export const balance = query({
       .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
 
-    const balance = expenses.reduce((acc, exp: ExpenseDoc) => {
-      // Note: share defaults to 0 (not 100) for backward compatibility with v1.
-      // This means legacy expenses (no share field) treat partnerShare = 100,
-      // i.e. partner owes the full amount. Ratio balancing is 2-party only.
-      const payerShare = exp.share ?? 0;
-      const partnerShare = 100 - payerShare;
-      const amount = exp.amount * (partnerShare / 100);
-      if (exp.paidBy === userId) return acc - amount;
-      return acc + amount;
-    }, 0);
+    let balance = 0;
+    for (const exp of expenses) {
+      // Determine current user's share percent for this expense
+      let ownPercent: number;
+      if (exp.shares && exp.shares.length > 0) {
+        // N-party: use shares array
+        const entry = exp.shares.find((s) => s.userId === userId);
+        ownPercent = entry?.percent ?? 0;
+      } else if (exp.share !== undefined) {
+        // Legacy 2-party: scalar share field represents payer's percentage
+        if (exp.paidBy === userId) {
+          ownPercent = exp.share;
+        } else {
+          ownPercent = 100 - exp.share;
+        }
+      } else {
+        // Legacy no-share: default 2-party where non-payer owes 100%
+        ownPercent = exp.paidBy === userId ? 0 : 100;
+      }
+
+      if (exp.paidBy === userId) {
+        // Payer: others owe their share = (100 - ownPercent)%
+        balance -= exp.amount * ((100 - ownPercent) / 100);
+      } else {
+        // Non-payer: owes their own share = ownPercent%
+        balance += exp.amount * (ownPercent / 100);
+      }
+    }
 
     const otherUserExpense = expenses.find(
       (e: ExpenseDoc) => e.paidBy !== userId

@@ -11,6 +11,10 @@ export default defineSchema({
     paidBy: v.string(),
     notes: v.optional(v.string()),
     share: v.optional(v.number()),
+    shares: v.optional(v.array(v.object({
+      userId: v.string(),
+      percent: v.number(),
+    }))),
     receiptImageId: v.optional(v.id("_storage")),
     receiptImageIds: v.optional(v.array(v.id("_storage"))),
     receiptPHash: v.optional(v.string()),
