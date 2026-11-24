@@ -4,7 +4,7 @@ import { v } from "convex/values";
 import { requireAuthenticatedUser, requireAuthenticatedOrg } from "../auth";
 import { renderInviteEmail } from "./email";
 import { clerkRequest, isClerkConfigured } from "./clerk";
-import { ROLES, INVITE_TOKEN_TTL_MS, checkPermission } from "./shared_constants";
+import { ROLES, INVITE_TOKEN_TTL_MS, RETENTION_DAYS, checkPermission } from "./shared_constants";
 import { internal } from "../_generated/api";
 import { seedDefaultCategories } from "../categories";
 import { displayNameForUserId } from "./directory";
@@ -578,8 +578,12 @@ export const transferOwnership = mutation({
       .withIndex("by_org_user", (q) => q.eq("orgId", args.orgId).eq("userId", userId))
       .first();
 
-    if (!callerMembership) {
-      throw new Error("You are not a member of this organization");
+    if (!callerMembership || callerMembership.status !== "active" || callerMembership.deletedAt !== undefined) {
+      throw new Error("Your membership is not active");
+    }
+
+    if (callerMembership.role !== ROLES.ADMIN) {
+      throw new Error("Only admins can transfer ownership");
     }
 
     const ranks: Record<string, number> = { free: 0, paying: 1, admin: 2 };
@@ -620,6 +624,12 @@ export const transferOwnership = mutation({
         updatedAt: now,
       });
     } else {
+      // For member-only transfer, downgrade caller from paying → free to avoid entitlement inflation
+      await ctx.db.patch(callerMembership._id, {
+        subscriptionRole: "free",
+        updatedAt: now,
+      });
+
       if (targetMembership) {
         await ctx.db.patch(targetMembership._id, {
           subscriptionRole: "paying",
@@ -638,6 +648,16 @@ export const transferOwnership = mutation({
         });
       }
     }
+
+    await ctx.db.insert("auditLogs", {
+      orgId: args.orgId,
+      userId,
+      action: "transferOwnership",
+      resource: "membership",
+      resourceId: targetMembership?._id ?? targetUserId,
+      metadata: { transferType: args.transferType, targetUserId, previousCallerRole: callerMembership.role },
+      createdAt: now,
+    });
 
     return { success: true, transferType: args.transferType, targetUserId };
   },
@@ -659,31 +679,35 @@ export const deleteAccount = mutation({
       .withIndex("by_org_user", (q) => q.eq("orgId", args.orgId).eq("userId", userId))
       .first();
 
-    if (!membership) {
-      throw new Error("You are not a member of this organization");
+    if (!membership || membership.status !== "active" || membership.deletedAt !== undefined) {
+      throw new Error("Your membership is not active");
     }
 
     const now = Date.now();
 
-    const expenses = await ctx.db
+    const ownedExpenses = await ctx.db
       .query("expenses")
-      .withIndex("by_org", (q) => q.eq("orgId", args.orgId))
+      .withIndex("by_org_enteredBy", (q) => q.eq("orgId", args.orgId).eq("enteredBy", userId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
-    const ownedExpenses = expenses.filter((e) => e.enteredBy === userId && e.deletedAt === undefined);
 
-    const settlements = await ctx.db
+    const ownedSettlementsFrom = await ctx.db
       .query("settlements")
-      .withIndex("by_org", (q) => q.eq("orgId", args.orgId))
+      .withIndex("by_org_fromUser", (q) => q.eq("orgId", args.orgId).eq("fromUser", userId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
-    const ownedSettlements = settlements.filter(
-      (s) => (s.fromUser === userId || s.toUser === userId) && s.deletedAt === undefined,
-    );
+    const ownedSettlementsTo = await ctx.db
+      .query("settlements")
+      .withIndex("by_org_toUser", (q) => q.eq("orgId", args.orgId).eq("toUser", userId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
+      .collect();
+    const ownedSettlements = [...ownedSettlementsFrom, ...ownedSettlementsTo];
 
     const exportPayload = {
       orgId: args.orgId,
       userId,
       generatedAt: now,
-      retentionDays: 90,
+      retentionDays: RETENTION_DAYS,
       expenses: ownedExpenses.map((e) => ({
         id: e._id,
         amount: e.amount,
@@ -710,6 +734,16 @@ export const deleteAccount = mutation({
       await ctx.db.patch(s._id, { deletedAt: now });
     }
     await ctx.db.patch(membership._id, { deletedAt: now, status: "suspended", updatedAt: now });
+
+    await ctx.db.insert("auditLogs", {
+      orgId: args.orgId,
+      userId,
+      action: "deleteAccount",
+      resource: "membership",
+      resourceId: membership._id,
+      metadata: { exportedExpenseCount: ownedExpenses.length, exportedSettlementCount: ownedSettlements.length },
+      createdAt: now,
+    });
 
     return { success: true, export: exportPayload };
   },

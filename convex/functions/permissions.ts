@@ -12,7 +12,11 @@ async function assertActiveRole(
   adminOnly: boolean,
 ): Promise<void> {
   // Callers authenticate first; requireAuthenticatedOrg restricts this bypass to local dev.
-  if (process.env.AUTH_BYPASS === "1") return;
+  if (process.env.AUTH_BYPASS === "1") {
+    const cloudUrl = process.env.CONVEX_CLOUD_URL || "";
+    const isLocal = /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?(\/|$)/.test(cloudUrl);
+    if (isLocal) return;
+  }
 
   const membership = await ctx.db
     .query("memberships")

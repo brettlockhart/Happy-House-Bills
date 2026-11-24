@@ -42,3 +42,5 @@ export function checkPermission(role: string, permission: string): boolean {
 }
 
 export const INVITE_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+export const RETENTION_DAYS = 90;

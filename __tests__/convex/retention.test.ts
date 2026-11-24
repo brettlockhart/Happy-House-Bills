@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 
-const RETENTION_DAYS = 30;
+const RETENTION_DAYS = 90;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const RETENTION_THRESHOLD_MS = RETENTION_DAYS * DAY_MS;
 

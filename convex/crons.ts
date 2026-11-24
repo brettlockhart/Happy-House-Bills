@@ -9,4 +9,10 @@ crons.daily(
   internal.functions.goals.checkVariance,
 );
 
+crons.daily(
+  "retention-purge",
+  { hourUTC: 4, minuteUTC: 0 },
+  internal.functions.retention.scheduleRetention,
+);
+
 export default crons;

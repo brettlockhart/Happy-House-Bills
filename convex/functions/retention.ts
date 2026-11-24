@@ -1,8 +1,8 @@
 import { internalAction, internalMutation, internalQuery } from "../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
+import { RETENTION_DAYS } from "./shared_constants";
 
-const RETENTION_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const RETENTION_THRESHOLD_MS = RETENTION_DAYS * DAY_MS;
 

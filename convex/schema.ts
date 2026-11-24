@@ -52,7 +52,8 @@ export default defineSchema({
   .index("by_org_ocrSource", ["orgId", "ocrSource"])
   .index("by_org_clientRequest", ["orgId", "clientRequestId"])
   .index("by_org_categoryId", ["orgId", "categoryId"])
-  .index("by_org_category", ["orgId", "category"]),
+  .index("by_org_category", ["orgId", "category"])
+  .index("by_org_enteredBy", ["orgId", "enteredBy"]),
 
   settlements: defineTable({
     orgId: v.string(),
@@ -64,7 +65,9 @@ export default defineSchema({
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),
   })
-  .index("by_org", ["orgId"]),
+  .index("by_org", ["orgId"])
+  .index("by_org_fromUser", ["orgId", "fromUser"])
+  .index("by_org_toUser", ["orgId", "toUser"]),
 
   orgs: defineTable({
     name: v.string(),

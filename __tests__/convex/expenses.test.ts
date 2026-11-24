@@ -190,12 +190,15 @@ function createMockCtx(
     db: {
       query: (table: string) => {
         if (table === "memberships") {
-          return createQueryChain([{
-            orgId: user?.org_id || "org_1",
-            userId: user?.subject || "user_1",
-            role: "member",
-            status: "active",
-          }]);
+          const orgId = user?.org_id || "org_1";
+          const subject = user?.subject || "user_1";
+          const m1: Record<string, unknown> = { orgId, userId: subject, role: "member", status: "active" };
+          const m2: Record<string, unknown> = { orgId, userId: "user_2", role: "member", status: "active" };
+          const result: unknown[] = [m1];
+          if (subject !== "user_2") {
+            result.push(m2);
+          }
+          return createQueryChain(result);
         }
         return createQueryChain(options?.expenses || []);
       },

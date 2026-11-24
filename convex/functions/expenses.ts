@@ -1,4 +1,5 @@
 import { internalMutation, mutation, query } from "../_generated/server";
+import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { v } from "convex/values";
 import { requireAuthenticatedOrg } from "../auth";
 import { assertOrgWriteAccess } from "./permissions";
@@ -10,6 +11,26 @@ import type { Doc, Id } from "../_generated/dataModel";
 import { internal } from "../_generated/api";
 
 type ExpenseDoc = Doc<"expenses"> & { _id: Id<"expenses"> };
+
+export async function assertShareMembers(
+  ctx: MutationCtx | QueryCtx,
+  orgId: string,
+  shares: Array<{ userId: string; percent: number }>,
+): Promise<void> {
+  const seen = new Set<string>();
+  for (const entry of shares) {
+    if (seen.has(entry.userId)) {
+      throw new Error(`Shares must not contain duplicate userIds: ${entry.userId}`);
+    }
+    seen.add(entry.userId);
+    const membership = await ctx.db.query("memberships")
+      .withIndex("by_org_user", (q) => q.eq("orgId", orgId).eq("userId", entry.userId))
+      .first();
+    if (!membership || membership.status !== "active" || membership.deletedAt !== undefined) {
+      throw new Error(`Share user '${entry.userId}' is not an active member of organisation '${orgId}'`);
+    }
+  }
+}
 
 export const create = mutation({
   args: {
@@ -66,10 +87,15 @@ export const create = mutation({
         throw new Error("Shares array must contain at least one entry");
       }
       let sum = 0;
+      const seen = new Set<string>();
       for (const entry of args.shares) {
-        if (!entry.userId || entry.userId.length === 0) {
+        if (!entry.userId || entry.userId.length === 0 || entry.userId.length > 64) {
           throw new Error("Each share entry must have a non-empty userId");
         }
+        if (seen.has(entry.userId)) {
+          throw new Error("Shares must not contain duplicate userIds");
+        }
+        seen.add(entry.userId);
         if (!Number.isFinite(entry.percent) || entry.percent < 0 || entry.percent > 100) {
           throw new Error("Each share percent must be a finite number between 0 and 100");
         }
@@ -78,6 +104,7 @@ export const create = mutation({
       if (Math.abs(sum - 100) > 0.01) {
         throw new Error("Shares must sum to 100%; current sum: " + Math.round(sum));
       }
+      await assertShareMembers(ctx, orgId, args.shares);
     }
     if (args.share !== undefined) {
       if (!Number.isInteger(args.share) || args.share < 0 || args.share > 100) {
@@ -206,10 +233,15 @@ export const updateExpenseShare = mutation({
       throw new Error("Shares array must contain at least one entry");
     }
     let sum = 0;
+    const seen = new Set<string>();
     for (const entry of args.shares) {
-      if (!entry.userId || entry.userId.length === 0) {
+      if (!entry.userId || entry.userId.length === 0 || entry.userId.length > 64) {
         throw new Error("Each share entry must have a non-empty userId");
       }
+      if (seen.has(entry.userId)) {
+        throw new Error("Shares must not contain duplicate userIds");
+      }
+      seen.add(entry.userId);
       if (!Number.isFinite(entry.percent) || entry.percent < 0 || entry.percent > 100) {
         throw new Error("Each share percent must be a finite number between 0 and 100");
       }
@@ -218,14 +250,28 @@ export const updateExpenseShare = mutation({
     if (Math.abs(sum - 100) > 0.01) {
       throw new Error("Shares must sum to 100%; current sum: " + Math.round(sum));
     }
+    await assertShareMembers(ctx, orgId, args.shares);
 
     const expense = (await ctx.db.get(args.expenseId)) as ExpenseDoc | null;
     if (!expense) throw new Error("Expense not found");
     if (expense.orgId !== orgId) throw new Error("Access denied");
+    if (expense.deletedAt !== undefined) {
+      throw new Error("Expense is deleted");
+    }
 
     await ctx.db.patch(args.expenseId, {
       shares: args.shares,
       updatedAt: Date.now(),
+    });
+
+    await ctx.db.insert("auditLogs", {
+      orgId,
+      userId,
+      action: "updateExpenseShare",
+      resource: "expense",
+      resourceId: args.expenseId,
+      metadata: { shares: args.shares },
+      createdAt: Date.now(),
     });
 
     return { id: args.expenseId };
