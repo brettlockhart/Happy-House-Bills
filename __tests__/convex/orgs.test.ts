@@ -63,11 +63,10 @@ function makeCtx() {
     withIndex: vi.fn().mockReturnValue({
       first: vi.fn().mockResolvedValue(null),
       filter: vi.fn().mockReturnValue({
-        order: vi.fn().mockReturnValue({
-          collect: vi.fn().mockResolvedValue([]),
-        }),
+        order: vi.fn().mockReturnValue({ collect: vi.fn().mockResolvedValue([]) }),
         collect: vi.fn().mockResolvedValue([]),
       }),
+      collect: vi.fn().mockResolvedValue([]),
     }),
     filter: vi.fn().mockReturnValue({
       order: vi.fn().mockReturnValue({

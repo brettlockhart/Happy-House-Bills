@@ -552,3 +552,165 @@ export const incrementMyOcrCount = mutation({
     return ctx.runMutation(internal.functions.orgs.incrementOcrCount, { orgId });
   },
 });
+
+// D28: Transfer group ownership to another user (paid subscriber driven)
+export const transferOwnership = mutation({
+  args: {
+    orgId: v.string(),
+    targetUserId: v.string(),
+    transferType: v.union(v.literal("full"), v.literal("member-only")),
+  },
+  handler: async (ctx, args): Promise<{ success: boolean; transferType: string; targetUserId: string }> => {
+    const { userId, orgId: callerOrgId } = await requireAuthenticatedOrg(ctx);
+    if (args.orgId !== callerOrgId) {
+      throw new Error("Org ID mismatch");
+    }
+    const targetUserId = args.targetUserId.trim();
+    if (!targetUserId) {
+      throw new Error("Target user is required");
+    }
+    if (targetUserId === userId) {
+      throw new Error("Cannot transfer ownership to yourself");
+    }
+
+    const callerMembership = await ctx.db
+      .query("memberships")
+      .withIndex("by_org_user", (q) => q.eq("orgId", args.orgId).eq("userId", userId))
+      .first();
+
+    if (!callerMembership) {
+      throw new Error("You are not a member of this organization");
+    }
+
+    const ranks: Record<string, number> = { free: 0, paying: 1, admin: 2 };
+    const callerRank = ranks[callerMembership.subscriptionRole ?? "free"] ?? 0;
+    if (callerRank < (ranks.paying ?? 1)) {
+      throw new Error("Only paying subscribers can transfer ownership");
+    }
+
+    const targetMembership = await ctx.db
+      .query("memberships")
+      .withIndex("by_org_user", (q) => q.eq("orgId", args.orgId).eq("userId", targetUserId))
+      .first();
+
+    const now = Date.now();
+    if (args.transferType === "full") {
+      if (targetMembership) {
+        await ctx.db.patch(targetMembership._id, {
+          role: ROLES.ADMIN,
+          status: "active",
+          subscriptionRole: "paying",
+          updatedAt: now,
+        });
+      } else {
+        await ctx.db.insert("memberships", {
+          orgId: args.orgId,
+          userId: targetUserId,
+          role: ROLES.ADMIN,
+          status: "active",
+          subscriptionRole: "paying",
+          invitedBy: userId,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+      await ctx.db.patch(callerMembership._id, {
+        role: ROLES.MEMBER,
+        subscriptionRole: "free",
+        updatedAt: now,
+      });
+    } else {
+      if (targetMembership) {
+        await ctx.db.patch(targetMembership._id, {
+          subscriptionRole: "paying",
+          updatedAt: now,
+        });
+      } else {
+        await ctx.db.insert("memberships", {
+          orgId: args.orgId,
+          userId: targetUserId,
+          role: ROLES.MEMBER,
+          status: "active",
+          subscriptionRole: "paying",
+          invitedBy: userId,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+    }
+
+    return { success: true, transferType: args.transferType, targetUserId };
+  },
+});
+
+// D28: Account deletion with GDPR export-before-purge (soft delete via deletedAt, 90-day retention)
+export const deleteAccount = mutation({
+  args: {
+    orgId: v.string(),
+  },
+  handler: async (ctx, args): Promise<{ success: boolean; export: Record<string, unknown> }> => {
+    const { userId, orgId: callerOrgId } = await requireAuthenticatedOrg(ctx);
+    if (args.orgId !== callerOrgId) {
+      throw new Error("Org ID mismatch");
+    }
+
+    const membership = await ctx.db
+      .query("memberships")
+      .withIndex("by_org_user", (q) => q.eq("orgId", args.orgId).eq("userId", userId))
+      .first();
+
+    if (!membership) {
+      throw new Error("You are not a member of this organization");
+    }
+
+    const now = Date.now();
+
+    const expenses = await ctx.db
+      .query("expenses")
+      .withIndex("by_org", (q) => q.eq("orgId", args.orgId))
+      .collect();
+    const ownedExpenses = expenses.filter((e) => e.enteredBy === userId && e.deletedAt === undefined);
+
+    const settlements = await ctx.db
+      .query("settlements")
+      .withIndex("by_org", (q) => q.eq("orgId", args.orgId))
+      .collect();
+    const ownedSettlements = settlements.filter(
+      (s) => (s.fromUser === userId || s.toUser === userId) && s.deletedAt === undefined,
+    );
+
+    const exportPayload = {
+      orgId: args.orgId,
+      userId,
+      generatedAt: now,
+      retentionDays: 90,
+      expenses: ownedExpenses.map((e) => ({
+        id: e._id,
+        amount: e.amount,
+        date: e.date,
+        category: e.category,
+        paidBy: e.paidBy,
+        share: e.share ?? null,
+        status: e.status,
+        notes: e.notes ?? null,
+      })),
+      settlements: ownedSettlements.map((s) => ({
+        id: s._id,
+        amount: s.amount,
+        date: s.date,
+        fromUser: s.fromUser,
+        toUser: s.toUser,
+      })),
+    };
+
+    for (const e of ownedExpenses) {
+      await ctx.db.patch(e._id, { deletedAt: now });
+    }
+    for (const s of ownedSettlements) {
+      await ctx.db.patch(s._id, { deletedAt: now });
+    }
+    await ctx.db.patch(membership._id, { deletedAt: now, status: "suspended", updatedAt: now });
+
+    return { success: true, export: exportPayload };
+  },
+});

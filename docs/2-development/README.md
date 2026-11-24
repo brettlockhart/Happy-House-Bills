@@ -40,6 +40,7 @@ Happy House Bills is a web app for couples to track shared household spending, s
 | P0 | Stripe Production Integration (D25) | `docs/2-development/04-implemented/d25-stripe-production-integration.md` | 04-implemented | ✅ D25 complete |
 | P0 | Advanced Feature Gating (D26) | `docs/2-development/04-implemented/d26-advanced-feature-gating.md` | 04-implemented | ✅ D26 complete |
 | P0 | Team Analytics & Reporting (D27) | `docs/2-development/04-implemented/d27-team-analytics-reporting.md` | 04-implemented | ✅ D27 complete |
+| P0 | Account Deletion & Ownership Transfer (D28) | `docs/2-development/04-implemented/d28-account-deletion-ownership-transfer.md` | 04-implemented | ✅ D28 complete |
 | P0 | Performance & Reliability | `docs/2-development/04-implemented/d16-performance-reliability.md` | 04-implemented | ✅ D16 complete |
 
 ## Review Queue
