@@ -1,8 +1,8 @@
 # Implementation Roadmap
 
 **Project:** Happy House Bills
-**Status:** Active — Phase 1 complete; Phases 3–5 expansion complete
-**Last updated:** 22-November-2026
+**Status:** Active — Phase 1 complete; Phases 3–5 expansion complete; D28/D29 implemented
+**Last updated:** 24-November-2026
 
 Phases are sequential and build on one another. Each phase ends with a concrete milestone
 before the next begins. All work follows the doc lifecycle (`01-draft` → `02-in-progress` →
@@ -165,29 +165,29 @@ receipt detection warns on duplicates. Deploy from clean repo to production in u
   - `subscriptions` table: Stripe status per group; local dev workaround (`local_test`) — **implemented (D24-B)**
   - Multi-org membership relaxed: paying users can own multiple groups — **implemented (D24-C)**
   - Group switcher UI; differentiated invite flow (free vs paying) — **implemented (D24-D/E)**
-  - Account deletion / ownership transfer, per-role feature gating — **pending**
+  - Account deletion / ownership transfer, per-role feature gating — **implemented (D28)**
 
-- [x] **D25: Stripe Production Integration** — `docs/2-development/01-draft/d25-stripe-production-integration.md`
+- [x] **D25: Stripe Production Integration** — `docs/2-development/04-implemented/d25-stripe-production-integration.md`
   - Live Stripe keys; production webhook endpoints
   - Trial management; renewal reminders; dunning flow
   - Stripe Customer Portal integration
 
-- [x] **D26: Advanced Feature Gating** — `docs/2-development/01-draft/d26-advanced-feature-gating.md`
+- [x] **D26: Advanced Feature Gating** — `docs/2-development/04-implemented/d26-advanced-feature-gating.md`
   - Per-role feature matrix (free vs paying vs admin)
   - Usage limits for free members (expenses/month, OCR calls, etc.)
   - Upgrade prompts & in-app purchase flow
 
-- [x] **D27: Team Analytics & Reporting (Commercial)** — `docs/2-development/01-draft/d27-team-analytics-reporting.md`
+- [x] **D27: Team Analytics & Reporting (Commercial)** — `docs/2-development/04-implemented/d27-team-analytics-reporting.md`
   - Group-level analytics (spending by role, share efficiency)
   - Export reports for accountants / shared with members
   - Scheduled report delivery
 
-- [x] **D28: Account Deletion & Ownership Transfer** — `docs/2-development/01-draft/d28-account-deletion-ownership-transfer.md`
+- [x] **D28: Account Deletion & Ownership Transfer** — `docs/2-development/04-implemented/d28-account-deletion-ownership-transfer.md`
   - Paying subscriber-initiated ownership transfer
   - GDPR-compliant account deletion with 90-day retention
   - Post-transfer per-role feature gating re-evaluation
 
-- [x] **D29: Multi-user Responsibility Ratios** — `docs/2-development/01-draft/d29-multi-user-responsibility-ratios.md`
+- [x] **D29: Multi-user Responsibility Ratios** — `docs/2-development/04-implemented/d29-multi-user-responsibility-ratios.md`
   - Generalize 2-party `expenses.share` to N-user groups
   - Per-user share tracking (summing to 100%)
   - Ratio-weighted balance computation
@@ -197,6 +197,11 @@ receipt detection warns on duplicates. Deploy from clean repo to production in u
 | Slice | Review → Implemented | Status |
 |-------|----------------------|--------|
 | D24 — Commercial Model & Responsibility Ratios | 22-November-2026 | Implemented |
+| D25 — Stripe Production Integration | 23-November-2026 | Implemented |
+| D26 — Advanced Feature Gating | 23-November-2026 | Implemented |
+| D27 — Team Analytics & Reporting | 24-November-2026 | Implemented |
+| D28 — Account Deletion & Ownership Transfer | 24-November-2026 | Implemented |
+| D29 — Multi-user Responsibility Ratios | 24-November-2026 | Implemented |
 
 ---
 
